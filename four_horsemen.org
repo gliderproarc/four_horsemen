@@ -1,0 +1,1841 @@
+#+TITLE: Four Horsemen
+#+DATE: [2022-01-12 Wed]  
+
+* The languages are all gathered
+  Started on [2021-04-04 Sun]
+
+After a lot of work I finally have all 4 repls working, and I can call all these languages from Org mode.
+** Elisp
+#+name:Elisp
+#+begin_src elisp
+(print "Elisp was always ready")
+#+end_src
+
+#+RESULTS: Elisp
+: Elisp was always ready
+** Python
+#+name:Python
+#+begin_src python :python python3 :results output
+print("Python will need libraires")
+#+end_src
+** Hylang
+#+name:Hy-lang
+#+begin_src hy :results output
+(print "Hy is almost at version 1.0!")
+#+end_src
+
+#+RESULTS: Hy-lang
+: Hy is almost at version 1.0!
+
+And for Hy I need to remember to
+1. Start the environment that can evaluate Hy
+2. use "hy-describe-thing-at-point" for documentation
+** Clojure
+#+name:ClojureScript
+#+begin_src clojurescript :results output
+(println (js/Date))
+#+end_src
+
+#+RESULTS: ClojureScript
+: Mon Jun 14 2021 19:29:44 GMT+0900 (Japan Standard Time)
+
+
+There is this little hiccup where I need to type in the Clojurescript repl before I can evaluate, but it works.
+Also good to know that I think I can jack into a Java clojure repl if I want to write some Java clojure.
+** Need to start collecting coding tips from my other projects so I can delete the others
+So nice to know this is up and working.
+** Bubble sort
+*** What this is:
+started [2021-04-05 Mon]
+
+I found this explanation on a website:  https://www.hackerearth.com/practice/algorithms/sorting/bubble-sort/tutorial/
+And it is talking about a "Bubble sort" algorithm. Never heard of it. Sounds useful. So I am going to try implementing it is 4 languages. I think by the time I get it done in Elisp I will be able to make it in the other 3.
+
+Ok, let's get what this is:
+#+begin_quote
+Sorting Algorithms are concepts that every competitive programmer must know. Sorting algorithms can be used for collections of numbers, strings, characters, or a
+structure of any of these types.
+
+Bubble sort is based on the idea of repeatedly comparing pairs of adjacent elements and then swapping their positions if they exist in the wrong order.
+
+Assume that $$A [ ]$$ is an unsorted array of $$n$$ elements. This array needs to be sorted in ascending order.
+#+end_quote
+
+Hmn... so I think this is doing something close to:
+1. Take in elements 1 and 2 of the array
+2. Compare the two
+3. If the elements are in order, leave them
+4. If the elements are out of order, push the higher element into the next block and take the lower element and the next element
+
+Hmn, that part at 4 looks weird. How about a short example?
+
+2 4 6 8 4 6 9
+
+If I take the first two "2 4" I can leave them because they are in order. By the time I keep leaving these in order, how do I move the 4 all the way up past the 6 and 8 to get it up by the other 4?
+
+Could it be that you back track up the list every time you find a pair out of order? So when you encounter "8 4" you then swap the 8 and 4, and compare "6 4" because 6 was next on the list. I mean it works, but it sounds like you are making trips up and down the list for every element out of order. It looks really inefficient. But I guess it is a way to sort. I could even abstract out the comparison step to do things like do an alphabetical sort, or a sort by time.
+
+So the loop method seems pretty simple. You keep pulling in elements, comparing them, "bubbling" them up, and stop when the list to sort is empty.
+
+I think you could do a "for each" loop too. No need to have an array that you slice elements off of. You know how many things you need to sort.
+
+...okay so I guess it works like this:
+   1. Take an element of the Unsorted array
+   2. Append it to the end of the Sorted array
+   3. Compare the values of the last two element of the array
+   4. If they are out of order, swap them and do the process again ignoring the last element of the array
+   5. Once the elements are in order, you have "bubbled up" the newest element to it's place in the sorted array.
+   6. Repeat for every element in the unsorted array.
+
+Hmn. Okay, I think I got it. And for Lisps I think I would want to do this in reverse order to I can use "car" or "first" to grab elements from arrays from the front instead of working from the back. I don't know of a good lisp function for grabbing the last two elements of a list.
+*** First draft in Elisp
+#+name:Bubbles-sort-v1
+#+begin_src elisp
+(defun bubble-sort (unsorted-list) "bubble-sort practice"
+       ;; function body here
+       unsorted-list
+       )
+
+(print (bubble-sort '(0 3 5 4 8)))
+#+end_src
+
+#+RESULTS: Bubbles-sort-v1
+| 0 | 3 | 5 | 4 | 8 |
+
+So if I am thinking about this right, I want nested recursive calls. One recursive call will run for each of the elements int he unsorted array. And the recursive call within will run to "bubble up" each of those elements through the resulting array.
+
+But that seems like a lot of state to track. Isn't there a better way? I am trying to think of a way to track at what index I am inserting each of the new elements after the comparison, and I can't think of a good way to do it without a loop and tracking an index.
+
+The functional approach is to return a new list each time around, and I need a way to return a list with the new element where it need to be int the array. What I am not seeing is how to add a new element into the middle of array with just car, cdr, and cons. I can imagine a recursive call that splits the current array into two parts, and as it comapres elemetns, moves elemtns from the sorted array into a temporary array while it adds new elements into a spot in the middle of the array.
+
+hmn... still not very functional.
+
+yeah no matter how I wrap my head around it, I still want to call cdr on the sorted working list with he car of the unsorted list and keep calling cred till I can cons the new element in, then add back on all the elements I had before. Seems weird, but I CAN do it with just car cdr and cons.
+
+Very lisp, but not very functional. I am tracking a working copy of the result and a throw-away array and over writing them all along the way.
+
+There is a function I need to write in the bubble function. It can be a lambda if I don't want to give it a name, but I need a better way of getting the next element of the unsorted array into the "working array" before it is returned.
+... if the element needs to go into the end of the array, what if I add the element back to the unsorted array instead of putting it into some new array?
+
+#+name:Bubbles-sort-v2
+#+begin_src elisp
+(defun bubble-sort (unsorted-list) "bubble-sort practice"
+       (let (sorted-list '())
+         (defun recursive-bubble-sort (unsorted-list-r sorted-list-r)
+           (cond ((= (length unsorted-list-r) 0) 'sorted-list-r)
+                 ((= (length sorted-list-r) 0)
+                  (recursive-bubble-sort (cdr unsorted-list-r) (cons (car unsorted-list-r) sorted-list-r )))
+                 ((>= (car unsorted-list-r) (car sorted-list-r))
+                  (recursive-bubble-sort (cdr unsorted-list-r) (cons (car unsorted-list-r) sorted-list-r)))
+                 ((< (car unsorted-list-r) (car sorted-list-r))
+                  (defun re-sort (elemnt working-list) "find a place for the element"
+                         (let (push-back '())
+                           (defun recursive-re-sort (element-r working-list-r push-back-r))
+                           (cond (< element-r (car working-list-r)) (recursive-re-sort element-r (cdr working-list-r) (cons (car working-list-r) push-back-r) )
+                                 (>= element (car working-list)) (flatten-list (cons push-back (cons element working-list))))
+                           )
+                         )
+                  (recursive-re-sort (car unsorted-list-r) sorted-list-r)
+                  )
+
+
+                  (cons (car unsorted-list) sorted-list)
+                  ))
+
+           (print (bubble-sort '(0 3 5 4 8)))
+#+end_src
+
+#+RESULTS: Bubbles-sort-v2
+| 0 |
+#+name:car-and-cons
+#+begin_src elisp
+(cons 3 '(4))
+#+end_src
+
+#+RESULTS: car-and-cons
+| 3 | 4 |
+
+
+Okay, I give up. Let's take a look at an example.
+
+
+...okay lovely this is a horrible algorithm used mostly for educations... haha. In that case, I have no problem doing something highly inefficient.
+
+I think once I hit that step above, I need a function to handle just the current sorted list and the new element. Call a new function it is.
+
+Oh man.... this is just a mess. Good thing I don't do this for a living... yet. Haha.
+
+Okay, what did I learn from this?
+
+- Recursion is great, but that pattern or having a function with a nested version of it's self to call recursively seems like a really bad idea. Let's not do that every again.
+- Bad algorithms look like this. They might have a pretty simple way of working, but the mechanism they use leaves this trail of state that isn't good for anything later.
+*** Second draft
+
+    Okay, I can think of a way to do this, but it sounds like it's a horrible idea.
+    1. Take the list
+    2. Look at the length of the list
+    3. If the list is less than 2 items long, return the sresult (which is the cons of the sorted items at the back and the remaining list at the front)
+    4. store the car of the list somewhere. (in a variable)
+    5. take the car of the remaining items in the list (the next elem)
+    6. If the next item is bigger, leave it is order.
+    7. If it's smaller, swap the two
+    8. Store the small item by consing it to the beginning of a list which is going to be a running list of elements as you pull them off the list to sort
+    9. Loop from here up to the to but each time you run though, move another item off the list to hold and gradually shorten the list to sort
+    10. Repeat the sort of the whole length of the list once per element of the list
+
+    This looks like a really bad idea.
+*** Elisp solution
+
+   #+name:Bad-bubbles
+   #+begin_src elisp
+(defun swap-two (unsorted-list) "just swap the first two elements in a list"
+       (if (> (car unsorted-list) (car (cdr unsorted-list)))
+           (cons (car (cdr unsorted-list)) (cons (car unsorted-list) (cdr (cdr unsorted-list))))
+         (flatten-list  unsorted-list)))
+(defun bubble-reccur (list-to-sort sorted-list) "reccur over a list"
+       (cond  ((= (length list-to-sort) 2) (flatten-list (cons sorted-list (swap-two list-to-sort))))
+              (t (bubble-reccur (cdr (swap-two list-to-sort)) (flatten-list (cons sorted-list (car (swap-two list-to-sort))))))))
+(defun bubble-sort (list-s) "the main function"
+       (dotimes (i (length list-s))
+         (setq list-s (bubble-reccur list-s '())))
+       list-s)
+;; (print (swap-two '(2 1 4)))
+(print (bubble-sort '( 1 2 2 2 3 9 4 6 7 7 5)))
+   #+end_src
+
+   #+RESULTS: Bad-bubbles
+   | 1 | 2 | 2 | 2 | 3 | 4 | 5 | 6 | 7 | 7 | 9 |
+
+
+   Got it.
+
+   What I ended up doing here is creating 3 functions. One to swap the last two elements to make them in order. Another to recursively call that on each pair of items in the list. And a 3rd to do a "do times" loop enough time to sort the list.
+
+   I will make the Clojure solution the same, but for Vanilla Python and Hy, I want to ditch the recursion.
+
+*** Hy
+#+name:hy-bubles
+#+begin_src hy :results output
+(require [hy.contrib.loop [loop]])
+(require [hy.extra.anaphoric [*]])
+
+(defn sort-two [u-list]
+    "sort the last two elements"
+    (if (>(py "u_list[0]") (py "u_list[1]")) (flatten [(py "u_list[1]") (py "u_list[0]") (cut u-list 2)])
+        u-list))
+
+(defn bubble-reccur [list-to-sort]
+  "propper loop recursion"
+  (loop [[working-list list-to-sort] [sorted-list []]]
+        (if (= (len working-list) 2) (flatten [sorted-list (sort-two working-list)])
+            (recur (cut (sort-two working-list) 1) (flatten [sorted-list (first (sort-two working-list))])))))
+
+(defn bubble-sort [list-s]
+  "sad that numba cant work here"
+  (setv list-w list-s)
+  (ap-dotimes (len list-s) (setv list-w (bubble-reccur list-w )))
+  list-w)
+
+(print (bubble-sort [4 6 3 2 1 5]))
+#+end_src
+
+#+RESULTS: hy-bubles
+: [1, 2, 3, 4, 5, 6]
+
+
+Done. Sad to see that I couldn't use Numba with Hy's recursion. But in many ways I shouldn't try to make a really "performant" piece of code with recursion anyway. I can think of Vanilla Python and for loops as my window into that world.
+
+I still don't like I how I call the recursive middle function once per item in the list. I seems pretty silly.
+*** Numba JITed Hy
+I was thinking about writting this with vanilla Python, but another part of me wants to make the for-loop version I would write if I wanted to Jit Complie this. Let's see how it goes:
+
+#+name:hy-bubles-jit
+#+begin_src hy :results output
+(require [hy.extra.anaphoric [*]])
+(import [numba [njit]])
+
+
+(with-decorator njit
+(defn sort-two [u-list index]
+    "sort two elements at index and next"
+    (if (>(py "u_list[index]") (py "u_list[index+1]")) (pys "u_list[index], u_list[index+1] = u_list[index+1], u_list[index]")
+        u-list))
+  )
+
+(with-decorator njit
+(defn bubble-loop [list-to-sort]
+  "for loops oh my"
+  (for [i (range 0 (- (len list-to-sort) 1 ))]
+    (sort-two list-to-sort i))
+  list-to-sort)
+  )
+
+(with-decorator njit
+(defn bubble-sort [list-s]
+  "numba wokrs now"
+  (setv list-w list-s)
+  (ap-dotimes (len list-s) (setv list-w (bubble-loop list-w )))
+  list-w)
+  )
+
+(print (last (bubble-sort (list (range 0 1000)))))
+#+end_src
+
+#+RESULTS: hy-bubles-jit
+: 999
+
+wow... even after jit-ing that, it still takes FOREVER to compute. Good to know that Jit-ing something does not mean it's fast. It just means that algorithm is not being help back by Python. If it's a bad algorithm, it's still slow.
+
+Very statefull, and not pure, and kind of hard to understand now that I think about it. But it DOES all go through njit.
+
+And the Jited version is faster, but if you hit this with a list that is about 100,000 items long, it REALLY start to slow down. I don't think I want to wait and see how long that takes in vanilla Python.
+
+I feel like it makes very little sense to split that out into 3 functions this way. I would rather see them all in one function. The first small function feels like it will never get used again. So why make it it's own function?
+
+Bubble loop is the only function along the chain that is passing an index down to sort-two, and it feels really arbitrary. And I don't see why you would not want to build that into the original bubble sort function. It was easier for me to write this way, because I can test the smaller functions as I build them up, and I know which part is broken because it was the last function I was working on (most of the time).
+
+*** And with Clojure
+I think I know what I want to make this do in Clojure, but to save time I really do think I will ditch Hy.
+#+name:Bubblesort-clojure
+#+begin_src clojure :results value
+(defn swap-two [u-list]
+  "swap last two element is the second from the end in bigger"
+  (if (> (first u-list) (first (rest u-list)))
+    (cons (first (rest u-list)) (cons (first u-list) (rest (rest u-list))))
+    u-list))
+
+(defn bubble-recur [un-list]
+  "recursviely sort the list until the entire list has each element sorted once"
+  (loop [w-list un-list s-list '()]
+    (if (= (count w-list) 2)
+      (flatten (list s-list (swap-two w-list)))
+      (recur (rest (swap-two w-list)) (flatten (list s-list (first (swap-two w-list))))))))
+
+(defn bubble-sort [unsorted-list]
+  "Do the recursion once per item in list"
+  (nth (iterate bubble-recur unsorted-list) (count unsorted-list)))
+
+(bubble-sort '(1 6 3 2 5 4))
+#+end_src
+
+#+RESULTS: Bubblesort-clojure
+| #'shadow.user/swap-two     |
+| #'shadow.user/bubble-recur |
+| #'shadow.user/bubble-sort  |
+| (1 2 3 4 5 6)              |
+
+So weird. That is a way to apply a function x times
+https://stackoverflow.com/questions/46655508/apply-a-function-n-times-on-a-starting-value
+
+Anyway, it's done and I did not need to use a recur or "do times" in the bubble sort function. And it kind of makes sense now. You want the function to be applied n times. So you make a list that consists of the function being applied one more time each time. And you just take the THAT number(th) item from the list.
+
+** Numba
+
+#+name:Numba-test
+#+begin_src python :python python3 :results output :session my_sesh
+from numba import jit
+import random
+
+
+@jit
+def monte_carlo_pi(nsamples):
+    acc = 0
+    for i in range(nsamples):
+        x = random.random()
+        y = random.random()
+        if (x ** 2 + y ** 2) < 1.0:
+            acc += 1
+    return 4.0 * acc / nsamples
+
+
+print(monte_carlo_pi(100000000))
+#+end_src
+
+#+RESULTS: Numba-test
+: 3.14146192
+
+
+So this is a Python package that does JIT compilation. And it looks like the demo on the website works. One of the questions I have is: can I use this to make Hy fast?
+
+Can I just say how nice it is that that basically seemed to "just work" even after pulling it into org?
+
+#+name:jit-hy
+#+begin_src hy :results output
+(import [numba [njit]])
+
+(with-decorator njit
+  (defn gotta-go-fast [num] "try to jit this"
+    (setv my-var 0)
+  (for [x (range 200000000)]
+    (setv my-var (+ my-var (->>
+      (+ num 1 x)
+      (* 40)
+      (/ 3)
+      (- 3)))))
+    my-var
+    )
+)
+
+  (print (gotta-go-fast 30))
+#+end_src
+
+#+RESULTS: jit-hy
+: 599999998.9730192
+
+Here is my proof of concept. This is a really silly example, totally designed to prove it works without doing anyting of value, but I wrote something that is painfully slow in Python, and pretty decent once you JIT it. And it "just works" using Hy.
+
+So here is my thinking. I write code with Python libraires. As I go along, I start breaking out the heavy math computations of my program to run in these JITed functions. It allow me to keep the bulk of what I do in nice easy Lispy python land, and I still get to drop instruction's straight down to machine code if I need to   .
+** Numba for recursion?
+So I was reading on the numba website that it supports recursion. Does that mean it will also tail call optimize it?
+#+name:reccursion-test
+#+begin_src hy :results output
+(import [numba [njit]])
+
+(with-decorator njit
+  (defn do-it [num] "try to jit this"
+    (if (> num 40000)
+        (return num)
+    (do-it (+ num 1)))))
+    
+  (print (do-it 1))
+#+end_src
+
+#+RESULTS: reccursion-test
+: 40001
+
+Okay so it will let me call recursively, but the number of iterations is not that large. Let's try it with "loop recur"
+
+#+name:loop-reccur
+#+begin_src hy :results output
+(require [hy.contrib.loop [loop]])
+
+(defn do-this [num]
+  "try to loop this"
+  (loop [[bill num]]
+        (if (> bill 1000000) bill
+            (recur (+ bill 1)))))
+    
+(print (do-this 100))
+#+end_src
+
+#+RESULTS: loop-reccur
+: 1000001
+
+Yeah, so the loop recur macro gets me more recursive calls. But it's REALLY slow.
+** C++ and Montecarlo
+   I am starting to learn c++ and I think I have a good first project. C++ is good for big hard computation type stuff. Python is slow, and not suitable for things like Monte carlo. So I will see if C++ can do it better
+
+It looks like the python version I downloaded off the net does something like:
+- Get two random numbers between 0 and 1.
+- If the square of the two numbers is greater than 1, increment a counter in a loop
+- Multiply the final counter by 4 and decide but the numbers of time you calculated
+- Trying to Parameterize the number of calculations is a good idea.
+#+name:cpp-monte-carlo
+#+begin_src C++ :includes <iostream> <random> <iomanip>
+using std::cout;
+using std::setprecision;
+
+constexpr int FLOAT_MIN = 0;
+constexpr int FLOAT_MAX = 1;
+
+double monteCarlo( const unsigned long int samps ){
+    std::random_device rd;
+    std::default_random_engine eng(rd());
+    std::uniform_real_distribution<float> distr(FLOAT_MIN, FLOAT_MAX);
+    cout << setprecision(12);
+    
+    long double accum = 0;
+    
+    for( unsigned long int i = 0; i < samps; i += 1){
+      double x = distr(eng); 
+      double y = distr(eng);
+      
+      if (((x * x)+(y * y)) < 1.0) {
+        accum += 1;
+          }
+    }
+    return 4 * (accum/samps);
+}
+
+int main(){
+  //The second one is about the limit of my computer
+    std::cout << monteCarlo(1000000);
+    // std::cout << monteCarlo(5000000000000000);
+    return EXIT_SUCCESS;
+}
+   #+end_src
+
+   #+RESULTS: cpp-monte-carlo
+   : 3.142144
+
+...well there it is. Not bad for my second day out at C++.
+** C and reversing an array
+   I got some homework from Paul, and I was amazed that it was so hard to simply reverse a string. C doesn't even have strings... is has chars that are stored in arrays. I got really close to solving the assignment, but I wasn't able to figure out how to reverse the item in the array, so it's time to break it down a little bit.
+
+   
+#+name:c-test
+#+begin_src C :results output
+
+#include <string.h>
+
+char *word;
+
+char scen[] = "Hi there from C";
+const char delim[2] = " ";
+word = strtok(scen, delim);
+  
+printf (word);
+#+end_src 
+
+#+RESULTS: c-test
+: Hi
+   
+This is the first word. Let's try printing the second.
+
+#+name:c-test2
+#+begin_src C :results output
+
+#include <string.h>
+
+char scen[] = "Hi there from California";
+
+char *word = strtok(scen, " ");
+char *buffer[5];
+char myWord[10];
+
+int i = 0;
+while (word != NULL)
+  {
+    buffer[i++] = word;
+    word = strtok(NULL, " ");
+    }
+myWord = buffer[1];
+printf(myWord);
+#+end_src 
+
+still no luck.
+But I did find this:
+
+#+begin_quote
+  1  #include<stdio.h>  
+  2  #include<stdlib.h>  
+  3    
+  4  int main()  
+  5  {  
+  6      int n, i;  
+  7      char *ptr;  
+  8    
+  9      printf("Enter number of characters to store: ");  
+ 10      scanf("%d", &n);  
+ 11    
+ 12      ptr = (char*)malloc(n*sizeof(char));  
+ 13    
+ 14      for(i=0; i < n; i++)  
+ 15      {  
+ 16          printf("Enter ptr[%d]: ", i);  
+ 17          /* notice the space preceding %c is  
+ 18            necessary to read all whitespace in the input buffer  
+ 19          */  
+ 20          scanf(" %c", ptr+i);   
+ 21      }  
+ 22    
+ 23      printf("\nPrinting elements of 1-D array: \n\n");  
+ 24    
+ 25      for(i = 0; i < n; i++)  
+ 26      {  
+ 27          printf("%c ", ptr[i]);  
+ 28      }  
+ 29    
+ 30      // signal to operating system program ran fine  
+ 31      return 0;  
+ 32  }  
+#+end_quote
+
+I keep seeing this malloc thing, and I haven't used any derefs. I think that is part of what I am missing.
+** A little work with Hy
+   I am in the middle of working with the second round of homework from Paul, and I feel like writing some lisp. Not because I need to, but because I kind of forget what it's like at this point.
+
+  let's do the string reverse thing. I don't want to do any file IO that needs to be cleaned up, so I will leave that out.
+#+name:reverse-me
+#+begin_src elisp
+"This is a sentence"
+#+end_src
+
+#+RESULTS: reverse-me
+: This is a sentence
+  
+ #+name:Reverse-a-string
+ #+begin_src hy :results output :var rev-me=reverse-me
+;; (print (py "rev_me.split()"))
+(lfor word (py "rev_me.split()")
+      (print (py "word[::-1]")))
+
+ #+end_src 
+
+ #+RESULTS: Reverse-a-string
+ : sihT
+ : si
+ : a
+ : ecnetnes
+
+
+ That does most of what I want besides the making it all into one new string. Isn't Python and Hy grand?
+** Is Hy a little broken?
+   I was working with strings last night and I remembered something I ran against with Hy before. I think ANY code with a [ ' ] is broken when run from a Hy code block
+
+#+name:can-I-use-quote
+#+begin_src hy :results value
+`("hu")
+#+end_src
+
+#+RESULTS: can-I-use-quote
+: HyExpression([
+:   HyString('hu')])
+
+Hmn
+
+#+name:try-a-tick
+#+begin_src hy :results output
+(print (py"'b'+'a'"))
+#+end_src
+
+#+RESULTS: try-a-tick
+
+okay yeah, that is broken. 
+
+#+name:is-that-gooder-syntax?
+#+begin_src python :python python3 :results output
+print('a'+'b')
+#+end_src
+
+#+RESULTS: is-that-gooder-syntax?
+: ab
+
+Yes indeed.
+
+Okay, so Hy won't let me to that in an Org mode code block. What about in a Hy file?
+
+... yeah so in a Hy mode buffer that works. There is just something wrong with the Hy lang code evaluation in an Org code block.
+
+
+It looks like more and more I just need to write my own way of making these code blocks work. 
+#+name:gotojvm
+#+begin_src clojurescript :results output
+(defn swap-two [u-list]
+  "swap last two element is the second from the end in bigger"
+  (if (> (first u-list) (first (rest u-list)))
+    (cons (first (rest u-list)) (cons (first u-list) (rest (rest u-list))))
+    u-list))
+
+(defn bubble-recur [un-list]
+  "recursviely sort the list until the entire list has each element sorted once"
+  (loop [w-list un-list s-list '()]
+    (if (= (count w-list) 2)
+      (flatten (list s-list (swap-two w-list)))
+      (recur (rest (swap-two w-list)) (flatten (list s-list (first (swap-two w-list))))))))
+
+(defn bubble-sort [unsorted-list]
+  "Do the recursion once per item in list"
+  (nth (iterate bubble-recur unsorted-list) (count unsorted-list)))
+
+(println (bubble-sort '(1 6 3 2 5 8 7 4)))
+#+end_src
+
+#+RESULTS: gotojvm
+: (1 2 3 4 5 6 7 8)
+
+Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure sort of work. I would need to space out the blocks to have some that load in functions and other that call them, but I do see a way to make Clojure work with Org babel.
+
+** arrow syntax in Elisp
+   I have been toying around with Clojure and Hy, but the most convenient lisp for working in Emacs is undoubtedly Elisp. Let's revisit the arrow syntax.
+
+  #+name:arrows
+  #+begin_src elisp
+(->> (list 5 6 7)
+     (cons 0))
+  #+end_src 
+
+  #+RESULTS: arrows
+  | 0 | 5 | 6 | 7 |
+
+  I had looked this up once before and it's nice to see how nice and clean it is. Let's do it more like a data pipeline. How about all the even numbers under 20?
+
+  #+name:even-under-20
+  #+begin_src elisp
+(->> (number-sequence 0 20)
+     (remove-if-not #'evenp))
+  #+end_src 
+
+  #+RESULTS: even-under-20
+  | 0 | 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 |
+  
+I need to practice making predicates. But it works. And I can use that function just about anywhere here in Emacs. Particularly in tables.
+** Companion Python script to the C string reversal problem.
+   I haven't worked with files in Python before. This might be fun.
+  #+name:Rev_some_strings
+  #+begin_src python :python python3 :results output
+my_text = "This is a scentence"
+word_list = my_text.split(' ')
+for word in word_list:
+    print(word[::-1])
+#+end_src 
+
+  #+RESULTS: Rev_some_strings
+  : sihT
+  : si
+  : a
+  : ecnetnecs
+
+Wow, that was easy. C is Scary stuff. Let's try it with files
+
+** Deepest nested level of parrens
+   I was watching this "code report" youtube video that did this problem in like 5 different languages. I remember this one because it was cool to see Clojure pitted against a few other languages I didn't particularly care for.
+
+  So the basic problems statement is: Show how many levels deep the deepest paren is. And the solution is something like this:
+  1. Remove all the text from the string that is not a paren
+  2. Assign all the left parrens to 1 and right parren to -1
+  3. do a "plus scan" or partial sum
+
+     Shucks, I forget how a plus scan works. I think it's somehow a sum off all the numbers, but it's not just a sum. It somehow gives the highest the number goes, without needing a way to track the total. Sad, no web search pulled up a good explanation of a plus scan.
+
+    #+name:does-hy-accumulate
+  #+begin_src hy :results output
+(print (list (accumulate [1 2 3 4 2 3])))
+  #+end_src 
+
+  #+RESULTS:
+  : [1, 3, 6, 10, 12, 15]
+
+  Nice. Okay, now for the stringy bits
+
+ #+name:can-accumilate
+ #+begin_src hy :results output
+(setv problem-string  "(1+2)+3*(7/3)(4+(5+((8))+3)-4)-(2)")
+(defn is-parren? [thing]
+  (cond [(= thing "(") True]
+        [(= thing ")") True]
+        [True False]))
+(defn the-mapping [parren]
+  (if (= parren "(") 1
+      -1))
+
+(print (->>
+         (list (filter is-parren? (list problem-string)))
+         (map the-mapping)
+         (accumulate)
+         (max)
+         ))
+ #+end_src 
+
+ #+RESULTS: can-accumilate
+ : 4
+
+ Hmn. Well I needed to make two helper functions, bit the bit at the end looks really nice. Take the string, filter if parren, map to numbers, accumulate and max
+
+* Putting Clojure off pause
+[2021-04-10 Sat]
+As much as I don't like to put Clojure down considering it filled the place as my most performant language, I am also spending inordinate amount of time trying to get the darned thing to work in the first place. Python and Elisp just work. An Hy is mostly working. So rather than spend all the time I could be coding on trying to get Clojure to work with org-mode blocks, I am just going to set it aside for a little bit.
+
+** ...and it's back!
+#+name:back
+#+begin_src clojurescript :results output
+(print (+ 2 5))
+#+end_src
+
+#+RESULTS: back
+: 7
+
+And it's fast!
+
+#+name:pass_a_list
+#+begin_src clojure :results output
+(println (+ 3 6))
+#+end_src
+
+#+RESULTS: pass_a_list
+: 9
+
+#+name:print-me
+#+begin_src clojurescript :results output
+(print (js/Date))
+#+end_src
+
+#+RESULTS: print-me
+: Mon Jun 14 2021 19:30:36 GMT+0900 (Japan Standard Time)
+** Testing calling goog
+
+#+name:b
+#+begin_src clojure :results value
+(require '[goog.math :as math])
+#+end_src
+
+#+RESULTS: b
+
+#+name:out
+#+begin_src clojure :results value
+(math/clamp -1 0 5)
+#+end_src
+
+#+RESULTS: out
+: 0
+https://clojurescript.org/reference/google-closure-library
+
+So I was reading more about clojurescript and I can get this to work but it needs some babying.
+
+1. Cider jack in
+2. in the spawned repl, type a bit
+3. evaluate the blocks
+
+** ...and it's back out.
+  [2021-06-16 Wed] 
+   Clojure is something I would love to get into one day. But I have nothing to make in Clojure. Hy and Python and Elisp I have uses for now. I will learn them first.
+** Maybe console.log will help?
+  #+name:test
+  #+begin_src clojurescript :results value :session mySesh
+(defn swap-two [u-list]
+  "swap last two element is the second from the end in bigger"
+  (if (> (first u-list) (first (rest u-list)))
+    (cons (first (rest u-list)) (cons (first u-list) (rest (rest u-list))))
+    u-list))
+
+(defn bubble-recur [un-list]
+  "recursviely sort the list until the entire list has each element sorted once"
+  (loop [w-list un-list s-list '()]
+    (if (= (count w-list) 2)
+      (flatten (list s-list (swap-two w-list)))
+      (recur (rest (swap-two w-list)) (flatten (list s-list (first (swap-two w-list))))))))
+
+(defn bubble-sort [unsorted-list]
+  "Do the recursion once per item in list"
+  (nth (iterate bubble-recur unsorted-list) (count unsorted-list)))
+
+(bubble-sort '(1 6 3 2 5 4 6 8))
+  #+end_src
+
+  #+RESULTS: test
+  : Please reevaluate when nREPL is connected
+** I think I have a work around
+   So I was be moaning the fact that I needed to output ClojureScript blocks by value. And if I wanted to get really fancy it might get me in trouble one day. But for the most part, I do think I can make this work without using the output of blocks. I can put functions in different blocks and just call to the functions if I need to pass the block to something else. 
+   Yeah, after more testing this seems to do it.
+   
+** Maybe use clojure when Hy is giving me problems?
+  #+name:grab-the-bad-char
+  #+begin_src clojurescript :results output :var my-var=the-bad-char
+(println my-var)
+  #+end_src
+
+  #+RESULTS: grab-the-bad-chat
+  : can't
+ 
+  Yeah. That works just fine.
+* Hy is back
+Well that settles it. After poking around I have come to a conclusion. Hy is cool, but Clojure is better, and I can get a lot more power and stability (as well as LOTS to work on) with just Clojure and Python. I don't even feel the need to add more languages. Maybe I can call the other two languages I am learning Nix and Elips?
+
+** Hy is back... LOL
+ [2021-06-16 Wed]
+
+ I have FINALLY figured this out. I have bee trying to get Clojure into how I work, and I could never make it work. And the reason always seemed to come back to: "I have nothing to make in Clojure". Most of the things I have made are either in Elisp, or Python. And there is a simple reason. I can work with them REALLY well here in Org mode. I did I little experiment to see how I can illustrate this to myself when I was making some org-table practice entries. Consider the following:
+  The Hy and Clojure code get the job done But what happens if I want to define a function in that block?
+  For some miraculous reason, I seem to get the values in the Org table, but when passing the results of clojure blocks to other languages, I run into problems. Less so when using Hy. So as long as what I am doing is mostly here in Emacs and Org mode, I can take advantage of a lot of cool without needing to sacrifice the interop with org-mode.
+*** Hy no func
+  #+TBLNAME: the_ranks_4hy
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
+  #+TBLFM: $2='(org-sbe "grab-hy" (text-hy $$1))
+
+  #+name:grab-hy
+  #+begin_src hy :results value
+text-hy
+  #+end_src
+*** Clojure no func
+  #+TBLNAME: the_ranks_4hy
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
+  #+TBLFM: $2='(org-sbe "grab-clj" (text-clj $$1))
+
+  #+name:grab-clj
+  #+begin_src clojure :results value
+text-clj
+  #+end_src
+*** Hy with func
+  #+TBLNAME: the_ranks_4hy
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
+  #+TBLFM: $2='(org-sbe "grab-hyf" (text-hyf $$1))
+
+  #+name:grab-hyf
+  #+begin_src hy :results value
+(defn my-func []
+  text-hyf)
+(my-func)
+  #+end_src
+
+  Hy just seems to work really well, just like Python. If I can get it to work in Python, I can usually get it to work in Hy.
+*** Clojure with func
+  #+TBLNAME: the_ranks_4hy
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
+  #+TBLFM: $2='(org-sbe "grab-cljf" (text-cljf $$1))
+
+  #+name:grab-cljf
+  #+begin_src clojure :results value
+(defn my-func []
+  text-cljf)
+(my-func)
+  #+end_src
+
+  #+RESULTS: grab-cljf
+  | #'shadow.user/my-func |
+  | "text-cljf"           |
+
+ ...wow, the clojure actually worked really nicely. Even though the block output has that extra output thingy.
+*** Code block to code block
+
+  #+name:make-clj-text
+  #+begin_src clojurescript :results value
+(defn my-func []
+  "texter")
+(my-func)
+  #+end_src
+
+  #+RESULTS: make-clj-text
+  | #'cljs.user/my-func |
+  | "texter"            |
+
+  #+RESULTS: make clj-text
+  | #'shadow.user/my-func |
+  | "text"                |
+
+ #+name:grab_it
+ #+begin_src python :python python3 :results output :var thing=make-clj-text
+print(thing)
+ #+end_src
+
+ #+RESULTS: grab_it
+ : [["#'shadow.user/my-func"], ['"texter"']]
+
+ This is where I run into problems. If I want to chain code blocks together, I need the output of each block to work for the next block. What plopped out of the Clojure block 
+
+ Let's try to make the same thing with Hy
+
+
+
+  #+name:make-hy-text
+  #+begin_src hy :results value
+(defn my-func []
+  "docs"
+  "test")
+(my-func)
+  #+end_src
+
+
+ #+name:grab_hy
+ #+begin_src python :python python3 :results output :var thing=make-hy-text
+print(thing)
+ #+end_src
+
+ #+RESULTS: grab_hy
+ : test
+ 
+ See that? I can work with that!
+** What does Hy return do?
+The other day I was trying to use Hy to return a value in a function to a Org table. I was getting these weird Hy repper things. Let's find out what that was all about.
+
+#+name:give-me-return
+#+begin_src hy :results output
+(defn my-func []
+(return "hi"))
+(print (my-func))
+#+end_src
+
+#+RESULTS: give-me-return
+: hi
+
+So it doesn't so anything weird here. Even weirder, I can't get it to make the error I got the other day.
+
+Here is something else about return. I was watching this guy's talk on Youtube, and he said something about using returns to make things tail call optimized. Does that work in Python if it's recursive?
+
+#+name:blows-the-stack
+#+begin_src python :python python3 :results output
+def fact1(n, acc=1):
+    if n == 0:
+        return acc
+    else:
+        return fact1(n-1, n*acc) 
+print(fact1(10000, 1))
+#+end_src
+
+#+RESULTS: tail-called
+
+I am convinced the best way to do recursion in Python is with slow nasty while loops
+
+Let's do one in Hy and see how it goes ...with numba
+
+#+name:name
+#+begin_src hy :results output
+(import [numba [njit]])
+
+(with-decorator njit
+(defn fact1 [n acc]
+  (while (not (= n 0))
+    (setv acc (* n acc))
+    (setv n (- n 1)))
+  acc))
+
+(print (fact1 500 1))
+#+end_src
+
+#+RESULTS: name
+: <itertools.takewhile object at 0x7f3d1329ff80>
+
+Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
+
+Anyway. How about a lfor loop? I don't like the idea of an accumulator anyway. I really just want a number which is an accumulation of a number that has been multiplied by the numbers 1 through it's self. 
+
+or maybe I can do it as a reduce?
+
+#+name:better-fact
+#+begin_src hy :results output
+(print (reduce * (list (range 1 50))))
+#+end_src
+
+#+RESULTS: better-fact
+: 608281864034267560872252163321295376887552831379210240000000000
+
+That is a one liner. That is pretty cool. Does Python do that too? It's do able, but looking up how to use the reduce function was a pain. Hy makes it so easy.
+** And it's back out... haha.
+   Man I keep flip flopping these. But the more I work with Hy, the more I run into it's young age problems. I think I can get clojure to work, and it gives me a way into the javascript world without needing to learn Javascript, and a way into the JVM. I might need another C related language I can use if I want to talk to C based languages, but I like Vanilla Python for working with C just fine. It WOULD be nicer if it was a LISP.
+   I'll post a request to have Hy 1.0 tooling include an update to ob-hy.el that fixes the issue with evaluating Hy code. I will remember it exists, but I don't see my self building anything with it for the time being. 
+** Let's see if I can fix it
+  #+name:quote-test
+  #+begin_src hy :results output
+(print (py "'three'"))
+  #+end_src 
+
+  #+RESULTS: quote-test
+
+  I have tried a few things to see if I can understand what is going wrong, and it appears that the single quotes are getting lost by the time it gets to interpreting the python. If I can find a way to make that work, I might go back and start re-learning Hy. But considering it's not really that stable anyway, I will stick with Elisp and Clojure for my lisp needs.
+
+ #+name:quote
+ #+begin_src elisp
+(print "'yo")
+ #+end_src 
+
+ #+RESULTS: quote
+ : 'yo
+
+ so elisp has no problem with a bit of code with quote around it having a single single quote
+
+#+name:just-print-it
+#+begin_src hy :results output
+(print `(5 6 7))
+#+end_src 
+
+#+RESULTS: just-print-it
+: HyExpression([
+:   HyInteger(5),
+:   HyInteger(6),
+:   HyInteger(7)])
+
+Yeah, even with no "py" involved, as soon as there is any single quote, it doesn't work.
+
+I wonder if it has to do with how Hy handles that character...
+
+
+  #+name:quote-test2
+  #+begin_src hy :results output
+(print (py "'3' + '4'"))
+  #+end_src 
+
+  #+RESULTS: quote-test2
+
+  ...it worked?
+
+  
+  #+name:quote-test2
+  #+begin_src hy :results output
+(print (py "'a' + 'b'"))
+  #+end_src 
+
+ #+name:string_add
+ #+begin_src python :python python3 :results output
+print('a' + 'b')
+ #+end_src 
+
+ #+RESULTS: string_add
+ : ab
+
+ Weird
+
+ Okay, what other string related thing would I need to do in Hy... how about that fancy reverse thingy?
+
+#+name:reverse-in-hy
+#+begin_src hy :results output
+(setv my_word "candy")
+(print (py "my_word[::-1]"))
+#+end_src 
+
+#+RESULTS: reverse-in-hy
+: ydnac
+
+
+ooh. Nice. You know what? I am just going to keep using Hy. Ir does have it's downsides, but it's almost to 1.0 and it just makes so much sense for someone like me who likes the idea of Cljojure but no need to write actual Clojure code.
+ 
+
+#+name:name
+#+begin_src hy :results output
+
+#+end_src
+** Bracket string for 'py'?
+   
+  #+name:quote-test3
+  #+begin_src hy :results output
+(print (py #[$["a" + "b"]$]))
+  #+end_src 
+
+  #+RESULTS: quote-test3
+  : ab
+
+  Okay, now I have REALLY fixed it. I can run any old Python in that string that I want as long as I use this bracket string thing
+
+Sessions are broken, but that is by far the least of my problems
+
+** Can I squeak it by in a variable?
+  #+name:the-bad-char
+  #+begin_src elisp
+(print "can't")
+  #+end_src 
+
+  #+RESULTS: the-bad-char
+  : can't
+
+ #+name:safer-i-think
+ #+begin_src hy :results output :var my-var=the-bad-char
+(print my-var)
+ #+end_src 
+
+ #+RESULTS: safer-i-think
+ : cant
+
+ Oh that's kind of sad... any very revealing. See how I doesn't provide an error if there are two apostrophes? And I was getting an error form zsh... I wonder if it does this in bash too?
+
+ 
+ #+name:safer-i-think2
+ #+begin_src hy :results output :var my-var=the-bad-char
+(print "this''s")
+ #+end_src 
+
+ #+RESULTS: safer-i-think2
+ : thiss
+
+ And they disappear. 
+
+#+name:this-should-be-okay
+#+begin_src elisp :var my-var=the-bad-char
+(print my-var)
+#+end_src 
+
+#+RESULTS: this-should-be-okay
+: can''t
+
+Yeah, so if I am dealing with any text that includes apostrophes, I can't use Hy for it in Emacs.
+
+** Trying to fix Ob-hy
+*** Code  
+ #+name:test
+ #+begin_src hy :results raw
+'(("hi")'
+ #+end_src
+
+ #+RESULTS: test
+ None
+
+ Here are some other interesting findings:
+ #+name:parse error?
+ #+begin_src hy :results value
+'("hi")
+ #+end_src
+
+ #+RESULTS: parse error?
+
+ #+RESULTS: umatched?
+
+ #+name:unmatched?
+ #+begin_src hy :results value
+'(("hi")
+ #+end_src
+
+ #+RESULTS: unmatched?
+
+*** error  
+   #+begin_quote
+  zsh:1: bad pattern: \n(defn main []\n  ((hi))\n\n(with [f (open "/tmp/babel-jbbzDF/hy-DaCnft" "w")] (.write f (str (main))))
+   #+end_quote 
+*** What does it mean?
+    I think what is happening is that the function in Ob-hy that writes the code to a temporary file is getting confused buy the single quotes. If I can fix that, I might be able to get it working.
+
+ I need an elisp call that writes the code above to a file, but there appears to be a problem when it encounters single quotes.
+   
+ Here is something interesting. When I got that error, I could not find the text in the temporary file. To me, that means the error is happening sometime before the Hy code it's self is getting evaluated. I need to fix the part that is getting the text to the Hy file int he first place.
+
+ #+name:hmn5
+ #+begin_src hy :results output pp
+(print (first '(1 2 3)))
+ #+end_src
+
+ #+RESULTS: hmn5
+
+ hy -c "\n(defn main []\n  (print "can't")\n\n(with [f (open "/tmp/babel-jbbzDF/hy-DaCnft" "w")] (.write f (str (main))))"
+
+*** Someone fixed it for me
+    https://github.com/brantou/ob-hy/pull/10
+    Yeah, this guy already fixed it.
+    
+** Annotation syntax
+  [2021-10-02 Sat] 
+  I am hearing a lot of type hinting in Python, and I am starting to think I want to be able to do that in Hy too. Low and behold Hy has that covered. There is new syntax coming int 1.0 so I need to wait a bit before I start flooding lots of code with it but it looks something like this:
+  
+#+name:newsyntax
+#+begin_src hy :results output
+(defn (annotate int) add1 [(annotate int) x]
+  (+ x 1))
+(print (add1 3))
+#+end_src
+
+#+RESULTS: test
+
+
+#+name:oldsyntax
+#+begin_src hy :results output
+(defn add1 [^int x]
+  (+ x 1))
+(print (add1 3))
+#+end_src
+
+#+RESULTS: test3
+: 4
+
+* Adding C and C++
+** Pointer practice
+   Okay, I need to get at what this whole pointer thing is about. So let's do some tests
+   
+   #+name:arrays1
+   #+begin_src C :results output
+char ch_arr[3][5] = {
+  {'B', 'o', 'b','\0'},
+  {'A', 'n', 'n','\0'},
+  {'B', 'e', 'n','\0'},
+ }; 
+
+printf(ch_arr[1]);
+   #+end_src
+
+   #+RESULTS: arrays1
+   : Ann
+
+This seems simple enough. I have a nested array. I ask for the second array, I get back the string at index 1. So far so good 
+   
+   #+name:arrays2
+   #+begin_src C :results output
+char ch_arr[3][5] = {
+  {'B', 'o', 'b','\0'},
+  {'A', 'n', 'n','\0'},
+  {'B', 'e', 'n','\0'},
+ }; 
+
+char *word = ch_arr;
+
+printf(&word[1]);
+   #+end_src
+
+   #+RESULTS: arrays2
+   : ob
+
+What?! How does this not just equal "o"? Why is the B in there too? I thought referencing a pointer gave me the memory address. How does printing... oh. It is just printing till it sees the null character?
+
+
+Okay, well this kind of helps me along with pointers. Let's see if I can write something with a double pointer that runs
+
+   #+name:arrays3
+   #+begin_src C :results output
+char ch_arr[3][5] = {
+  {'B', 'o', 'b','\0'},
+  {'A', 'n', 'n','\0'},
+  {'B', 'e', 'n','\0'},
+ }; 
+
+char *word = ch_arr[2];
+char **letter = word[0];
+printf(&letter);
+
+word = ch_arr[1];
+letter = word[0];
+printf(&letter);
+   #+end_src
+
+   #+RESULTS: arrays3
+   : BA
+
+Okay there it is. That letter pointer lets me look at letters in words. I can select which word in the array by setting the index for the first array, and the letter by setting the index for that.
+
+   #+name:arrays4
+   #+begin_src C :results output
+char ch_arr[3][5] = {
+  {'B', 'o', 'b','\0'},
+  {'A', 'n', 'n','\0'},
+  {'B', 'e', 'n','\0'},
+ }; 
+
+printf("%d", (int) (sizeof(ch_arr) /  sizeof(ch_arr[0])));
+   #+end_src
+
+   #+RESULTS: arrays4
+   : 3
+
+   Okay, that looks handy. According to stack overflow, it only work with actual arrays, not pointers to them.
+   
+   #+name:arrays5
+   #+begin_src C :results output
+char ch_arr[3][5] = {
+  {'B', 'o', 'b','\0'},
+  {'A', 'n', 'n','\0'},
+  {'B', 'e', 'n','\0'},
+ }; 
+
+char *p = ch_arr;
+printf("%d", (int) (sizeof(p) /  sizeof(p[0])));
+   #+end_src
+
+   #+RESULTS: arrays5
+   : 8
+
+   Interesting.
+
+I see how that works now. I get the length of the array by taking it's total size in Memory and dividing it by the length of one of it's members.
+** Let's reverse a word
+   I am still going over this homework assignment, and I think I have an idea for how ti get it working better. But I also need to just do more with strings and get the syntax in my head. Let's try this:
+
+  #+name:backwards-string
+  #+begin_src C :results output
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', '\0'};
+printf(myString);
+  #+end_src
+
+  #+RESULTS: backwards-string
+  : Reason
+ 
+  Okay that is a way to define a word
+
+  #+name:backwards-string2
+  #+begin_src C :results output
+char myString[6] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+int myLength = sizeof(myString) / sizeof(myString[0]);
+printf("%i \n",myLength);
+printf("%s \n",myString);
+for(int i = myLength-1; i > -1;)
+  {
+    printf("%c", myString[i]);
+    i = i - 1;
+  }
+  #+end_src
+
+  #+RESULTS: backwards-string2
+  : 6 
+  : Reason 
+  : nosaeR
+  
+so that is weird. Why does it print the null character?
+Anyway, it appears to work. This loop and length check gets me the string in a new order. I could do something else rather than print it. 
+** Time to define a function
+I have a pretty good idea of how to revrse words now, but I don't know the syntax for defining functions very well. Time to get that going.
+
+#+name:functionDeclarationPractice
+#+begin_src C :results output
+int myFunc(int x, int y)
+  {
+    return x + y;
+    }
+
+printf("%d",myFunc(4,3));
+#+end_src
+
+#+RESULTS: functionDeclarationPractice
+: 7
+
+Well that wasn't so bad. Looks simple enough. This works for positional arguments.
+
+Let's take the reverse word loop and stick it in a function
+
+
+#+name:revFunc
+#+begin_src C :results output
+char * revThisString(char *string)
+{
+  int myLength = sizeof(string) / sizeof(string[0]);
+  
+  char reversed[7];
+
+  int j = 0;
+  
+  for(int i = myLength-1; i > -1;)
+    {
+      reversed[j] = string[i];
+      i = i - 1;
+      j = j + 1;
+    }
+  j = j + 1;
+  reversed[j] = 0;
+  return reversed;
+}
+
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+
+printf("%s",revThisString(myString));
+#+end_src
+
+#+RESULTS: revFunc
+: (null)
+
+
+Well it's definitely not working. I don't really know why. 
+*** let's simplify
+Let's make it even simpler    
+
+#+name:justString
+#+begin_src C :results output
+char * justString(char* string)
+{
+  return string;
+}
+
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+
+printf("%s",justString(myString));
+/* printf("%s",myString); */
+#+end_src
+
+#+RESULTS: justString
+: Reason
+
+
+Interesting right? the problem is not in the function. This function does nothing.
+
+Okay, it works. So weird. I am missing something really simple. I just want a function that takes a string and returns a string. How hard can that be.
+
+There it is. That was weird.
+*** Round 2
+    
+#+name:revFunc2
+#+begin_src C :results output
+char* revThisString(char *string)
+{
+  /* const int myLength = sizeof(string) / sizeof(string[0]); */
+  
+  static char reversed[7];
+
+  int j = 0;
+  
+  for(int i = 6; i > -1;)
+    {
+      reversed[j] = string[i];
+      i = i - 1;
+      j = j + 1;
+    }
+  j = j + 1;
+  reversed[j] = 0;
+  reversed[0] = string[0];
+  return reversed;
+}
+
+int main()
+  {
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+
+printf("%s",revThisString(myString));
+ return 0;
+ }
+#+end_src
+
+#+RESULTS: revFunc2
+: (null)
+
+
+
+Does it work if I deference things?
+
+
+
+
+#+name:whatisaderef
+#+begin_src C :results output
+char * justString(char* string)
+{
+  return string;
+  /* Adding a "&" here makes the block return (null) */
+}
+
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+
+printf("%s",justString(myString));
+#+end_src
+
+#+RESULTS: whatisaderef
+: Reason
+
+oh, look at that! That is what is happening to my other block. I am getting back a null pointer.
+
+So I need a... pointer pointer?
+
+*** I think I got it's
+
+    
+#+name:revFunc4
+#+begin_src C :results output
+char* revThisString(char *string)
+{
+  const int* myLength = sizeof(string) / sizeof(string[0]);
+  
+  static char reversed[5];
+
+  int j = 0;
+  
+  for(int i = 5; i > -1;)
+    {
+      reversed[j] = string[i];
+      i = i - 1;
+      j = j + 1;
+    }
+  /* j = j + 1; */
+  /* reversed[j] = 0; */
+  /* reversed[0] = string[5]; */
+  return reversed;
+}
+
+int main()
+  {
+char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+
+printf("%s",revThisString(myString));
+ return 0;
+ }
+#+end_src
+
+#+RESULTS: revFunc4
+: nosaeR
+
+** Need more general C practice
+   I have been kind of stalled with this homework assignment from Paul for a while now. I need a way to move forward without beating my head against the same problem over and over again. Time to do a bunch of general C stuff and just get more comfortable to doing all kind of things in C. 
+  #+name:addSomeNumbers
+  #+begin_src C :results output
+printf("%i", 2 + 3);
+  #+end_src
+
+  #+RESULTS: addSomeNumbers
+  : 5
+
+  okay. So to print out things you need to do one of those percent things and give the type. Then you provide what the thing is. 
+ #+name:subtractSomeNumbers
+  #+begin_src C :results output
+printf("%i", 5 - 3);
+  #+end_src
+
+  #+RESULTS: subtractSomeNumbers
+  : 2
+
+  subtraction is the same
+ 
+ #+name:multSomeNumbers
+  #+begin_src C :results output
+printf("%i", 5 * 3);
+  #+end_src
+
+  #+RESULTS: multSomeNumbers
+  : 15
+
+  multiplication
+
+  
+ #+name:divSomeNumbers
+  #+begin_src C :results output
+printf("%i", 9 / 3);
+  #+end_src
+
+  #+RESULTS: divSomeNumbers
+  : 3
+
+OKay, that's all the basic math. Next lets do lists
+
+#+name:makeAlist
+#+begin_src C :results output
+int int_arr[4] = {1, 2, 3, 4};
+printf("%i", int_arr[1]);
+#+end_src
+
+#+RESULTS: makeAlist
+: 2
+
+Arrays of ints is not so bad. What was that other data type? Does C have vectors? Ooh, no built in Vector type. Yikes. Well let's not implement vectors. I have arrays, I know some basic of variables. I did a bit of work with pointers. I think the last piece I really need help with is functions.
+
+
+#+name:functionArgs
+#+begin_src C :results output
+int myFunc(int x, int y)
+  {
+    return x + y;
+    }
+
+printf("%d",myFunc(4,3));
+#+end_src
+
+#+RESULTS: functionArgs
+: 7
+
+I understand that this is how you declare and call a funtion. But I don't know how to work with memeory in a function. If I don't know the size of an array before I declare the function, how do I make a function that takes an array of a arbitrary length?
+
+Let's try the function.
+
+
+#+name:revFunc3
+#+begin_src C :results output
+#include <stdlib.h>
+char * revThisString(char *string, const int num)
+{
+  static char *reversed = malloc(num);
+
+  int j = 0;
+  
+  for(int i = num - 2; i > -1;)
+    {
+      reversed[j] = string[i];
+      i = i - 1;
+      j = j + 1;
+    }
+  j = j + 1;
+  reversed[j] = 0;
+  return reversed;
+}
+
+const char myString[7] = {'R', 'e', 'a', 's', 'o', 'n', 0};
+const int myLength = sizeof(myString) / sizeof(myString[0]);
+
+printf("%s",revThisString(myString, myLength));
+#+end_src
+
+#+RESULTS: revFunc3
+
+I think the problem is I need a way to size the reverse of the array being passed in to the function.
+
+It's worse. I can't even pass an int to a function and make that the size of an array.
+
+This has to be doable. I can't imagine that this can't be done.
+
+
+Conclusion:
+
+C doesn't want you to return arrays from functions. This really is a different beast than Python. I am thinking the stream of text Like Paul wa initially talking about is better (needs less memory management too).
+
+* I need to rename and recount
+  So its [2021-07-24 Sat] and I think I figured out what was breaking when running Hy code in Emacs. The Hy quazi-quote operator is ` and not '. And the more I work with Python, the more I really do like putting up with it's limitations and wishing for some Lisp syntax. Why not get the worst of all worlds and Use Hy?
+
+ 1. Elisp
+ 2. Python/Hy
+ 3. Clojure
+ 4. C/C++
+
+    How about that? Think of Hy as a Python library, and C and C++ as their own thing together? Sure.
+
+* LeetCode problems
+  I have been looking around the web and found various people talking about learning how to code. The name LeetCode came up more than a few times and I think this is a place I could get things like "code katas" but lots of them leveled out by difficulty and geared towards showing competency in some algorithms or data structures. I don't know how many of these I will do, but it might be a good next step once I am all done with my homework assignment form Paul (which I am REALLY close to finishing).
+ 
+** Two sum
+   So this one appears to be pretty simple, but I am not sure about what things you can or should do for optimization. The basic premis is you want to find pairs of numbers that add up to a target. To start, you are given a list of integers and a target. There is only one answer per problem, and you just need to return the two indecies of the list that add up to the total. Seems simple enough.
+   1. Make a problem list of ints
+   2. Make a target value
+   3. For each item in the list, try to add it to every other element
+   4. Stop when the two items add up to the target and return the indices of the two items in the list.
+
+      I can imagine a solution with Python generator objects, but I don't know if they are efficient, and I can't imagine very many ways to optimize the algorithm. This is going to be fun in Hy.
+     
+*** First in Python
+   #+name:Two_sum
+   #+begin_src python :python python3 :results output
+from itertools import combinations
+
+problem_list = [0, 9, 2, 32, 4, 52, 3, 7]
+problem_target = 6
+my_gen = combinations(problem_list, 2)
+current = next(my_gen)
+
+while sum(current) != problem_target:
+    current = next(my_gen)
+
+print(list([problem_list.index(current[0]), problem_list.index(current[1])]))
+   #+end_src 
+
+   #+RESULTS: Two_sum
+   : [2, 4]
+      
+Wow, done. That didn't take me very long at all. Next I want to try that in Hy
+
+*** Next in Hy
+#+name:two-sum-hy
+#+begin_src hy :results output
+(setv problem-list [1 2 3 4 5 6 7 8])
+(setv problem-target 11)
+(setv hy-gen (combinations problem-list 2))
+(setv current (next hy-gen))
+
+(while (!= (sum current) problem-target)
+  (setv current (next hy-gen)))
+
+(print [(.index problem-list (first current)) (.index problem-list (nth current 1))])
+#+end_src    
+
+#+RESULTS: two-sum-hy
+: [2, 7]
+
+...wow, after having written that in Python, getting it to work in Hy was REALLY fast. I kind of wish I had less state, and didn't re-assign current each pass of the while loop, but it manages how the algorithm works so nicely. It's the same number of lines of code in Hy and Python, and while the syntax is a little different, I have less syntax in Hy. In Python I get that list indexing syntax, dot access, lists in brackets, it's not bad it's just not quite as clean as the Hy code if you ask me. Oh, and I don't need to import combinations.
+
+I don't think I was even working of that for 30 min. That was FAST!
+
+** Reverse Integer
+   Started on [2021-08-22 Sun]
+   I am going to stick to easy problems for now, and work on Medium ones ones I get a bit more of my brain back in the weekends.
+  #+begin_quote
+Given a signed 32-bit integer x, return x with its digits reversed. If reversing x causes the value to go outside the signed 32-bit integer range [-231, 231 - 1], then return 0.
+  #+end_quote 
+
+  Okay, so I need a way to take a number, reverse the order of the numbers that make it up, and never store a number that goes outside the range of a a 32-bit int. Hmn... I wonder if there IS a way to do that in Python? In something like C, I was thinking I could just cast it, and then do a try catch if it can't fit into a 32 bit int.
+  
+ 
+#+name:32-bit-int-test
+#+begin_src python :python python3 :results output
+def int_reverse(number):
+    string_repr = str(number)
+    new_number = int(string_repr[::-1])
+    if abs(new_number) < 2**32 and new_number != 2**31 -1:
+        return new_number
+    else:
+        return 0
+
+print(int_reverse(3233))
+#+end_src
+
+#+RESULTS: 32-bit-int-test
+: 32
+
+this is a good first draft. But I still need to:
+- handle the sign
+- figure out if I am supposed to handle leading zeros
+- find a way to check if I can store the new number before assigning it.
+
+  Hmn... there is a library for calling C types?
+
+  
+#+name:more_c_test
+#+begin_src python :python python3 :results output
+from ctypes import *
+
+i = c_int32(2**32)
+print(i.value)
+#+end_src
+
+#+RESULTS: more_c_test
+: 0
+
+Well cool, that returns 0.
+
+*** Draft 1
+    
+#+name:reverse_int draft 1
+#+begin_src python :python python3 :results output
+from ctypes import c_int32
+
+
+def int_reverse(number):
+    string_repr = str(number)
+    new_number = c_int32(int(string_repr[::-1]))
+    return new_number.value
+
+print(int_reverse(160062))
+#+end_src
+
+#+RESULTS: reverse_int draft 1
+: 260061
+
+** Palindrome number
+ Started on [2021-09-20 Mon] 
+*** Problem statement:
+    Given an integer x, return true if x is palindrome integer.
+
+An integer is a palindrome when it reads the same backward as forward. For example, 121 is palindrome while 123 is not.
+
+ 
+
+Example 1:
+
+Input: x = 121
+Output: true
+
+Example 2:
+
+Input: x = -121
+Output: false
+Explanation: From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome.
+
+Example 3:
+
+Input: x = 10
+Output: false
+Explanation: Reads 01 from right to left. Therefore it is not a palindrome.
+
+Example 4:
+
+Input: x = -101
+Output: false
+
+ 
+
+Constraints:
+
+    -231 <= x <= 231 - 1
+
+ 
+Follow up: Could you solve it without converting the integer to a string?
+
+
+*** draft 1
+   Okay, simple enough function. Take an input int, return a bool. If the number is a palindrome, return true. Else false.
+
+   If I convert the int to a string, I can do that slice thing to return the reverse of the string. If I compare a string to the reverse of it's self, I will know if it's a palindrome.
+
+  #+name:Palindrom-int-checker
+  #+begin_src hy :results output
+(setv problem-int 3543)
+
+(defn is-it-palindrome? [num]
+  "Returns true if the input int is a palindrome"
+  (setv string-repr (str num))
+  (= string-repr (py "string_repr[::-1]")))
+
+(print (is-it-palindrome? problem-int))
+  #+end_src 
+
+  #+RESULTS: Palindrom-int-checker
+  : False
+
+  wow, that took me something like 5 min.
+
+  The follow up question of if you can do this without converting to a number seems kind of misplaced. The examples show "-121" as reading out to be 121-. "121-" is not an int. You should do this sort of thing with a string. I mean you COULD work with the int. You define the places as being represented by a list, compare the list forwards and back, take the rectified initial int and call false if it is negative.
