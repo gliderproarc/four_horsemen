@@ -1,11 +1,11 @@
 #+TITLE: Four Horsemen
 #+DATE: [2022-01-12 Wed]  
-
-* The languages are all gathered
+* Old stuff
+** The languages are all gathered
   Started on [2021-04-04 Sun]
 
 After a lot of work I finally have all 4 repls working, and I can call all these languages from Org mode.
-** Elisp
+*** Elisp
 #+name:Elisp
 #+begin_src elisp
 (print "Elisp was always ready")
@@ -13,12 +13,12 @@ After a lot of work I finally have all 4 repls working, and I can call all these
 
 #+RESULTS: Elisp
 : Elisp was always ready
-** Python
+*** Python
 #+name:Python
 #+begin_src python :python python3 :results output
 print("Python will need libraires")
 #+end_src
-** Hylang
+*** Hylang
 #+name:Hy-lang
 #+begin_src hy :results output
 (print "Hy is almost at version 1.0!")
@@ -30,7 +30,7 @@ print("Python will need libraires")
 And for Hy I need to remember to
 1. Start the environment that can evaluate Hy
 2. use "hy-describe-thing-at-point" for documentation
-** Clojure
+*** Clojure
 #+name:ClojureScript
 #+begin_src clojurescript :results output
 (println (js/Date))
@@ -42,10 +42,10 @@ And for Hy I need to remember to
 
 There is this little hiccup where I need to type in the Clojurescript repl before I can evaluate, but it works.
 Also good to know that I think I can jack into a Java clojure repl if I want to write some Java clojure.
-** Need to start collecting coding tips from my other projects so I can delete the others
+*** Need to start collecting coding tips from my other projects so I can delete the others
 So nice to know this is up and working.
-** Bubble sort
-*** What this is:
+*** Bubble sort
+**** What this is:
 started [2021-04-05 Mon]
 
 I found this explanation on a website:  https://www.hackerearth.com/practice/algorithms/sorting/bubble-sort/tutorial/
@@ -88,7 +88,7 @@ I think you could do a "for each" loop too. No need to have an array that you sl
    6. Repeat for every element in the unsorted array.
 
 Hmn. Okay, I think I got it. And for Lisps I think I would want to do this in reverse order to I can use "car" or "first" to grab elements from arrays from the front instead of working from the back. I don't know of a good lisp function for grabbing the last two elements of a list.
-*** First draft in Elisp
+**** First draft in Elisp
 #+name:Bubbles-sort-v1
 #+begin_src elisp
 (defun bubble-sort (unsorted-list) "bubble-sort practice"
@@ -169,7 +169,7 @@ Okay, what did I learn from this?
 
 - Recursion is great, but that pattern or having a function with a nested version of it's self to call recursively seems like a really bad idea. Let's not do that every again.
 - Bad algorithms look like this. They might have a pretty simple way of working, but the mechanism they use leaves this trail of state that isn't good for anything later.
-*** Second draft
+**** Second draft
 
     Okay, I can think of a way to do this, but it sounds like it's a horrible idea.
     1. Take the list
@@ -184,7 +184,7 @@ Okay, what did I learn from this?
     10. Repeat the sort of the whole length of the list once per element of the list
 
     This looks like a really bad idea.
-*** Elisp solution
+**** Elisp solution
 
    #+name:Bad-bubbles
    #+begin_src elisp
@@ -213,7 +213,7 @@ Okay, what did I learn from this?
 
    I will make the Clojure solution the same, but for Vanilla Python and Hy, I want to ditch the recursion.
 
-*** Hy
+**** Hy
 #+name:hy-bubles
 #+begin_src hy :results output
 (require [hy.contrib.loop [loop]])
@@ -246,7 +246,7 @@ Okay, what did I learn from this?
 Done. Sad to see that I couldn't use Numba with Hy's recursion. But in many ways I shouldn't try to make a really "performant" piece of code with recursion anyway. I can think of Vanilla Python and for loops as my window into that world.
 
 I still don't like I how I call the recursive middle function once per item in the list. I seems pretty silly.
-*** Numba JITed Hy
+**** Numba JITed Hy
 I was thinking about writting this with vanilla Python, but another part of me wants to make the for-loop version I would write if I wanted to Jit Complie this. Let's see how it goes:
 
 #+name:hy-bubles-jit
@@ -294,7 +294,7 @@ I feel like it makes very little sense to split that out into 3 functions this w
 
 Bubble loop is the only function along the chain that is passing an index down to sort-two, and it feels really arbitrary. And I don't see why you would not want to build that into the original bubble sort function. It was easier for me to write this way, because I can test the smaller functions as I build them up, and I know which part is broken because it was the last function I was working on (most of the time).
 
-*** And with Clojure
+**** And with Clojure
 I think I know what I want to make this do in Clojure, but to save time I really do think I will ditch Hy.
 #+name:Bubblesort-clojure
 #+begin_src clojure :results value
@@ -329,7 +329,7 @@ https://stackoverflow.com/questions/46655508/apply-a-function-n-times-on-a-start
 
 Anyway, it's done and I did not need to use a recur or "do times" in the bubble sort function. And it kind of makes sense now. You want the function to be applied n times. So you make a list that consists of the function being applied one more time each time. And you just take the THAT number(th) item from the list.
 
-** Numba
+*** Numba
 
 #+name:Numba-test
 #+begin_src python :python python3 :results output :session my_sesh
@@ -385,7 +385,7 @@ Can I just say how nice it is that that basically seemed to "just work" even aft
 Here is my proof of concept. This is a really silly example, totally designed to prove it works without doing anyting of value, but I wrote something that is painfully slow in Python, and pretty decent once you JIT it. And it "just works" using Hy.
 
 So here is my thinking. I write code with Python libraires. As I go along, I start breaking out the heavy math computations of my program to run in these JITed functions. It allow me to keep the bulk of what I do in nice easy Lispy python land, and I still get to drop instruction's straight down to machine code if I need to   .
-** Numba for recursion?
+*** Numba for recursion?
 So I was reading on the numba website that it supports recursion. Does that mean it will also tail call optimize it?
 #+name:reccursion-test
 #+begin_src hy :results output
@@ -422,7 +422,7 @@ Okay so it will let me call recursively, but the number of iterations is not tha
 : 1000001
 
 Yeah, so the loop recur macro gets me more recursive calls. But it's REALLY slow.
-** C++ and Montecarlo
+*** C++ and Montecarlo
    I am starting to learn c++ and I think I have a good first project. C++ is good for big hard computation type stuff. Python is slow, and not suitable for things like Monte carlo. So I will see if C++ can do it better
 
 It looks like the python version I downloaded off the net does something like:
@@ -469,7 +469,7 @@ int main(){
    : 3.142144
 
 ...well there it is. Not bad for my second day out at C++.
-** C and reversing an array
+*** C and reversing an array
    I got some homework from Paul, and I was amazed that it was so hard to simply reverse a string. C doesn't even have strings... is has chars that are stored in arrays. I got really close to solving the assignment, but I wasn't able to figure out how to reverse the item in the array, so it's time to break it down a little bit.
 
    
@@ -552,7 +552,7 @@ But I did find this:
 #+end_quote
 
 I keep seeing this malloc thing, and I haven't used any derefs. I think that is part of what I am missing.
-** A little work with Hy
+*** A little work with Hy
    I am in the middle of working with the second round of homework from Paul, and I feel like writing some lisp. Not because I need to, but because I kind of forget what it's like at this point.
 
   let's do the string reverse thing. I don't want to do any file IO that needs to be cleaned up, so I will leave that out.
@@ -580,7 +580,7 @@ I keep seeing this malloc thing, and I haven't used any derefs. I think that is 
 
 
  That does most of what I want besides the making it all into one new string. Isn't Python and Hy grand?
-** Is Hy a little broken?
+*** Is Hy a little broken?
    I was working with strings last night and I remembered something I ran against with Hy before. I think ANY code with a [ ' ] is broken when run from a Hy code block
 
 #+name:can-I-use-quote
@@ -646,7 +646,7 @@ It looks like more and more I just need to write my own way of making these code
 
 Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure sort of work. I would need to space out the blocks to have some that load in functions and other that call them, but I do see a way to make Clojure work with Org babel.
 
-** arrow syntax in Elisp
+*** arrow syntax in Elisp
    I have been toying around with Clojure and Hy, but the most convenient lisp for working in Emacs is undoubtedly Elisp. Let's revisit the arrow syntax.
 
   #+name:arrows
@@ -670,7 +670,7 @@ Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure so
   | 0 | 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 |
   
 I need to practice making predicates. But it works. And I can use that function just about anywhere here in Emacs. Particularly in tables.
-** Companion Python script to the C string reversal problem.
+*** Companion Python script to the C string reversal problem.
    I haven't worked with files in Python before. This might be fun.
   #+name:Rev_some_strings
   #+begin_src python :python python3 :results output
@@ -688,7 +688,7 @@ for word in word_list:
 
 Wow, that was easy. C is Scary stuff. Let's try it with files
 
-** Deepest nested level of parrens
+*** Deepest nested level of parrens
    I was watching this "code report" youtube video that did this problem in like 5 different languages. I remember this one because it was cool to see Clojure pitted against a few other languages I didn't particularly care for.
 
   So the basic problems statement is: Show how many levels deep the deepest paren is. And the solution is something like this:
@@ -732,11 +732,11 @@ Wow, that was easy. C is Scary stuff. Let's try it with files
 
  Hmn. Well I needed to make two helper functions, bit the bit at the end looks really nice. Take the string, filter if parren, map to numbers, accumulate and max
 
-* Putting Clojure off pause
+** Putting Clojure off pause
 [2021-04-10 Sat]
 As much as I don't like to put Clojure down considering it filled the place as my most performant language, I am also spending inordinate amount of time trying to get the darned thing to work in the first place. Python and Elisp just work. An Hy is mostly working. So rather than spend all the time I could be coding on trying to get Clojure to work with org-mode blocks, I am just going to set it aside for a little bit.
 
-** ...and it's back!
+*** ...and it's back!
 #+name:back
 #+begin_src clojurescript :results output
 (print (+ 2 5))
@@ -762,7 +762,7 @@ And it's fast!
 
 #+RESULTS: print-me
 : Mon Jun 14 2021 19:30:36 GMT+0900 (Japan Standard Time)
-** Testing calling goog
+*** Testing calling goog
 
 #+name:b
 #+begin_src clojure :results value
@@ -786,10 +786,10 @@ So I was reading more about clojurescript and I can get this to work but it need
 2. in the spawned repl, type a bit
 3. evaluate the blocks
 
-** ...and it's back out.
+*** ...and it's back out.
   [2021-06-16 Wed] 
    Clojure is something I would love to get into one day. But I have nothing to make in Clojure. Hy and Python and Elisp I have uses for now. I will learn them first.
-** Maybe console.log will help?
+*** Maybe console.log will help?
   #+name:test
   #+begin_src clojurescript :results value :session mySesh
 (defn swap-two [u-list]
@@ -814,11 +814,11 @@ So I was reading more about clojurescript and I can get this to work but it need
 
   #+RESULTS: test
   : Please reevaluate when nREPL is connected
-** I think I have a work around
+*** I think I have a work around
    So I was be moaning the fact that I needed to output ClojureScript blocks by value. And if I wanted to get really fancy it might get me in trouble one day. But for the most part, I do think I can make this work without using the output of blocks. I can put functions in different blocks and just call to the functions if I need to pass the block to something else. 
    Yeah, after more testing this seems to do it.
    
-** Maybe use clojure when Hy is giving me problems?
+*** Maybe use clojure when Hy is giving me problems?
   #+name:grab-the-bad-char
   #+begin_src clojurescript :results output :var my-var=the-bad-char
 (println my-var)
@@ -828,16 +828,16 @@ So I was reading more about clojurescript and I can get this to work but it need
   : can't
  
   Yeah. That works just fine.
-* Hy is back
+** Hy is back
 Well that settles it. After poking around I have come to a conclusion. Hy is cool, but Clojure is better, and I can get a lot more power and stability (as well as LOTS to work on) with just Clojure and Python. I don't even feel the need to add more languages. Maybe I can call the other two languages I am learning Nix and Elips?
 
-** Hy is back... LOL
+*** Hy is back... LOL
  [2021-06-16 Wed]
 
  I have FINALLY figured this out. I have bee trying to get Clojure into how I work, and I could never make it work. And the reason always seemed to come back to: "I have nothing to make in Clojure". Most of the things I have made are either in Elisp, or Python. And there is a simple reason. I can work with them REALLY well here in Org mode. I did I little experiment to see how I can illustrate this to myself when I was making some org-table practice entries. Consider the following:
   The Hy and Clojure code get the job done But what happens if I want to define a function in that block?
   For some miraculous reason, I seem to get the values in the Org table, but when passing the results of clojure blocks to other languages, I run into problems. Less so when using Hy. So as long as what I am doing is mostly here in Emacs and Org mode, I can take advantage of a lot of cool without needing to sacrifice the interop with org-mode.
-*** Hy no func
+**** Hy no func
   #+TBLNAME: the_ranks_4hy
      | Name(rank) | rank |
      |------------+------|
@@ -850,7 +850,7 @@ Well that settles it. After poking around I have come to a conclusion. Hy is coo
   #+begin_src hy :results value
 text-hy
   #+end_src
-*** Clojure no func
+**** Clojure no func
   #+TBLNAME: the_ranks_4hy
      | Name(rank) | rank |
      |------------+------|
@@ -863,7 +863,7 @@ text-hy
   #+begin_src clojure :results value
 text-clj
   #+end_src
-*** Hy with func
+**** Hy with func
   #+TBLNAME: the_ranks_4hy
      | Name(rank) | rank |
      |------------+------|
@@ -880,7 +880,7 @@ text-clj
   #+end_src
 
   Hy just seems to work really well, just like Python. If I can get it to work in Python, I can usually get it to work in Hy.
-*** Clojure with func
+**** Clojure with func
   #+TBLNAME: the_ranks_4hy
      | Name(rank) | rank |
      |------------+------|
@@ -901,7 +901,7 @@ text-clj
   | "text-cljf"           |
 
  ...wow, the clojure actually worked really nicely. Even though the block output has that extra output thingy.
-*** Code block to code block
+**** Code block to code block
 
   #+name:make-clj-text
   #+begin_src clojurescript :results value
@@ -950,7 +950,7 @@ print(thing)
  : test
  
  See that? I can work with that!
-** What does Hy return do?
+*** What does Hy return do?
 The other day I was trying to use Hy to return a value in a function to a Org table. I was getting these weird Hy repper things. Let's find out what that was all about.
 
 #+name:give-me-return
@@ -1015,10 +1015,10 @@ or maybe I can do it as a reduce?
 : 608281864034267560872252163321295376887552831379210240000000000
 
 That is a one liner. That is pretty cool. Does Python do that too? It's do able, but looking up how to use the reduce function was a pain. Hy makes it so easy.
-** And it's back out... haha.
+*** And it's back out... haha.
    Man I keep flip flopping these. But the more I work with Hy, the more I run into it's young age problems. I think I can get clojure to work, and it gives me a way into the javascript world without needing to learn Javascript, and a way into the JVM. I might need another C related language I can use if I want to talk to C based languages, but I like Vanilla Python for working with C just fine. It WOULD be nicer if it was a LISP.
    I'll post a request to have Hy 1.0 tooling include an update to ob-hy.el that fixes the issue with evaluating Hy code. I will remember it exists, but I don't see my self building anything with it for the time being. 
-** Let's see if I can fix it
+*** Let's see if I can fix it
   #+name:quote-test
   #+begin_src hy :results output
 (print (py "'three'"))
@@ -1098,7 +1098,7 @@ ooh. Nice. You know what? I am just going to keep using Hy. Ir does have it's do
 #+begin_src hy :results output
 
 #+end_src
-** Bracket string for 'py'?
+*** Bracket string for 'py'?
    
   #+name:quote-test3
   #+begin_src hy :results output
@@ -1112,7 +1112,7 @@ ooh. Nice. You know what? I am just going to keep using Hy. Ir does have it's do
 
 Sessions are broken, but that is by far the least of my problems
 
-** Can I squeak it by in a variable?
+*** Can I squeak it by in a variable?
   #+name:the-bad-char
   #+begin_src elisp
 (print "can't")
@@ -1152,8 +1152,8 @@ Sessions are broken, but that is by far the least of my problems
 
 Yeah, so if I am dealing with any text that includes apostrophes, I can't use Hy for it in Emacs.
 
-** Trying to fix Ob-hy
-*** Code  
+*** Trying to fix Ob-hy
+**** Code  
  #+name:test
  #+begin_src hy :results raw
 '(("hi")'
@@ -1179,11 +1179,11 @@ Yeah, so if I am dealing with any text that includes apostrophes, I can't use Hy
 
  #+RESULTS: unmatched?
 
-*** error  
+**** error  
    #+begin_quote
   zsh:1: bad pattern: \n(defn main []\n  ((hi))\n\n(with [f (open "/tmp/babel-jbbzDF/hy-DaCnft" "w")] (.write f (str (main))))
    #+end_quote 
-*** What does it mean?
+**** What does it mean?
     I think what is happening is that the function in Ob-hy that writes the code to a temporary file is getting confused buy the single quotes. If I can fix that, I might be able to get it working.
 
  I need an elisp call that writes the code above to a file, but there appears to be a problem when it encounters single quotes.
@@ -1199,11 +1199,11 @@ Yeah, so if I am dealing with any text that includes apostrophes, I can't use Hy
 
  hy -c "\n(defn main []\n  (print "can't")\n\n(with [f (open "/tmp/babel-jbbzDF/hy-DaCnft" "w")] (.write f (str (main))))"
 
-*** Someone fixed it for me
+**** Someone fixed it for me
     https://github.com/brantou/ob-hy/pull/10
     Yeah, this guy already fixed it.
     
-** Annotation syntax
+*** Annotation syntax
   [2021-10-02 Sat] 
   I am hearing a lot of type hinting in Python, and I am starting to think I want to be able to do that in Hy too. Low and behold Hy has that covered. There is new syntax coming int 1.0 so I need to wait a bit before I start flooding lots of code with it but it looks something like this:
   
@@ -1227,8 +1227,8 @@ Yeah, so if I am dealing with any text that includes apostrophes, I can't use Hy
 #+RESULTS: test3
 : 4
 
-* Adding C and C++
-** Pointer practice
+** Adding C and C++
+*** Pointer practice
    Okay, I need to get at what this whole pointer thing is about. So let's do some tests
    
    #+name:arrays1
@@ -1324,7 +1324,7 @@ printf("%d", (int) (sizeof(p) /  sizeof(p[0])));
    Interesting.
 
 I see how that works now. I get the length of the array by taking it's total size in Memory and dividing it by the length of one of it's members.
-** Let's reverse a word
+*** Let's reverse a word
    I am still going over this homework assignment, and I think I have an idea for how ti get it working better. But I also need to just do more with strings and get the syntax in my head. Let's try this:
 
   #+name:backwards-string
@@ -1358,7 +1358,7 @@ for(int i = myLength-1; i > -1;)
   
 so that is weird. Why does it print the null character?
 Anyway, it appears to work. This loop and length check gets me the string in a new order. I could do something else rather than print it. 
-** Time to define a function
+*** Time to define a function
 I have a pretty good idea of how to revrse words now, but I don't know the syntax for defining functions very well. Time to get that going.
 
 #+name:functionDeclarationPractice
@@ -1410,7 +1410,7 @@ printf("%s",revThisString(myString));
 
 
 Well it's definitely not working. I don't really know why. 
-*** let's simplify
+**** let's simplify
 Let's make it even simpler    
 
 #+name:justString
@@ -1435,7 +1435,7 @@ Interesting right? the problem is not in the function. This function does nothin
 Okay, it works. So weird. I am missing something really simple. I just want a function that takes a string and returns a string. How hard can that be.
 
 There it is. That was weird.
-*** Round 2
+**** Round 2
     
 #+name:revFunc2
 #+begin_src C :results output
@@ -1498,7 +1498,7 @@ oh, look at that! That is what is happening to my other block. I am getting back
 
 So I need a... pointer pointer?
 
-*** I think I got it's
+**** I think I got it's
 
     
 #+name:revFunc4
@@ -1535,7 +1535,7 @@ printf("%s",revThisString(myString));
 #+RESULTS: revFunc4
 : nosaeR
 
-** Need more general C practice
+*** Need more general C practice
    I have been kind of stalled with this homework assignment from Paul for a while now. I need a way to move forward without beating my head against the same problem over and over again. Time to do a bunch of general C stuff and just get more comfortable to doing all kind of things in C. 
   #+name:addSomeNumbers
   #+begin_src C :results output
@@ -1646,7 +1646,7 @@ Conclusion:
 
 C doesn't want you to return arrays from functions. This really is a different beast than Python. I am thinking the stream of text Like Paul wa initially talking about is better (needs less memory management too).
 
-* I need to rename and recount
+** I need to rename and recount
   So its [2021-07-24 Sat] and I think I figured out what was breaking when running Hy code in Emacs. The Hy quazi-quote operator is ` and not '. And the more I work with Python, the more I really do like putting up with it's limitations and wishing for some Lisp syntax. Why not get the worst of all worlds and Use Hy?
 
  1. Elisp
@@ -1656,10 +1656,10 @@ C doesn't want you to return arrays from functions. This really is a different b
 
     How about that? Think of Hy as a Python library, and C and C++ as their own thing together? Sure.
 
-* LeetCode problems
+** LeetCode problems
   I have been looking around the web and found various people talking about learning how to code. The name LeetCode came up more than a few times and I think this is a place I could get things like "code katas" but lots of them leveled out by difficulty and geared towards showing competency in some algorithms or data structures. I don't know how many of these I will do, but it might be a good next step once I am all done with my homework assignment form Paul (which I am REALLY close to finishing).
  
-** Two sum
+*** Two sum
    So this one appears to be pretty simple, but I am not sure about what things you can or should do for optimization. The basic premis is you want to find pairs of numbers that add up to a target. To start, you are given a list of integers and a target. There is only one answer per problem, and you just need to return the two indecies of the list that add up to the total. Seems simple enough.
    1. Make a problem list of ints
    2. Make a target value
@@ -1668,7 +1668,7 @@ C doesn't want you to return arrays from functions. This really is a different b
 
       I can imagine a solution with Python generator objects, but I don't know if they are efficient, and I can't imagine very many ways to optimize the algorithm. This is going to be fun in Hy.
      
-*** First in Python
+**** First in Python
    #+name:Two_sum
    #+begin_src python :python python3 :results output
 from itertools import combinations
@@ -1689,7 +1689,7 @@ print(list([problem_list.index(current[0]), problem_list.index(current[1])]))
       
 Wow, done. That didn't take me very long at all. Next I want to try that in Hy
 
-*** Next in Hy
+**** Next in Hy
 #+name:two-sum-hy
 #+begin_src hy :results output
 (setv problem-list [1 2 3 4 5 6 7 8])
@@ -1710,7 +1710,7 @@ Wow, done. That didn't take me very long at all. Next I want to try that in Hy
 
 I don't think I was even working of that for 30 min. That was FAST!
 
-** Reverse Integer
+*** Reverse Integer
    Started on [2021-08-22 Sun]
    I am going to stick to easy problems for now, and work on Medium ones ones I get a bit more of my brain back in the weekends.
   #+begin_quote
@@ -1757,7 +1757,7 @@ print(i.value)
 
 Well cool, that returns 0.
 
-*** Draft 1
+**** Draft 1
     
 #+name:reverse_int draft 1
 #+begin_src python :python python3 :results output
@@ -1775,9 +1775,9 @@ print(int_reverse(160062))
 #+RESULTS: reverse_int draft 1
 : 260061
 
-** Palindrome number
+*** Palindrome number
  Started on [2021-09-20 Mon] 
-*** Problem statement:
+**** Problem statement:
     Given an integer x, return true if x is palindrome integer.
 
 An integer is a palindrome when it reads the same backward as forward. For example, 121 is palindrome while 123 is not.
@@ -1816,7 +1816,7 @@ Constraints:
 Follow up: Could you solve it without converting the integer to a string?
 
 
-*** draft 1
+**** draft 1
    Okay, simple enough function. Take an input int, return a bool. If the number is a palindrome, return true. Else false.
 
    If I convert the int to a string, I can do that slice thing to return the reverse of the string. If I compare a string to the reverse of it's self, I will know if it's a palindrome.
@@ -1839,3 +1839,15 @@ Follow up: Could you solve it without converting the integer to a string?
   wow, that took me something like 5 min.
 
   The follow up question of if you can do this without converting to a number seems kind of misplaced. The examples show "-121" as reading out to be 121-. "121-" is not an int. You should do this sort of thing with a string. I mean you COULD work with the int. You define the places as being represented by a list, compare the list forwards and back, take the rectified initial int and call false if it is negative.
+
+* Fresh start
+[2022-01-12 Wed]
+
+It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
+
+1. Python/Hy
+2. Elixir (and a bit of Erlang?)
+3. Elisp
+4. C/C++
+
+I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
