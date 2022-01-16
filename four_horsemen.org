@@ -1851,3 +1851,132 @@ It's time to get this off to a good start. I have been trying to get Clojure to 
 4. C/C++
 
 I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
+
+** Starting Elixir
+After a lot of hemming and hawing about how to move forward, I think Elixir rounds things out while also being fairly easy to work with here in Emacs and Org. There is a lot to get used to so let's try some things I have done in the other languages. How about rock-paper-scissors?
+
+*** rock paper scissors
+started [2022-01-13 Thu] 
+I want to finish this a night, but I don't know much of Elixir's syntax so this might take a bit
+#+name:rock_paper_scissors
+#+begin_src elixir :results output
+bob = :rand.uniform(3)
+paul = :rand.uniform(3)
+# 1 is rock 2 is paper 3 is scissors
+# so 1 beats two 2 beats 3 and 3 beats 1
+cond do
+  bob - paul == 2 -> IO.puts "Paul wins with rock"  
+  paul - bob == 2 -> IO.puts "Bob wins with rock"  
+  bob > paul -> IO.puts "Paul wins"
+  bob < paul -> IO.puts "Bob wins"
+  bob == paul -> IO.puts "Tie"
+end
+
+IO.puts "bob played #{bob}"
+IO.puts "paul played #{paul}"
+
+#+end_src
+
+#+RESULTS: rock_paper_scissors
+: Paul wins
+: bob played 2
+: paul played 1
+: :ok
+
+Wow, I finished that in about 30 min.
+
+Some take aways:
+1. cond do blocks stop at the first match
+2. IO.puts is how I print to the console
+3. When not writing functions, I can just put things in and the code executes top to bottom
+4. comments are just a hash
+5. String interpolation syntax can be found in those last two prints
+6. random numbers calls to a module with an atom as it's name. Interesting
+
+*** Making a predicate function
+In functional languages, I  will need to make my own now and again. I think pattern matching will be able to do some of that, but I will still want to be able to make my own
+
+#+name:make_a_predicate
+#+begin_src elixir :results output
+is_even = fn (num) -> rem(num, 2) == 0 end
+
+is_even.(6)
+#+end_src
+
+#+RESULTS: make_a_predicate
+: true
+
+Here is how to make a quick function. But mostly I will be putting these things on modules. So here is the same things that way
+
+
+#+name:make_a_predicate_in_mod
+#+begin_src elixir :results output
+defmodule A do
+  def is_even(num) do
+    rem(num, 2) == 0
+  end
+end
+
+A.is_even(5)
+#+end_src
+
+#+RESULTS: make_a_predicate_in_mod
+: [33mwarning: [0mredefining module A (current version defined in memory)
+:   iex:1
+: 
+: false
+
+I get a warning from re-defining the module, but I can get away from that if I put the function in a separate code block.
+
+*** Bubble sort
+I didn't like how this got made in any of the languages I tried it in before, but maybe there is a better way of defining it in Elixir that is more functional?
+
+#+name:bubble_sort
+#+begin_src elixir :results output
+defmodule Bubble do
+  # sort-two and b_recur are helper functions for the main functionality which is calling b-sort on a list to perform a bubble sort
+  
+  # recursively sort a list by swapping the first two elements, then calling it's self in the tail of the list 
+  def sort_two([l, r]) do
+    [head | tail] = l
+    case {head, tail} do
+      {_head, tail} when tail == [] ->
+        List.flatten([r] ++ [head])
+      {head, tail} when head < hd(tail) ->
+        sort_two([[tail], List.flatten([r] ++ [head])])
+      {head, tail} when head > hd(tail) ->
+        sort_two([List.flatten([head] ++ [tl(tail)]), List.flatten([r] ++ [hd(tail)])])
+    end
+  end
+
+  # c is for counter and i is for "items to sort". call the sorting function once per item in the list
+  def b_recur([c, i]) do
+    tail = tl(c)
+    case {tail, i} do
+      {tail, _} when tail == [] -> sort_two([i, []])
+      {_, _} -> b_recur([tl(c), sort_two([i, []])])
+    end
+  end
+
+  # call b_recur with the list as both the things to sort and the (length of the list) as the counter for the number of times to recurse
+  def b_sort(l) do
+    tail = tl(l)
+    case {tail} do
+      {_} when tail == [] -> l
+      {_} -> b_recur([l, l])
+    end
+  end
+
+end
+
+Bubble.b_sort([5, 4, 3, 2, 1])
+#+end_src
+
+#+RESULTS: bubble_sort
+: [33mwarning: [0mredefining module Bubble (current version defined in memory)
+:   iex:1
+: 
+: [1, 2, 3, 4, 5]
+
+Finished on [2022-01-16 Sun]
+It's kind of weird to need to make the recur and sort and interface all separate functions. But I basically did this in Clojure too. Clojure did not have a really good way of making a "do times" function. Python handled that very nicely but this whole thing is just very tasteful. A sorting scheme that doesn't require so much mutation would be much more natural to write.
