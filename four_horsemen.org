@@ -813,7 +813,7 @@ So I was reading more about clojurescript and I can get this to work but it need
   #+end_src
 
   #+RESULTS: test
-  : Please reevaluate when nREPL is connected
+  : 9
 *** I think I have a work around
    So I was be moaning the fact that I needed to output ClojureScript blocks by value. And if I wanted to get really fancy it might get me in trouble one day. But for the most part, I do think I can make this work without using the output of blocks. I can put functions in different blocks and just call to the functions if I need to pass the block to something else. 
    Yeah, after more testing this seems to do it.
@@ -998,7 +998,7 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: <itertools.takewhile object at 0x7f3d1329ff80>
+: hi
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1325,7 +1325,7 @@ printf("%d", (int) (sizeof(p) /  sizeof(p[0])));
 
 I see how that works now. I get the length of the array by taking it's total size in Memory and dividing it by the length of one of it's members.
 *** Let's reverse a word
-   I am still going over this homework assignment, and I think I have an idea for how ti get it working better. But I also need to just do more with strings and get the syntax in my head. Let's try this:
+I am still going over this homework assignment, and I think I have an idea for how ti get it working better. But I also need to just do more with strings and get the syntax in my head. Let's try this:
 
   #+name:backwards-string
   #+begin_src C :results output
@@ -1846,12 +1846,13 @@ Follow up: Could you solve it without converting the integer to a string?
 It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
 
 1. Python/Hy
-2. Elixir (and a bit of Erlang?)
+2. Elixir (and a bit of Erlang? LFE?)
 3. Elisp
 4. C/C++
 
 I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
 
+I wonder if it's worth my time to examine ob-hy and see if I can make vars and sessions work?
 ** Starting Elixir
 After a lot of hemming and hawing about how to move forward, I think Elixir rounds things out while also being fairly easy to work with here in Emacs and Org. There is a lot to get used to so let's try some things I have done in the other languages. How about rock-paper-scissors?
 
@@ -1980,3 +1981,409 @@ Bubble.b_sort([5, 4, 3, 2, 1])
 
 Finished on [2022-01-16 Sun]
 It's kind of weird to need to make the recur and sort and interface all separate functions. But I basically did this in Clojure too. Clojure did not have a really good way of making a "do times" function. Python handled that very nicely but this whole thing is just very tasteful. A sorting scheme that doesn't require so much mutation would be much more natural to write.
+
+** LFE?
+
+#+name:test4
+#+begin_src lfe :results output
+(+ 3 9)
+#+end_src
+
+#+RESULTS: test4
+: 12
+
+uh oh, this works now
+
+#+name:seqs
+#+begin_src lfe
+(set my-list (lists:seq 1 6))
+#+end_src
+
+#+RESULTS: seqs
+: (1 2 3 4 5 6)
+
+It's a lisp, it's running in Org. And it can interface with anything I write in Elixir.
+
+Should I add this too?
+
+
+#+name:vartest
+#+begin_src lfe :var b = "hi"
+(io:format b)
+#+end_src
+
+#+RESULTS: vartest
+: ** exception error: symbol b is unbound
+:   in lfe_eval:eval_error/1 (src/lfe_eval.erl, line 1242)
+:   in lists:map/2 (lists.erl, line 1243)
+: 
+
+yeah, looks like LFE needs work before it can use variables from Org mode. But that would be a nice ELISP project. I can't imagine it's that much work. Would not be easy to be sure but at the same time I could probably get most things done with just Elixir and python and not worry about using a Lisp.
+
+I will keep it in stalled, but don't think I will really end up using it for much. 
+
+** Swap LFE for Hy [2022-01-23 Sun] 
+Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
+
+BUT, after learning some Elixir, I think I have a LISP that can replace Hy, and in a way Clojure-script. LFE. As much as it's going to be hard to wrap my head around Erlang, and I won't have a LSP server to help, I will have a very powerful lisp that should be able to do a lot of what I had intended to use Hy and ClojureScript for.
+
+update [2022-01-25 Tue]
+Looks like it's not emacs. I am getting this weird error in the Hy repl too. Not sure what is broken.
+* Classic programming problems
+[2022-01-17 Mon]
+I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
+
+** Fibonachi... why am I not surprised
+
+*** Python
+Let's see if I can do this without looking at their solution
+
+#+name:Fib_p
+#+begin_src python :python python3 :results output
+def fib_of_x(num):
+    match num:
+        case 0:
+            0
+        case 1:
+            1
+        case _ if num > 0:
+            return num + fib_of_x(num-1)
+            
+print(fib_of_x(5))
+#+end_src
+
+#+RESULTS: Fib_p
+
+Something tells me that should work. Something weird is happening with the recursion.       
+
+Let's just do the iterative approach
+
+#+name:fib_p_iter
+#+begin_src python :python python3 :results output
+def fib_iter(num: int) -> int:
+    if num == 0: return num
+    last, next = 0, 1
+    for _ in range(1, num):
+        last, next = next, last + next
+    return next
+
+if __name__ == "__main__":
+    print(fib_iter(15))
+#+end_src
+
+#+RESULTS: fib_p_iter
+: 610
+
+*** Hy
+Let's try that is Hy
+
+#+name:fib_h
+#+begin_src hy :results output
+(defn fib-of-x [num]
+  (cond [(= num 0) 0]
+        [(= num 1) 1]
+        [(> num 0) (+  (fib-of-x (- num 2)) (fib-of-x (- num 1)))]
+        [True "no match"]))
+  (print (fib-of-x 10)) 
+#+end_src
+
+#+RESULTS: fib_h
+: 55
+
+
+Let's try Hy for iteration too
+
+#+name:fib-h-iter
+#+begin_src hy :results output
+(require [hy.extra.anaphoric [*]])
+
+
+(defn fib-of-x [num]
+  (cond [(= num 0) 0]
+        [(= num 1) 1]
+        [(> num 2) (do
+                     (setv last 0)
+                     (setv next 1)
+                     (ap-dotimes (- num 1)
+                                 (pys "last, next = next, last + next"))
+                     next)]
+        [True "no match"]))
+  (print (fib-of-x 15)) 
+#+end_src
+
+#+RESULTS: fib-h-iter
+: 610
+
+Does this work with loop-recur?
+
+#+name:fib-recur
+#+begin_src hy :results output
+(require [hy.contrib.loop [loop]])
+
+(defn fib [number]
+  (loop [[num number] [n 1] [r 0]]
+        (if (= num 0) r
+            (recur (- num 1) (+ n r) n))))
+(print (fib 10000))
+    
+#+end_src
+
+#+RESULTS: fib-recur
+: 33644764876431783266621612005107543310302148460680063906564769974680081442166662368155595513633734025582065332680836159373734790483865268263040892463056431887354544369559827491606602099884183933864652731300088830269235673613135117579297437854413752130520504347701602264758318906527890855154366159582987279682987510631200575428783453215515103870818298969791613127856265033195487140214287532698187962046936097879900350962302291026368131493195275630227837628441540360584402572114334961180023091208287046088923962328835461505776583271252546093591128203925285393434620904245248929403901706233888991085841065183173360437470737908552631764325733993712871937587746897479926305837065742830161637408969178426378624212835258112820516370298089332099905707920064367426202389783111470054074998459250360633560933883831923386783056136435351892133279732908133732642652633989763922723407882928177953580570993691049175470808931841056146322338217465637321248226383092103297701648054726243842374862411453093812206564914032751086643394517512161526545361333111314042436854805106765843493523836959653428071768775328348234345557366719731392746273629108210679280784718035329131176778924659089938635459327894523777674406192240337638674004021330343297496902028328145933418826817683893072003634795623117103101291953169794607632737589253530772552375943788434504067715555779056450443016640119462580972216729758615026968443146952034614932291105970676243268515992834709891284706740862008587135016260312071903172086094081298321581077282076353186624611278245537208532365305775956430072517744315051539600905168603220349163222640885248852433158051534849622434848299380905070483482449327453732624567755879089187190803662058009594743150052402532709746995318770724376825907419939632265984147498193609285223945039707165443156421328157688908058783183404917434556270520223564846495196112460268313970975069382648706613264507665074611512677522748621598642530711298441182622661057163515069260029861704945425047491378115154139941550671256271197133252763631939606902895650288268608362241082050562430701794976171121233066073310059947366875
+
+...well now that is cool. By learning how to make a properly tail calling version in Elixir, I got a better idea of how to make it in Hy. I wonder if this works for Python too, or is that what the tuple unpacking version does better and in a more Pythonic way?
+
+*** Elixir
+This should handle the recursion better
+
+#+name:Fib_e
+#+begin_src elixir :results output
+defmodule F do
+  def fib_of_x(num) do
+    case {num} do
+      {0} -> 0
+      {1} -> 1
+      {_} when num > 0 -> fib_of_x(num-2) + fib_of_x(num-1)
+    end
+  end
+end
+
+F.fib_of_x(15)
+#+end_src
+
+#+RESULTS: Fib_e
+: 610
+
+Well it breaks after the next place, but that is a recursive definition of Fib that goes pretty big. 
+
+I think my next little assignment could be making this TCO.
+
+...okay I found a guy who made it really easy to understand. And better yet, it looks suspiciously like the Python version with iteration.
+"~/four_horsemen/lib/four_horsemen.ex"
+#+name:from_the_webs
+#+begin_src elixir :results output
+defmodule Fw do
+  def fib(n) when n < 0, do: :error
+  def fib(n), do: fib(n, 1, 0)
+  defp fib(0, _, result), do: result
+  defp fib(n, next, result), do: fib(n - 1, next + result, next)
+end
+
+Fw.fib(1000)
+#+end_src
+
+#+RESULTS: from_the_webs
+: 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
+
+*** Elisp and C
+Looks like Elisp doesn't really support recursion, and I don't particularly want ti write thus in C. Though I suppose I should just to keep that learning moving along. Man that sounds like it's going to be hard.
+
+** 1.7 Exercises
+On page 53 I hit the first set of homework assignments. They are:
+1. Implement A fibonachi generator using a new technique. Write a using test to make sure it works.
+2. Make a wrapper for ints that allow you to generically wrap ints to make a sequence of bits. Re-implement the gene program with it.
+3. Write a solver for The Towers of Hanoi that works for any number of towers... hmn.
+4. Use a one-time pad to encrypt and decrepit images.
+
+   Well even if I did want to do all of these in all the languages, I don't think I have enough time. I still want to finish this book in a year. Here is an idea... what if I do one in each "famiy" or languages? One in C/C++, one in Python or Hy, one in Elisp, and one in Erlang/Elixir/LFE? That would cut down on the time for sure.
+
+
+...okay. Let's try it. Should I get C out of the way now to spare myself the pain later? Which of these is bound to give me the least amount of trouble with memory? Hannoi? Maybe the gene wrapper? Something tells me if would be an accomplishment enough to just get the gene translator working in C period. I think I would be happy if it took in a string of genomes and spat out Binary, then took in binary and spat out a string.
+
+I am okay calling 1 done by getting the tail call optimized recursion going in Hy.
+
+One time pad to encrypt an image? Do I want to do that in Elisp or Elixir? hmn. I kind of want to try Elixir for Hani so let's do these like so:
+
+1. [X]  With Hy, and done
+2. [ ] Gene program in C/C++
+3. [ ] Hanoi with Elixir
+4. [ ] Use Elisp to encrypt an image.
+
+  
+*** Gene program in C
+
+I kind of think C++ would hold my hand more. So let's give C a little more love. This looks like it might not be SO bad.
+
+#+name:geneAndC
+#+begin_src C :results output :includes stdio.h
+char myString[3] = {'H', 'i'};
+printf("%s", myString);
+#+end_src
+
+#+RESULTS: geneAndC
+: Hi
+
+whew, I was afraid I had lost my ability to write C code.
+
+Org code blocks wrap C code in an implicit "main" function, so any library includes for header files need to be declared up in the code block arguments
+
+So what I am imagining is a function that takes a string and loops over it.
+Each pass it takes a "gene" at a time and converts it to a binary bit or either 00, 01, 10, 11. And then appends that to a representation on it's way out.
+
+I then write another block that does the same thing in reverse.
+
+Let's start easy, spit out each letter one by one.
+
+#+name:oneLetter
+#+begin_src C :results output :includes stdio.h
+char myString[6] = {'B','o','b','b','y','\0' };
+
+int i;
+
+for( i = 0; myString[i] != '\0' ; i = i + 1)
+
+  {
+
+    printf("%c \n", myString[i]);
+
+  };
+#+end_src
+
+#+RESULTS: oneLetter
+: B 
+: o 
+: b 
+: b 
+: y 
+
+Okay, that was a lot more work than I thought it was going to be, but I got it done. Man... my C is really rusty.
+
+I think next is to make the tree of if statements and take ints and return binary
+
+#+name:binary
+#+begin_src C :results output :includes stdio.h
+printf("%b", 0b1010);
+#+end_src
+
+#+RESULTS: binary
+: b
+
+
+oh man. It looks like C doesn't even supports printing of binary data. I might need to make my own printer.
+
+
+#+name:fromtheweb
+#+begin_src C :results output
+#include <stdio.h>
+#include <stdlib.h>
+ 
+char* toBinary(int n, int len)
+{
+    char* binary = (char*)malloc(sizeof(char) * len);
+    int k = 0;
+    for (unsigned i = (1 << len - 1); i > 0; i = i / 2) {
+        binary[k++] = (n & i) ? '1' : '0';
+    }
+    binary[k] = '\0';
+    return binary;
+}
+ 
+int main(void)
+{
+    int n = 2;
+    int len = 4;
+ 
+    char* binary = toBinary(n, len);
+    printf("The binary representation of %d is %s", n, binary);
+    free(binary);
+ 
+    return 0;
+}
+
+#+end_src
+
+#+RESULTS: fromtheweb
+: The binary representation of 2 is 0010
+
+This is cool, but I didn't write it and it doesn't quite do what the example problem was trying to do. The idea is to save space. I am taking what would be a genome letter and turning it into 4 "letters" because this is a string.
+
+Let's take a look at the book again.
+
+One more block of code from the web:
+
+#+name:binaryBasics
+#+begin_src C :results output
+#include <stdio.h>
+
+int main(void)
+{
+
+   unsigned int a = 60;	/* 60 = 0011 1100 */  
+   unsigned int b = 13;	/* 13 = 0000 1101 */
+   int c = 0;           
+
+   c = a & b;       /* 12 = 0000 1100 */ 
+   printf("Line 1 - Value of c is %d\n", c );
+
+   c = a | b;       /* 61 = 0011 1101 */
+   printf("Line 2 - Value of c is %d\n", c );
+
+   c = a ^ b;       /* 49 = 0011 0001 */
+   printf("Line 3 - Value of c is %d\n", c );
+
+   c = ~a;          /*-61 = 1100 0011 */
+   printf("Line 4 - Value of c is %d\n", c );
+
+   c = a << 2;     /* 240 = 1111 0000 */
+   printf("Line 5 - Value of c is %d\n", c );
+
+   c = a >> 2;     /* 15 = 0000 1111 */
+   printf("Line 6 - Value of c is %d\n", c );
+   return 0;
+};
+#+end_src
+
+#+RESULTS: binaryBasics
+: Line 1 - Value of c is 12
+: Line 2 - Value of c is 61
+: Line 3 - Value of c is 49
+: Line 4 - Value of c is -61
+: Line 5 - Value of c is 240
+: Line 6 - Value of c is 15
+
+What is cool about this is how it shows really clearly how these logical operations are affecting the 1s and 0s of the two values.
+
+Now the question becomes, how do I store each letter of a string as a 4 bit value? do I make a list full of these "numbers"?
+
+#+name:sizeOfThings
+#+begin_src C :results output
+
+#include <stdio.h>
+#include <string.h>
+
+struct {
+   unsigned int age : 2;
+} Age;
+
+int main( ) {
+
+   Age.age = 1;
+   printf( "Sizeof( Age ) : %d\n", sizeof(Age) );
+   printf( "Age.age : %d\n", Age.age );
+
+   Age.age = 2;
+   printf( "Age.age : %d\n", Age.age );
+
+   Age.age = 3;
+   printf( "Age.age : %d\n", Age.age );
+
+   Age.age = 4;
+   printf( "Age.age : %d\n", Age.age );
+
+      Age.age = 0;
+   printf( "Age.age : %d\n", Age.age );
+
+   return 0;
+}
+#+end_src
+
+#+RESULTS: sizeOfThings
+: Sizeof( Age ) : 4
+: Age.age : 1
+: Age.age : 2
+: Age.age : 3
+: Age.age : 0
+: Age.age : 0
+
+
+Hmn. This looks like it's the syntax to define how many bits a value should be. If I am doing this right, I just define a struct, then loop over a bunch of letters and append the resulting 2 bit numbers to a list. Then decode by reversing the process.
