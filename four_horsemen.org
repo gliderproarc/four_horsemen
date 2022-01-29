@@ -2195,10 +2195,9 @@ I am okay calling 1 done by getting the tail call optimized recursion going in H
 One time pad to encrypt an image? Do I want to do that in Elisp or Elixir? hmn. I kind of want to try Elixir for Hani so let's do these like so:
 
 1. [X]  With Hy, and done
-2. [ ] Gene program in C/C++
+2. [X] Gene program in C/C++
 3. [ ] Hanoi with Elixir
 4. [ ] Use Elisp to encrypt an image.
-
   
 *** Gene program in C
 
@@ -2387,3 +2386,64 @@ int main( ) {
 
 
 Hmn. This looks like it's the syntax to define how many bits a value should be. If I am doing this right, I just define a struct, then loop over a bunch of letters and append the resulting 2 bit numbers to a list. Then decode by reversing the process.
+
+Let's try
+
+#+name:draft1Cgene
+#+begin_src C :results output
+#include <stdio.h>
+
+struct g
+{
+  unsigned int i;
+};
+
+struct g compressG(unsigned char gene)
+  {
+    if(gene == 'a')
+      {
+        struct g r = { 0 };
+        return r;
+          }
+    else
+    if(gene == 'c')
+      {
+        struct g r = { 1 };
+        return r;
+          }
+    else
+    if(gene == 'g')
+      {
+        struct g r = { 2 };
+        return r;
+          }
+    else
+      {
+        struct g r = { 3 };
+        return r;
+          }
+    }
+
+int main(void)
+  {
+    unsigned myChar = 'g';
+    struct g myResult = compressG(myChar);
+    printf("%d", myResult.i);
+    return 0;
+    }
+#+end_src
+
+#+RESULTS: draft1Cgene
+: 2
+
+hmn... I think that did it. I just need main to loop over all the letters in a gene sequence and... append those numbers to a string(?!) and print that out? No, I guess I need a linked list. 
+
+You know what, I am going to call that done. Because I have lost about an entire week on this and I want to keep moving on this book. I can come back to it later to add more to it. But this is the syntax to make a struct that is only 4 bytes large, and a function that returns that struct if a char matches. To really make it useful I just need to:
+- Build out a way to feed it sequences of letters
+- Make the part of main that loops over the letter passed
+- return the result in some usable format instead of printing it to the console
+- build out a way to turn it back
+
+*** Hanoi in Elixir
+[2022-01-29 Sat] started
+Man, I am kind of nervous about this. Hanoi towers I remember from when Big James passed that problems to us, but I don't really feel like I can just step into Elixir and just made a program like this.
