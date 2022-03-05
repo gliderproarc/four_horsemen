@@ -813,7 +813,8 @@ So I was reading more about clojurescript and I can get this to work but it need
   #+end_src
 
   #+RESULTS: test
-  : 9
+  : hi
+  : :ok
 *** I think I have a work around
    So I was be moaning the fact that I needed to output ClojureScript blocks by value. And if I wanted to get really fancy it might get me in trouble one day. But for the most part, I do think I can make this work without using the output of blocks. I can put functions in different blocks and just call to the functions if I need to pass the block to something else. 
    Yeah, after more testing this seems to do it.
@@ -998,7 +999,11 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: hi
+: ** (UndefinedFunctionError) function :timer.sleep/0 is undefined or private. Did you mean:
+: 
+:       * sleep/1
+: 
+:     (stdlib 3.17) :timer.sleep()
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1982,6 +1987,51 @@ Bubble.b_sort([5, 4, 3, 2, 1])
 Finished on [2022-01-16 Sun]
 It's kind of weird to need to make the recur and sort and interface all separate functions. But I basically did this in Clojure too. Clojure did not have a really good way of making a "do times" function. Python handled that very nicely but this whole thing is just very tasteful. A sorting scheme that doesn't require so much mutation would be much more natural to write.
 
+*** Elixir function patterns
+[2022-02-23 Wed]
+I was looking online for how to get a data structure to implement a binary sort in Elixir, and I found a really nice solution. It was not only a nice example of a binary sort, but it had a few things that I want to get into the habit of making with more of my Elixir functions. They were something like:
+1. Define a module to contain the set of functions
+2. Make a function that acts like a gate way into calling a function with all the arguments actually needed
+3. Add spec to this function to show what arguments it expects and their type
+4. For each function, write a few versions that short circuit the need to evaluate all the way down to the expensive one
+5. These short circuits also end recursion from the recursive case at the end
+6. With the expensive functions, build them to call them selves recursively at the end
+
+   I haven't seen this before, and it looks like good practice. So to practice it, let's make a very simple recursive function that calculates... the sum of a list. And rather than focusing on solveing the problem, I am just going to work on the above.
+  
+**** Good form? 
+#+name:gf_elixir
+#+begin_src elixir :results output
+
+defmodule GoodForm do
+  @spec list_sum(list) :: {:ok, integer} | :empty_list
+  def list_sum(l) when length(l) == 0, do: :empty_list
+  def list_sum(l) when length(l) == 1, do: {:ok, l}
+  def list_sum(l) do
+    list_sum_recur(l, 0)
+    end
+  
+  defp list_sum_recur(l, acc) when length(l) == 1, do: {:ok, acc + hd(l)}
+  defp list_sum_recur(l, acc) do
+    [head | tail] = l
+    list_sum_recur(tail, acc + head)
+  end
+end
+
+GoodForm.list_sum([1, 2, 3, 4])
+#+end_src
+
+#+RESULTS: gf_elixir
+: [33mwarning: [0mredefining module GoodForm (current version defined in memory)
+:   iex:2
+: 
+: {:ok, 10}
+
+Wow, well that took me all morning but I finally figured it out. I could not for the life of me figure out what was wrong with that I had written above, until I went to the exact line and columm I was getting the error.
+
+Turns out when you have this sort of function definition list going, the whens kind of make the whole thing work like a case statement. If the last one is a catch all, you need to use a do block.
+
+
 ** LFE?
 
 #+name:test4
@@ -2029,6 +2079,19 @@ BUT, after learning some Elixir, I think I have a LISP that can replace Hy, and 
 
 update [2022-01-25 Tue]
 Looks like it's not emacs. I am getting this weird error in the Hy repl too. Not sure what is broken.
+
+*** Clojure style arrow syntax in LFE
+
+#+name:clj-style-arrow
+#+begin_src lfe :results output
+(clj:->
+ (+ 3 4)
+ (+ 30 40))
+#+end_src
+
+#+RESULTS: clj-style-arrow
+: 77
+
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
@@ -2196,8 +2259,8 @@ One time pad to encrypt an image? Do I want to do that in Elisp or Elixir? hmn. 
 
 1. [X]  With Hy, and done
 2. [X] Gene program in C/C++
-3. [ ] Hanoi with Elixir
-4. [ ] Use Elisp to encrypt an image.
+3. [X] Hanoi with Elixir
+4. [X] Use Elixir to encrypt an image.
   
 *** Gene program in C
 
@@ -2255,7 +2318,12 @@ printf("%b", 0b1010);
 #+end_src
 
 #+RESULTS: binary
-: b
+: ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-OSholU/elixir-qf8kJX:1:17: syntax error before: "4"
+:     |
+:   1 | bin_data = << 3 4 55 >>
+:     |                 ^
+:     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
+:     iex:4: (file)
 
 
 oh man. It looks like C doesn't even supports printing of binary data. I might need to make my own printer.
@@ -2447,3 +2515,996 @@ You know what, I am going to call that done. Because I have lost about an entire
 *** Hanoi in Elixir
 [2022-01-29 Sat] started
 Man, I am kind of nervous about this. Hanoi towers I remember from when Big James passed that problems to us, but I don't really feel like I can just step into Elixir and just made a program like this.
+
+#+name:test44
+#+begin_src elixir :results output
+list = [0,1,2,3,4]
+
+[h | t] = list
+t
+#+end_src
+
+#+RESULTS: test44
+: [1, 2, 3, 4]
+
+**** test 1
+OKay, I think I need to use some objects to store where the dics are going to be. I kind of wish I could make the output be more about describing how the puzzle was solved rather than showing the towers were empty. I could almost care less about getting the disks moved over. I could also move them all straight over.
+
+The way the algorithm seems to work for 3 piles is to say:
+- move all but the last disk to the middle using the end as the go-between
+- move the biggest disk to the end
+- move the disks from the middle to the end using the first pile as the go between
+
+  what I could do with 4 is to do the same thing, but ignore all the other piles and just solve as if I had 3. But that is pretty silly.
+
+  What does it mean to "solve" towers of hanoe for more than 3 piles? Is it to find a faster way of moving the piles over? That could look something like:
+
+  you know what, I don't really get it yet, so I am just going to try to port the Python into Elixir first and see how it goes
+
+
+#+name:hanoi-draft-one
+#+begin_src elixir :results output
+defmodule H do
+def hanoi_pop ([stacks, int]) do
+    [b, e, t] = stacks
+    [[tl(b), List.flatten(hd(b),e), t],int]
+    end
+def stack_rotate ([stacks, int]) do
+
+  # def hanoi_r([begin_stack, end_stack, temp_stack, n]) do
+  #   hanoi1([begin_stack, end_stack, temp_stack, n])
+  #   hanoi_pop([begin_stack, end_stack, temp_stack, 1])
+  #   hanoi3([begin_stack, end_stack, temp_stack, n])
+  # end
+  
+end
+
+
+H.hanoi_r([[1,2,3,4], [], [], 4])
+
+
+#+end_src
+
+#+RESULTS: hanoi-draft-one
+: [33mwarning: [0mredefining module H (current version defined in memory)
+:   iex:1
+: 
+: [33mwarning: [0mundefined function hanoi/1 (expected H to define such a function or for it to be imported, but none are available)
+:   iex:11
+: 
+: ** (CompileError) iex:7: undefined function hanoi/1 (expected H to define such a function or for it to be imported, but none are available)
+:     (elixir 1.13.2) src/elixir_locals.erl:115: anonymous fn/4 in :elixir_locals.ensure_no_undefined_local/3
+:     (elixir 1.13.2) src/elixir_erl_compiler.erl:12: anonymous fn/2 in :elixir_erl_compiler.spawn/1
+
+so that really doesn't work. This whole Hanoe tower thing is built to mutate towers of state. I can't do that in Elixir
+
+**** Solution for 3 towers
+Finished on [2022-02-11 Fri]
+
+That was a lot harder than I think it needed to be. And this doesn't even get to the point of the original assignment. 
+
+#+name:Hanoi_v2
+#+begin_src elixir :results output
+require Integer
+defmodule H do
+  
+  # generate the list of disks to move by calling disk_list with the number of disks for this simulation
+  def disk_list(num) when num == 1, do: 1
+  def disk_list(num), do: List.flatten([disk_list(num-1), num, disk_list(num-1)])
+  # def disk_list(num) do
+  #   List.flatten(disk_recur(num, []))
+  #   end
+  # def disk_recur(num, list) when num == 1 do
+  #   [1,list,1]
+  #   end
+  # def disk_recur(num, list) do
+  #   disk_recur(num-1, [disk_recur(num-1, list), list, disk_recur(num-1, list)])
+  #   end
+
+ def add_cols(d_list, num) do
+    #Helper function for adding cols
+    #Pass this the disks_by_num list, and the num variable
+    
+    #First set the local stream for if even goes 1 or 2
+    if Integer.is_even(num) do
+      if Integer.is_even(List.last(List.flatten(d_list))) do
+        List.zip([d_list, Enum.to_list(Enum.take(Stream.cycle(["c", "b", "a"]), length(d_list)))])
+      else
+        List.zip([d_list, Enum.to_list(Enum.take(Stream.cycle(["b", "c", "a"]), length(d_list)))])
+      end
+      
+    else
+      if Integer.is_even(List.last(List.flatten(d_list))) do
+        List.zip([d_list, Enum.to_list(Enum.take(Stream.cycle(["b", "c", "a"]), length(d_list)))])
+      else
+        List.zip([d_list, Enum.to_list(Enum.take(Stream.cycle(["c", "b", "a"]), length(d_list)))])
+      end
+      
+    end
+  end
+
+
+  def hanoi(num) do
+    # This is the body of the wrapper function
+
+    #first handle the base case
+    if num == 1 do
+      [1, 1, "c"]
+    else
+      
+      #Get a fuction local copy of calling disK_list on num
+      disks_to_move = disk_list(num)
+
+      #make list of the kinds of disks
+      one_to_disks = Enum.to_list(1..num)
+
+      #add an order item to each element of disks_to_move
+      one_to_length = Enum.to_list(1..length(disks_to_move))
+      with_order = List.zip([one_to_length,disks_to_move])
+      only_list = Enum.map(with_order, fn x -> List.flatten(Tuple.to_list(x)) end) 
+
+      #list of lists filtering disks_to_move by the kind of disks there are
+      disks_by_num = Enum.map(one_to_disks, fn x -> Enum.to_list(Stream.filter(only_list, fn y -> hd(tl(y)) == x end))end)
+      
+      #add the columun to move to the elements of disks by num
+      tuples = Enum.map(disks_by_num, fn x -> add_cols(x, num) end)
+      flat = List.flatten(tuples)
+      result = Enum.map(flat, fn x -> List.flatten(Tuple.to_list(x)) end) 
+
+      #now we return the sorted result
+      Enum.sort(result, &(hd(&1) <= hd(&2)))
+    end
+  end
+end
+
+H.hanoi(5)
+
+#+end_src
+
+#+RESULTS: Hanoi_v2
+#+begin_example
+[33mwarning: [0mredefining module H (current version defined in memory)
+  iex:2
+
+[
+  [1, 1, "c"],
+  [2, 2, "b"],
+  [3, 1, "b"],
+  [4, 3, "c"],
+  [5, 1, "a"],
+  [6, 2, "c"],
+  [7, 1, "c"],
+  [8, 4, "b"],
+  [9, 1, "b"],
+  [10, 2, "a"],
+  [11, 1, "a"],
+  [12, 3, "b"],
+  [13, 1, "c"],
+  [14, 2, "b"],
+  [15, 1, "b"],
+  [16, 5, "c"],
+  [17, 1, "a"],
+  [18, 2, "c"],
+  [19, 1, "c"],
+  [20, 3, "a"],
+  [21, 1, "b"],
+  [22, 2, "a"],
+  [23, 1, "a"],
+  [24, 4, "c"],
+  [25, 1, "c"],
+  [26, 2, "b"],
+  [27, 1, "b"],
+  [28, 3, "c"],
+  [29, 1, "a"],
+  [30, 2, "c"],
+  [31, 1, "c"]
+]
+#+end_example
+
+
+
+
+***** Sketching
+#+name:a_solution
+#+begin_src elixir :results output
+defmodule hanoi do
+  
+  def disk_list(num) when num == 1, do: 1
+  def disk_list(num), do: list.flatten([disk_list(num-1), num, disk_list(num-1)])
+  
+  end
+hanoi.disk_list(6)
+
+#+end_src
+
+#+RESULTS: a_solution
+: [1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2,
+:  1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, ...]
+
+
+That is how to make the list of disks to move.
+
+I give up, I am going to recur with a list and take the head off to append to a new list
+
+
+
+#+name:dont_like_it
+#+begin_src elixir :results output
+defmodule hanoi do
+  
+  def disk_list(num) when num == 1, do: 1
+  def disk_list(num), do: list.flatten([disk_list(num-1), num, disk_list(num-1)])
+
+  alpha_list = stream.cycle(["b", "c", "a"])
+  beta_list = stream.cycle(["c", "b", "a"])
+  
+end
+hanoi.disk_list(6)
+
+#+end_src
+
+
+Wow, this is taking a lot to write.
+
+I need a few more helper functions. This is getting too complicated. I want to be able to set up some logic that allows me to do something like:
+
+ask if the list has been cycled all the way through, then return the result list with the last new element cons-ed onto the head. other wise:
+
+is the next item at the head of disk list alpha (meaning odd disk when total disks is even, and even when total disks is odd)? Then cons the head of the disk list and the head of the alpha list onto the to of the result list. other wise cons the head disk list and the head of beta on to result as a new pair.
+
+new note on [2022-02-11 Fri] 
+
+So afterthinking about it, the best way to make the list looks like doing it disck by dis and then sorting the list by a sort order. So:
+
+make the two streams for odd and even disks
+take the origional solution list of disks, and add a new element to each with the order so:
+[1, 2, 1] becomes
+[[1,1] [2,2],[3,1]]
+where the second elent is the disk, and the first is the order of the list
+this way can do a pretty simple transportation where I:
+- filter the list by disk
+- make a list of the same length with a stream of even or odd disk movement patterns
+- make a new list where I return a list of three elements instead of two. IE [order, disk] becomes [order, disk, move_here]
+- write a function that takes a list of disks and a their secquence, then returns a list per numbered disk.
+- write a function that takes a list of lists, and concatenates them and orders them by their first element
+- flatten the list beyond the triples
+- finally return the whole list as the answer.
+
+  That feels like it should not be so complicated, but it's the best way forward I can think of right now. I can learn how to sort Elixir lists in the process too.
+
+  first a few tests
+
+ 
+***** how to sort a elixir list
+#+name:sort-elixir-test
+#+begin_src elixir :results output
+my_list = [2,3,4,1]
+Enum.sort(my_list)
+#+end_src
+
+#+RESULTS: sort-elixir-test
+: [1, 2, 3, 4]
+
+Well that was pretty easy. How about a custom sort function?
+
+#+name:sort-elixir-test-2
+#+begin_src elixir :results output
+my_list = [[2,2],[3,1],[4,4],[1,6],[5,3]]
+Enum.sort(my_list, &(hd(&1) <= hd(&2)))
+#+end_src
+
+#+RESULTS: sort-elixir-test-2
+: [[1, 6], [2, 2], [3, 1], [4, 4], [5, 3]]
+
+Well it complains at me if the list is the wrong length, but it works. 
+
+So that is the function I call on the flattened list of lists of [sort, disk, move_to] lists for each kind of disk
+
+Let's try a function that makes a list of pairs based on two lists
+
+#+name:make_me_pairs
+#+begin_src elixir :results output
+List.zip([[{1,1},{2,2},{3,1}],[1,2,3]])
+
+#+end_src
+
+#+RESULTS: make_me_pairs
+: [{{1, 1}, 1}, {{2, 2}, 2}, {{3, 1}, 3}]
+
+Hmn, combine the two?
+
+#+name:combine
+#+begin_src elixir :results output
+my_list = List.zip([[[1,1],[2,2],[3,1]],["a","b","c"]])
+only_list = Enum.map(my_list, fn x -> List.flatten(Tuple.to_list(x)) end) 
+Enum.sort(only_list, &(hd(&1) <= hd(&2)))
+#+end_src
+
+#+RESULTS: combine
+: [[1, 1, "a"], [2, 2, "b"], [3, 1, "c"]]
+
+I need to convert the tuple the comes out of Zip into a list, but this works. I am appending columns to move disks to to a list of disks and order markers.
+
+
+Okay, I think I am ready to list out more of this pipline
+
+1. take in a number of disks to run the simulation
+2. call the disk list function and get back a list of which disk to move in what order
+3. set the list to a function local variable
+4. make a function local alpha and beta stream for how even and off disks should move
+5. make a list that is range from 1 to the total number of disks
+6. define a function that adds two elements from to lists and returns a list of lists
+7. make a list of lists. one list of the disk move list per disk, and filtered by disk number
+8. take that list of lists and combine it with a column move list for even or odd based on the number of total disks
+...
+
+*** Elisp one-time-pad
+[2022-02-14 Mon]
+Starting the last of the homework problems from Chapter 1. Let's see if this is as straight forwards as I thought this was going to be.
+
+**** getting my bearings
+
+#+name:binary-test 
+#+begin_src elisp
+(logxor 12 5)
+#+end_src
+
+#+RESULTS: binary-test
+: ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-hlJJwp/elixir-OVaJuz:1:17: syntax error before: "4"
+:     |
+:   1 | bin_data = << 3 4 55 >>
+:     |                 ^
+:     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
+:     iex:3: (file)
+
+https://www.gnu.org/software/emacs/manual/html_node/elisp/Bitwise-Operations.html
+Found logical xor
+
+https://stackoverflow.com/questions/11991137/reading-binary-data-in-elisp
+Check here for reading binary data into Emacs
+
+#+name:qr-code-data
+#+begin_src elisp 
+(logxor (f-read-bytes "~/Downloads/CFIS afterschool sign up QR code.png"))
+#+end_src
+
+**** Maybe this is easier in Elixir
+
+#+name:binary-test2
+#+begin_src elixir :results output
+bin_data = << 3, 4, 55 >>
+# :crypto.exor(bin_data, << 1,1,1 >>)
+g_list = String.graphemes(bin_data)
+Enum.join(g_list)
+
+#+end_src
+
+#+RESULTS: binary-test2
+: <<3, 4, 55>>
+
+That looks pretty easy. I just need a way to make a random number that many bits long
+
+***** try to read the pic file
+https://harfangk.github.io/2016/11/06/how-to-xor-bitstrings-in-elixir.html
+
+#+name:read-png
+#+begin_src elixir :results output
+{atom, data} = File.read("/Users/robertclay/Downloads/CFISdup.png")
+
+data_list = :binary.bin_to_list(data)
+png_header = Enum.slice(data_list, 0..7)
+pic_only = Enum.drop(data_list, 8)
+
+ot_pad = :crypto.strong_rand_bytes(length(pic_only))
+final = Enum.join(png_header, :crypto.exor(ot_pad, :binary.list_to_bin(pic_only)))
+File.write("/Users/robertclay/png-file-test/test.png", final)
+#+end_src
+
+#+RESULTS: read-png
+: :ok
+
+#+name:rand_bytes
+#+begin_src elixir :results output
+my_list = <<1,2,3,4,5,6,7,8,9,10>>
+ot_pad = :crypto.strong_rand_bytes(byte_size(my_list))
+:crypto.exor(my_list, ot_pad)
+# byte_size(ot_pad)
+#+end_src
+
+#+RESULTS: rand_bytes
+: <<61, 81, 160, 71, 129, 166, 227, 58, 204, 90>>
+
+*** Elixir one-time-pad
+[2022-02-19 Sat]
+
+This was much easier in Elixir
+#+name:read-png-in-elx
+#+begin_src elixir :results output
+{atom, data} = File.read("/Users/robertclay/Downloads/CFISdup.png")
+
+data_list = :binary.bin_to_list(data)
+png_header = Enum.slice(data_list, 0..7)
+pic_only = Enum.drop(data_list, 8)
+
+ot_pad = :crypto.strong_rand_bytes(length(pic_only))
+final = Enum.join(png_header, :crypto.exor(ot_pad, :binary.list_to_bin(pic_only)))
+File.write("/Users/robertclay/png-file-test/test.png", final)
+#+end_src
+
+#+RESULTS: read-png-in-elx
+: :ok
+
+And maybe the coolest bit of all, those "binary" calls? Those are calling into Erlang!
+
+** 2.5 Exercises
+starting these on [2022-02-21 Mon] 
+
+It took be almost two months to get through the first chapter. I think I might finish these next problems faster if I don't go out of my way too much to make this harder for myself.
+
+But this first problem just BEGS to have me pit these languages against each other
+
+1. Show the performance difference between Liner and Binary search
+2. track the count of states searched with depth first search, breadth first search, and A* search. run against 100 mazes and plot out the results
+3. Make a solution to Missionaries and Canibals that works for varying numbers of starting people.
+
+   If I make a C, Pyhon, and Elixir binary and linear search it would be very cool to see if the linear C search is faster than the binary Python search. And a speed comparison between the beam and llvm would be cool too.
+
+But to get any practice out of C, I need to write both algorithms in C... 泣く〜
+Let's see if the is a standard library binary search for Elixir
+
+...hmn Elixir lists don't contain random access to their elements, so you can't get the normal performance requirement you would expect form a binary search. But wouldn't you just throw everything into a Elixir map and search or keys?
+
+Elixir might not have a data structure that lends it's self to binary search, so I guess I could try sticking numbers in a map and compare times for looking that up? Not really sure.
+
+Hmn... looks like a tuple works. ...but can a tuple have 1,000,000 elements?
+*** Binary search drag race
+
+**** Elixir
+#+name:Elixir-Bsearch
+#+begin_src elixir :results output
+
+defmodule BinarySearch do
+  @spec search(tuple, integer) :: {:ok, integer} | :not_found
+  def search({}, _), do: :not_found
+  def search(numbers, key) do
+    do_search(numbers, key, 0, tuple_size(numbers) - 1)
+  end
+  defp do_search(numbers, key, l, h) when l > h, do: :not_found
+  defp do_search(numbers, key, l, h) do
+    m = div(l + h, 2)
+    case elem(numbers, m) do
+      ^key -> {:ok, m}
+      num when key > num -> do_search(numbers, key, m + 1, h)
+      num when key < num -> do_search(numbers, key, l, m - 1)
+    end
+  end
+end
+
+stream = Stream.concat([1..1_000_000])
+
+mil = List.to_tuple(Enum.to_list(stream))
+
+{time, your_func_result} = :timer.tc(&BinarySearch.search/2, [mil, 1000])
+#+end_src
+
+#+RESULTS: Elixir-Bsearch
+#+begin_example
+[33mwarning: [0mredefining module BinarySearch (current version defined in memory)
+  iex:2
+
+[33mwarning: [0mvariable "key" is unused (if the variable is not meant to be used, prefix it with an underscore)
+  iex:8: BinarySearch.do_search/4
+
+[33mwarning: [0mvariable "numbers" is unused (if the variable is not meant to be used, prefix it with an underscore)
+  iex:8: BinarySearch.do_search/4
+
+{2, {:ok, 999}}
+#+end_example
+
+Okay, I didn't write that implementation of a binary search in Elixir, but it looks like it is indeed possible. A one million element tuple is a apparently a thing... nice.
+
+I guess I really should write the C version my self. Python has a standard library one... wait I think C has one too. To be fair to myself, I wrote that in like 4 langauges before this just to show myself I could.
+
+I just found a stack overflow post that said Erlang's timer uses milliseconds. So I think I can verify this (and the result I got above) by timing sleep of one second. So if a 10 millisecond pause says it took 10, I can know the billion item search above took 2 milliseconds
+
+#+name:timer-test
+#+begin_src elixir :results output
+defmodule My_timer do
+  def my_func(n) do
+    :timer.sleep(n)
+  end
+end
+
+
+{time, your_func_result} = :timer.tc(&My_timer.my_func/1, [10])
+#+end_src
+
+#+RESULTS: timer-test
+: [33mwarning: [0mredefining module My_timer (current version defined in memory)
+:   iex:1
+: 
+: {10489, :ok}
+
+Got it. Nice.
+
+so calling sleep with 10 comes out to 10489. According to some post I found elsewhere, tc gives back microseconds. Let's see what sleep expects. hmn... so the other post said timer takes in miliseconds. So is 10 milliseconds 10,000 microseconds?
+
+Okay, that's it. It was Microseconds.
+
+...so Elixir did a binary search of a one million element tulpe is 2 microseconds?
+**** Python
+
+okay, C should beat that, but what about Python?
+
+#+name:python-b-search-race
+#+begin_src python :python python3 :results output
+from bisect import bisect_left
+import timeit
+
+
+
+my_list = list(range(0,1000000))
+
+print(timeit.timeit(lambda: bisect_left(my_list, 90)))
+#+end_src
+
+#+RESULTS: python-b-search-race
+: 0.24363270799999998
+
+according to the interwebs, that is seconds as a float. so 243 miliseconds? hahaha.
+
+
+okay, time for C to crush it
+**** C
+And this is bound to be REALLY fast
+
+#+name:c_bsort
+#+begin_src C :results output :includes stdio.h stdlib.h
+int cmpfunc(const void * a, const void * b) {
+   return ( *(int*)a - *(int*)b );
+}
+
+int values[] = { 5, 20, 29, 32, 63 };
+
+int main () {
+  
+   int *item;
+   int key = 20;
+
+   /* using bsearch() to find value 32 in the array */
+   item = (int*) bsearch (&key, values, 5, sizeof (int), cmpfunc);
+   if( item != NULL ) {
+      printf("Found item = %d\n", *item);
+   } else {
+      printf("Item = %d could not be found\n", *item);
+   }
+   
+   return(0);
+}
+#+end_src
+
+#+RESULTS: c_bsort
+: Found item = 20
+
+
+Well lovely. I found a standard library binary sort, and I can't figure out how to make a one million item array. 
+***** diversion to learn about making big arrays
+[2022-02-26 Sat]
+I found a nice implementation of a binary sort, but I could not make a one million element array.
+
+So let's learn about making arrays and see if i can make a 10 element array.
+
+
+#+name:learning_about_arrays
+#+begin_src C :results output :includes stdio.h stdlib.h
+int main () {
+long values[] = { 10000000, 200000000, 300000000 };
+  printf("%d", values[2]);
+  }
+#+end_src
+
+#+RESULTS: learning_about_arrays
+: 300000000
+
+Hmn... well I seem to be able to make and acssess big numbers from an array just fine. Let's try making an array with a loop.
+#+name:make_an_array
+#+begin_src C :results output :includes stdio.h
+int main () {
+  int values[10] = {0};
+  int i = 0;
+  for(i = 0; i < 10; i ++){
+    values[i] = i;
+  }
+  printf("%d", values[8]);
+  return 0;
+}
+#+end_src
+
+#+RESULTS: make_an_array
+: 8
+
+Here is where I get lost. 
+
+I think I need to use a pointer so I can write to that memory location.
+
+
+#+name:what_is_a_pointer
+#+begin_src C :results output :includes stdio.h
+int main () {
+  int values[11];
+  int *val;
+  val = values;
+  int i = 0;
+  for(i = 0; i < 10; i ++){
+    *(val + i) = i;
+  }
+  printf("%d", values[8]);
+  /* printf("finished"); */
+  return 0;
+}
+#+end_src
+
+#+RESULTS: what_is_a_pointer
+: 8
+
+There we go. I think I just needed to use a pointer to write to the memory address of the palace in the array... so weird. Anyway...
+
+
+#+name:c_bsort_final
+#+begin_src C :results output :includes stdio.h stdlib.h
+long cmpfunc(const void * a, const void * b) {
+   return ( *(long*)a - *(long*)b );
+}
+
+int main () {
+
+  /* long values[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; */
+  long values[1000000];
+  for ( long i = 0; i < 1000000; i++) {
+      values[i] = i;
+    }
+  
+   long *item;
+   long key = 900;
+
+   item = (long*) bsearch (&key, values, 1000000, sizeof(long), cmpfunc);
+   if( item != NULL ) {
+      printf("Found item = %d\n", *item);
+   } else {
+      printf("Item = %d could not be found\n", *item);
+   }
+   
+   return(0);
+}
+#+end_src
+
+#+RESULTS: c_bsort_final
+: Found item = 900
+
+I am still very confused. I found a snippet of code online writting to an array without that weird pointer syntax, and I can't think of what else I am missing from this.
+
+[2022-02-27 Sun]
+Got it! At last! What was broken about it before? I think it was the for loop making the array. Anyway, it works now. Now I need to time it.
+
+
+#+name:c_bsort_final_timed
+#+begin_src C :results output :includes stdio.h stdlib.h time.h
+long cmpfunc(const void * a, const void * b) {
+  return ( *(long*)a - *(long*)b );
+}
+
+int main () {
+
+  clock_t begin = clock();
+  long values[1000000];
+  for ( long i = 0; i < 1000000; i++) {
+    values[i] = i;
+  }
+  
+  long *item;
+  long key = 900;
+
+  item = (long*) bsearch (&key, values, 1000000, sizeof(long), cmpfunc); 
+  
+  clock_t end = clock();
+  
+  if( item != NULL ) {
+    printf("Found item = %d\n", *item);
+  } else {
+    printf("Item = %d could not be found\n", *item);
+  }
+  /* clock_t end = clock(); */
+  float time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  float clocks = CLOCKS_PER_SEC;
+  printf("clocks = %f \n", clocks);
+  printf("%f", time_spent);
+              
+  return(0);
+}
+#+end_src
+
+#+RESULTS: c_bsort_final_timed
+: Found item = 900
+: clocks = 1000000.000000 
+: 0.006295
+
+
+okay what is kind of cool from this is to see that:
+- C is so fast it's hard to even time it
+- C is very very finicky
+- Printing anything to the console had such a huge impact on the function execution time that it's like all the performance gains from using C at all are gone
+*** Counting BFS, DFS, A* search node visits in LFE
+Let's start small and kick the tires on LFE
+
+#+name:nodes-in-lfe
+#+begin_src lfe :results output
+(io:put_chars "hi")
+#+end_src
+
+#+RESULTS: nodes-in-lfe
+: hiok
+
+I really am going to need to keep the erlang manual open as I go
+
+
+#+name:more-nodes
+#+begin_src lfe :results output
+(list 3 4 5)
+#+end_src
+
+#+RESULTS: more-nodes
+: (3 4 5)
+
+I am not really sure what to do here beside just re-create the maze solver.
+**** remake the maze solver
+***** warming up
+Okay so what was it, a 8x8 grid? Sorry, 10x10
+
+#+name:give-me-a-grid
+#+begin_src lfe :results output
+(lfe_io:format "hi there"())
+#+end_src
+
+#+RESULTS: give-me-a-grid
+: hi thereok
+
+I should prefer this io module. It allows for prettier export of lfe native stuff to the console
+
+#+name:splitting-lists
+#+begin_src lfe :results output
+(set (cons head tail) (list 1 2 3 4))
+head
+tail
+#+end_src
+
+#+RESULTS: splitting-lists
+: 1
+: lfe> tail
+: (2 3 4)
+
+Does that pattern look familiar? I can do that thing I see in Elixir all the time where I split out the dead and tail with... cons? That is kind of weird.
+
+#+name:weird-equality
+#+begin_src lfe :results output
+(if (=:= 1 1) 'equal 'not)
+#+end_src 
+
+#+RESULTS: weird-equality
+: equal
+
+
+see now in another lisp I would have expected to just use the equals operator.
+
+
+#+name:tut-copy
+#+begin_src lfe :results output
+(defun check-val
+  (((cons head '()))
+   "Only one element")
+  (((list 1 2))
+   "Two element list")
+  (((list a _)) (when (is_atom a))
+    "List starts with an atom")
+  (((cons _ (cons a _))) (when (is_tuple a))
+    "Second element is a tuple")
+  ((_) "Anything goes"))
+
+(lfe_io:format (check-val '(3 4)) ())
+#+end_src
+
+#+RESULTS: tut-copy
+: lfe> (lfe_io:format (check-val '(3 4)) ())
+: Anything goesok
+
+***** make a maze
+
+#+name:maze-maker
+#+begin_src lfe :results output
+(list
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0)
+ (list 0 0 0 0 0 0 0 0 0 0))
+#+end_src
+
+#+RESULTS: maze-maker
+#+begin_example
+((0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ ("w" 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0))
+#+end_example
+
+That sure looks like a map to me. Let's test random numbers
+
+#+name:rand-num
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(list
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+  (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please))
+ (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please)))
+
+#+end_src
+
+#+RESULTS: rand-num
+#+begin_example
+lfe>  (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please ) (wall-or-path-please) (wall-or-path-please))
+lfe>  (list (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please) (wall-or-path-please ) (wall-or-path-please) (wall-or-path-please)))
+((0 1 1 0 0 0 1 1 0 0)
+ (0 0 1 0 0 0 0 0 0 0)
+ (0 0 0 0 0 1 0 0 0 0)
+ (1 1 1 0 0 1 0 0 0 0)
+ (1 0 1 0 1 1 1 1 0 0)
+ (1 0 1 0 0 0 1 1 0 0)
+ (1 0 1 1 1 0 0 0 1 1)
+ (0 1 1 1 0 0 1 0 0 0)
+ (0 0 0 1 1 0 0 0 0 0)
+ (1 1 0 1 0 0 0 0 0 0))
+#+end_example
+
+Well I sure ended up doing a lot of copy and pasting, but it gets the job done
+
+...before I make a record which I learned from some LFE book, I want to see if I can make that less repetitive. Surely there is a way to do things multiple times in LFE.
+
+
+#+name:dups
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+
+(lists:duplicate 10
+                 (lists:flatten
+                  (lists:duplicate 10 (wall-or-path-please))))
+#+end_src
+
+#+RESULTS: dups
+#+begin_example
+lfe> (lists:duplicate 10
+lfe>                  (lists:flatten
+lfe>                   (lists:duplicate 10 (wall-or-path-please))))
+((0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0))
+#+end_example
+
+hahaha, It's the same number because I am calling duplicate on it. Duh.
+
+
+#+name:map-fun
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(wall-or-path-please)
+(wall-or-path-please)
+(wall-or-path-please)
+#+end_src
+
+#+RESULTS: map-fun
+: 0
+: lfe> (wall-or-path-please)
+: 0
+: lfe> (wall-or-path-please)
+: 0
+: lfe> (wall-or-path-please)
+: 1
+
+Okay, so calling The function multiple times does get me different values. I just need a way to get 10 of them in a list
+
+
+#+name:this should be map
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please (num)
+  "throw away num and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+(defun make-maze-row (l)
+  "throw away a list and return one list for a maze"
+
+  (lists:map (lambda (l)
+               (wall-or-path-please l)) (lists:duplicate 10 1)))
+  (defun make-maze ()
+    "return a maze. Set of 100 nums repersenting the state of the maze path and walls"
+    (lists:map (lambda (x)
+                 (make-maze-row x))
+                 (lists:duplicate 10 1)))
+
+(make-maze)
+#+end_src
+
+#+RESULTS: this should be map
+#+begin_example
+((1 1 0 0 0 0 1 0 1 1)
+ (1 1 0 1 0 0 0 0 0 1)
+ (0 1 0 1 1 0 1 0 0 0)
+ (1 0 1 0 1 0 0 1 0 1)
+ (0 0 1 0 1 1 0 1 0 0)
+ (1 0 0 0 0 0 1 0 0 0)
+ (0 1 0 1 0 0 1 0 1 1)
+ (0 0 0 1 0 0 1 1 0 0)
+ (1 1 0 1 0 0 1 0 0 1)
+ (0 1 1 1 1 1 1 0 0 1))
+#+end_example
+
+...arg. It took me a good long while to figure this out, but I learned some good stuff today.
+
+1. The list:map syntax. Very important
+2. Don't forget to close off the lamdba before providing the list
+3. The lambda needs to provide something, so the function needs to know to throw away the argument passed.
+
+
+...and after seeing some of how LFE works, I am beginning to think I was missing part of how clojurecript works. The repl returns with the function definitions are part of how babel works. It might not be avoidable without multiple code blocks. Which means I HAD clojurescript working.
+
+At anyrate, I also have LFE working. And it works foe me just fine.
