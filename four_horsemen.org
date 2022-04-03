@@ -999,11 +999,11 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: ** (UndefinedFunctionError) function :timer.sleep/0 is undefined or private. Did you mean:
+: my-match
+: lfe> 
+: lfe> (my-match #(1 2))
+: ** exception error: no function clause matching
 : 
-:       * sleep/1
-: 
-:     (stdlib 3.17) :timer.sleep()
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1030,29 +1030,30 @@ That is a one liner. That is pretty cool. Does Python do that too? It's do able,
   #+end_src 
 
   #+RESULTS: quote-test
+  : three
 
   I have tried a few things to see if I can understand what is going wrong, and it appears that the single quotes are getting lost by the time it gets to interpreting the python. If I can find a way to make that work, I might go back and start re-learning Hy. But considering it's not really that stable anyway, I will stick with Elisp and Clojure for my lisp needs.
 
  #+name:quote
  #+begin_src elisp
-(print "'yo")
+(print "'yoo")
  #+end_src 
 
  #+RESULTS: quote
- : 'yo
+ : 'yoo
 
  so elisp has no problem with a bit of code with quote around it having a single single quote
 
 #+name:just-print-it
 #+begin_src hy :results output
-(print `(5 6 7))
+(print '(5 6 7))
 #+end_src 
 
 #+RESULTS: just-print-it
-: HyExpression([
-:   HyInteger(5),
-:   HyInteger(6),
-:   HyInteger(7)])
+: hy.models.Expression([
+:   hy.models.Integer(5),
+:   hy.models.Integer(6),
+:   hy.models.Integer(7)])
 
 Yeah, even with no "py" involved, as soon as there is any single quote, it doesn't work.
 
@@ -1065,6 +1066,7 @@ I wonder if it has to do with how Hy handles that character...
   #+end_src 
 
   #+RESULTS: quote-test2
+  : 34
 
   ...it worked?
 
@@ -1088,12 +1090,12 @@ print('a' + 'b')
 
 #+name:reverse-in-hy
 #+begin_src hy :results output
-(setv my_word "candy")
+(setv my_word "Candy")
 (print (py "my_word[::-1]"))
 #+end_src 
 
 #+RESULTS: reverse-in-hy
-: ydnac
+: ydnaC
 
 
 ooh. Nice. You know what? I am just going to keep using Hy. Ir does have it's downsides, but it's almost to 1.0 and it just makes so much sense for someone like me who likes the idea of Cljojure but no need to write actual Clojure code.
@@ -1820,7 +1822,6 @@ Constraints:
  
 Follow up: Could you solve it without converting the integer to a string?
 
-
 **** draft 1
    Okay, simple enough function. Take an input int, return a bool. If the number is a palindrome, return true. Else false.
 
@@ -2031,7 +2032,6 @@ Wow, well that took me all morning but I finally figured it out. I could not for
 
 Turns out when you have this sort of function definition list going, the whens kind of make the whole thing work like a case statement. If the last one is a catch all, you need to use a do block.
 
-
 ** LFE?
 
 #+name:test4
@@ -2080,6 +2080,8 @@ BUT, after learning some Elixir, I think I have a LISP that can replace Hy, and 
 update [2022-01-25 Tue]
 Looks like it's not emacs. I am getting this weird error in the Hy repl too. Not sure what is broken.
 
+update [2022-03-05 Sat]
+Hy looks like it is working again. And I kind of like the idea of keeping Hy around. 
 *** Clojure style arrow syntax in LFE
 
 #+name:clj-style-arrow
@@ -2703,7 +2705,6 @@ H.hanoi(5)
 
 
 
-
 ***** Sketching
 #+name:a_solution
 #+begin_src elixir :results output
@@ -2774,7 +2775,6 @@ this way can do a pretty simple transportation where I:
 
   first a few tests
 
- 
 ***** how to sort a elixir list
 #+name:sort-elixir-test
 #+begin_src elixir :results output
@@ -3475,11 +3475,11 @@ Okay, so calling The function multiple times does get me different values. I jus
 
   (lists:map (lambda (l)
                (wall-or-path-please l)) (lists:duplicate 10 1)))
-  (defun make-maze ()
-    "return a maze. Set of 100 nums repersenting the state of the maze path and walls"
-    (lists:map (lambda (x)
-                 (make-maze-row x))
-                 (lists:duplicate 10 1)))
+(defun make-maze ()
+  "return a maze. Set of 100 nums repersenting the state of the maze path and walls"
+  (lists:map (lambda (x)
+               (make-maze-row x))
+             (lists:duplicate 10 1)))
 
 (make-maze)
 #+end_src
@@ -3508,3 +3508,1828 @@ Okay, so calling The function multiple times does get me different values. I jus
 ...and after seeing some of how LFE works, I am beginning to think I was missing part of how clojurecript works. The repl returns with the function definitions are part of how babel works. It might not be avoidable without multiple code blocks. Which means I HAD clojurescript working.
 
 At anyrate, I also have LFE working. And it works foe me just fine.
+
+***** modify a maze
+
+I think it makes more sense to express the game board as a list of tuples. A flat list of tuples. The nested structure I got above is nice and all, but I also don't have an easy way to replace items. If I have flat list of tuples, I should be able to match on the first element of the tuple pair as a key, which can be the coordinates where the "element" of the board is. Then replace it.
+
+#+name:board-as-tuple-list
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                           (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                            (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(make-maze)
+#+end_src
+
+#+RESULTS: board-as-tuple-list
+#+begin_example
+lfe>          (cords (lists:zip cols rows)))
+lfe>     (lists:zip cords obs)))
+make-maze
+lfe> 
+lfe> (make-maze)
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 0)
+ #(#(4 1) 0)
+ #(#(5 1) 0)
+ #(#(6 1) 0)
+ #(#(7 1) 1)
+ #(#(8 1) 0)
+ #(#(9 1) 1)
+ #(#(10 1) 1)
+ #(#(1 2) 0)
+ #(#(2 2) 1)
+ #(#(3 2) 0)
+ #(#(4 2) 0)
+ #(#(5 2) 1)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 0)
+ #(#(1 3) 1)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 0)
+ #(#(5 3) 0)
+ #(#(6 3) 1)
+ #(#(7 3) 0)
+ #(#(8 ...) 1)
+ #(#(...) ...)
+ #(...) ...)
+#+end_example
+
+that's a long list. But now I think I can replace keys
+
+#+name:board-as-tuple-list2
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                           (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                            (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(set maze (make-maze))
+(set my-cord (tuple 4 2))
+(set new-tup #(#(4 2) 4))
+(lists:keyfind my-cord 1 maze)
+(lists:keyreplace my-cord 1 maze new-tup)
+#+end_src
+
+#+RESULTS: board-as-tuple-list2
+#+begin_example
+lfe> (set maze (make-maze))
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 1)
+ #(#(4 1) 0)
+ #(#(5 1) 1)
+ #(#(6 1) 1)
+ #(#(7 1) 0)
+ #(#(8 1) 1)
+ #(#(9 1) 0)
+ #(#(10 1) 1)
+ #(#(1 2) 0)
+ #(#(2 2) 0)
+ #(#(3 2) 1)
+ #(#(4 2) 0)
+ #(#(5 2) 1)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 0)
+ #(#(1 3) 0)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 1)
+ #(#(5 3) 0)
+ #(#(6 3) 1)
+ #(#(7 3) 0)
+ #(#(8 ...) 0)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (set my-cord (tuple 4 2))
+#(4 2)
+lfe> (set new-tup #(#(4 2) 4))
+#(#(4 2) 4)
+lfe> (lists:keyfind my-cord 1 maze)
+#(#(4 2) 0)
+lfe> (lists:keyreplace my-cord 1 maze new-tup)
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 1)
+ #(#(4 1) 0)
+ #(#(5 1) 1)
+ #(#(6 1) 1)
+ #(#(7 1) 0)
+ #(#(8 1) 1)
+ #(#(9 1) 0)
+ #(#(10 1) 1)
+ #(#(1 2) 0)
+ #(#(2 2) 0)
+ #(#(3 2) 1)
+ #(#(4 2) 4)
+ #(#(5 2) 1)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 0)
+ #(#(1 3) 0)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 1)
+ #(#(5 3) 0)
+ #(#(6 3) 1)
+ #(#(7 3) 0)
+ #(#(8 ...) 0)
+ #(#(...) ...)
+ #(...) ...)
+#+end_example
+
+Nice. So with that, I can now:
+- Make a list of 100 tuples
+- Those tuples will have a "coordinate" as the first element, then a 0 or 1 for the part of the board
+- The board elements are generated one at a time with a 60% chance of being a path, 40% chance of being a wall
+- With a few functions like keyfind and keyreplace, I can grab parts of the board, and update used paths to track where the player is, set a goal and starting point etc
+
+  ...next I should have a function that prints it out nicely.
+ And add the goal and start points 
+
+#+name: Add-a-start
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "Take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+
+(set my-maze (make-maze))
+(set with-point (add-points my-maze))
+(lists:keyfind 7 2 with-point)
+#+end_src
+
+#+RESULTS: Add-a-start
+#+begin_example
+lfe>     (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+add-points
+lfe> 
+lfe> (set my-maze (make-maze))
+(#(#(1 1) 1)
+ #(#(2 1) 1)
+ #(#(3 1) 0)
+ #(#(4 1) 0)
+ #(#(5 1) 0)
+ #(#(6 1) 0)
+ #(#(7 1) 0)
+ #(#(8 1) 0)
+ #(#(9 1) 0)
+ #(#(10 1) 0)
+ #(#(1 2) 0)
+ #(#(2 2) 0)
+ #(#(3 2) 1)
+ #(#(4 2) 1)
+ #(#(5 2) 1)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 1)
+ #(#(1 3) 1)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 0)
+ #(#(5 3) 0)
+ #(#(6 3) 1)
+ #(#(7 3) 0)
+ #(#(8 ...) 1)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (set with-point (add-points my-maze))
+(#(#(1 1) 1)
+ #(#(2 1) 1)
+ #(#(3 1) 0)
+ #(#(4 1) 6)
+ #(#(5 1) 0)
+ #(#(6 1) 0)
+ #(#(7 1) 0)
+ #(#(8 1) 0)
+ #(#(9 1) 0)
+ #(#(10 1) 0)
+ #(#(1 2) 0)
+ #(#(2 2) 0)
+ #(#(3 2) 1)
+ #(#(4 2) 1)
+ #(#(5 2) 1)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 1)
+ #(#(1 3) 1)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 0)
+ #(#(5 3) 0)
+ #(#(6 3) 1)
+ #(#(7 3) 0)
+ #(#(8 ...) 1)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (lists:keyfind 7 2 with-point)
+#(#(4 10) 7)
+#+end_example
+
+
+
+#+name:how-to-grab-the-nth-element-of-a-tuple
+#+begin_src lfe :results output
+(set myTup #(#(2 3) 1))
+(tref myTup 2)
+
+#+end_src
+
+#+RESULTS: tuple-practice
+: 1
+
+***** Add the points
+
+#+name: Add-a-start
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "Take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+
+(set my-maze (make-maze))
+(set with-point (add-points my-maze))
+(lists:keyfind 7 2 with-point)
+#+end_src
+
+Nice. This is enough for me to make the maze as a list of tuples, then go and replace some keys of the tuple list to have the markers I want to be the start and end point
+
+***** Make a function to print the maze or solution
+[2022-03-09 Wed]
+Since I have a way to make the the maze and add the points, it would be nice to be able to see that as somethign better than a single list of tuples. Before making the tree of posibilities, let's see if I can build a function to look at this thing.
+
+
+#+name: Print-a-maze
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.7)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "Take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+(defun format-maze (maze)
+  "Take a maze and return something for printing to standard out"
+  (format-maze-r (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze) ()))
+
+(defun format-maze-r (maze accum)
+  "recurse through the maze and make a formatted list"
+  (if (=:= (length maze) 0)
+    accum
+    (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split 10 maze) 1) "\n")))))
+
+(set my-maze (add-points (make-maze)))
+(lfe_io:format (format-maze my-maze) ())
+#+end_src
+
+#+RESULTS: Print-a-maze
+#+begin_example
+lfe>   "recurse through the maze and make a formatted list"
+lfe>   (if (=:= (length maze) 0)
+lfe>     accum
+lfe>     (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split  10 maze) 1) "\n")))))
+format-maze-r
+lfe> 
+lfe> (set my-maze (add-points (make-maze)))
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 0)
+ #(#(4 1) 6)
+ #(#(5 1) 0)
+ #(#(6 1) 1)
+ #(#(7 1) 0)
+ #(#(8 1) 0)
+ #(#(9 1) 0)
+ #(#(10 1) 0)
+ #(#(1 2) 0)
+ #(#(2 2) 1)
+ #(#(3 2) 0)
+ #(#(4 2) 0)
+ #(#(5 2) 0)
+ #(#(6 2) 0)
+ #(#(7 2) 1)
+ #(#(8 2) 1)
+ #(#(9 2) 0)
+ #(#(10 2) 0)
+ #(#(1 3) 0)
+ #(#(2 3) 0)
+ #(#(3 3) 0)
+ #(#(4 3) 0)
+ #(#(5 3) 1)
+ #(#(6 3) 1)
+ #(#(7 3) 1)
+ #(#(8 ...) 1)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (lfe_io:format (format-maze my-maze) ())
+0006010000
+0100001100
+0000111111
+1110001000
+1110000100
+0100000000
+0010001000
+0000100000
+1010100000
+0000017000
+ok
+#+end_example
+
+I think I got it. There are eralng functions for taking a list and splitting into two lists called split() and there is a function called join() that takes a seperator and puts it between all the elements of a list.
+
+So to print, I chop the map into group of 10, then join with a new line character, then print all the items in the list.
+
+...or would it be simpler to call take() of 10 on the map, print a new line, and return if the origional list is empty?
+
+Yeah, let's do that
+
+#+name:test-lfe
+#+begin_src lfe :results output
+(set my-list (list (list 5 4 "\n")
+                   (list "6" "7")))
+(lfe_io:format  my-list ())
+
+#+end_src
+
+#+RESULTS: test-lfe
+: ^E^D
+: 67ok
+
+Neverming. It looks like it would rather get one list of lists passed to io:format with strings and new lines and then be told to print it. Okay.
+
+
+#+name:more test
+#+begin_src lfe :results output
+(defmodule m)
+(defun format-maze (maze)
+  "Take a maze and print it out to standard out"
+  (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze))
+
+(format-maze (list #(#(1 1) 5) #(#(2 2) 5)))
+#+end_src
+
+#+RESULTS: more test
+: format-maze
+: lfe> 
+: lfe> (format-maze (list #(#(1 1) 5) #(#(2 2) 5)))
+: "55"
+
+***** Make a function to determin open spaces from a point
+[2022-03-10 Thu]
+The print functoin is done, and this next one should be pretty simple too. I take a point, and want to return the space above, below, and to the sides which should be easy because the points are all expressed as rows and columns. Just add and subtract 1 to the col, and the row.
+
+What gets trickery is dealing with "out of bounds". I could simply do a check and if the row and col are too big or small, drop the point from the list.
+
+Is there a better way of doing that?
+
+
+I am going to try to build a tree. A nested list of lists. I want to show how the maze can be navigated as a list of lists. Each list is going to show the branching possibilities of what the subsequent moves could be. But now that I think of it, that sounds kind of "stateful". Or am I making data? It kind of feels like it doesn't change. You could just compute this and be done with it. Furthermore, the tree is static, and is completely deterministic. Maybe just making the tree and then walking it with a BDF, or DFS is the easiest approach? Or is making the tree at the top too wasteful? Should I be trying to make it lazily?
+
+https://www.programming-idioms.org/idiom/17/create-a-tree-data-structure/3524/erlang
+
+According to this, you do trees in Erlang with records
+
+https://docs.lfe.io/v0.8/user-guide/data/4.html
+
+And according to this, you do records in LFE like this:
+
+#+name:tree
+#+begin_src lfe :results output
+(defmodule learning-about-trees
+  (export all))
+(defrecord tree
+  value
+  siblings )
+
+(set fir (make-tree
+           value '"a"
+           siblings (list 1 2 3)))
+(tree-value fir)
+#+end_src
+
+#+RESULTS: tree
+: lfe>            value '"a"
+: lfe>            siblings (list 1 2 3)))
+: #(tree "a" (1 2 3))
+: lfe> (tree-value fir)
+: "a"
+
+Okay well I could see how this works. I make a record so I can pull out two things. The value... which I guess could be the tuple which is the coordiantes value tuple, and the children.
+
+Do I want to go so far as to make the whole maze made of records?
+
+If I did, each record could have a row, a column, a wall/path/trodden state, and a list of children.
+
+If I have a list of records, I wonder if it's possible to do those key replace or key find things... looks like not.
+
+Hmn, so when do I reach for a Tuple, and when do I reach for a record? It feels like this list of tuples is a great way of representing a board. I kind of want to to records for the part with the spaces I can move to rather then making a new board.
+
+...maybe I can use a record to show how the current calculation is progressing, but use the list of tuples to represent the board?
+
+https://stackoverflow.com/questions/23697908/when-to-use-an-erlang-record-instead-of-a-tuple
+
+Looks like other people have wondered the same thing. And the answer was kind of vague, but it sounds like if I want to use records, I would go for it to help keep track of what the different parts are "called". I could use a tuple, but remembering where things are can be hard and easy to get wrong.
+
+So if I use a record, I can name the part of the data I want to pull out later.
+
+Having a record that represents the simulation is a not a bad idea. It gives me a place to store the growing list of possible next spaces the simulation can move to on the board.
+
+It think I want something like:
+1. Starting maze
+2. current "position"
+3. goal "position"
+4. List of moves so far
+5. possible moves from here
+6. "handled flag"
+
+... I guess. But I don't know how to make the records. Do I do that in a loop? Can it be done recursively?
+
+I think to find all the spaces that can be moved to, I need to expand this list of records until all the "leaves" have no possible moves. Now the question is how to I add to this list of records. That has to be where the breadth  first verses depth first search comes from. 
+
+I guess I could put the records in a cue. If it's a FIFO cue, it becomes breadth first. And a FILO makes it depth first... I think.
+
+I think I handle this recursively as such
+
+1. Take a generated maze and make a list
+2. Take the first not handled record, and for each of the possible moves, create a new record
+3. If the current record has no possible moves, set current record to handle and return
+4. Have each of these new records contain the new fields, and set the flag of the "parent" to "handled"
+5. Take a look at the children being created. If one of them has their "current position" as being their "goal position" then return (we are done)
+6. These new records get appended to the origional maze list.
+7. If the search is Depth first. add these new children to the top so they get handled quicker
+8. If this search if bredth first, add these new kids to the end so they are searched last
+9. Recurse through this list till either a child is generetd that is at the goal, or all the records in this list have been visited. This is sort of like a "second base case"
+10. The first base case if a child is made where the currnet posotion is the goal
+11. The second base case is if the entirty of the list all have their "handled" flag set
+
+    I can use the list of simulation records to "count" how many tries the search took. I need to return two things.
+    1. The record who's current postion equals it's goal.
+
+    2. The the count of the list of simulation records.
+
+Hmn... I think I can make this
+
+****** LFE Record to the rescue
+
+#+name:lfe-record-draft1
+#+begin_src lfe :results output
+(defmodule learning-about-trees
+  (export all))
+(defrecord tree
+  maze
+  c-position
+  g-position
+  move-list
+  move-options
+  handled?)
+
+(set fir (make-tree
+           maze '"this will be a maze"
+           c-position #(#(1 2) 4)))
+(tree-c-position fir)
+#+END_SRC
+
+#+RESULTS: lfe-record-draft1
+: lfe>            maze '"this will be a maze"
+: lfe>            c-position #(#(1 2) 4)))
+: #(tree
+:   "this will be a maze"
+:   #(#(1 2) 4)
+:   undefined undefined undefined undefined)
+: lfe> (tree-c-position fir)
+: #(#(1 2) 4)
+
+This is not so bad.
+
+I need a naming convention for the records. This is something I didn't need to do with tuples.
+
+I think the list of moves uniquely identifies each node. So when I take a record and try to make it's tree, I can just take the name of the parrent and add the potenial space to move to to the name when I make the child.
+
+#+name:lfe-record-draft2
+#+begin_src lfe :results output
+(defmodule learning-about-trees
+  (export all))
+
+
+
+(defrecord tree
+  maze
+  c-position
+  g-position
+  move-list
+  move-options
+  handled?)
+
+(set (cons "e" "fir") (make-tree
+           maze '"this will be a maze"
+           c-position #(#(1 2) 4)))
+(tree-c-position (cons "e" "fir"))
+#+END_SRC
+
+#+RESULTS: lfe-record-draft2
+#+begin_example
+lfe>            maze '"this will be a maze"
+lfe>            c-position #(#(1 2) 4)))
+,** exception error: no match of value #(tree
+                                     "this will be a maze"
+                                     #(#(1 2) 4)
+                                     undefined undefined undefined
+                                     undefined)
+
+lfe> (tree-c-position (cons "e" "fir"))
+,** exception error: bad argument
+  in (erlang : element 3 ("e" 102 105 114))
+
+#+end_example
+
+#+name:ttest
+#+begin_src lfe :results output
+(cons "e" "hi")
+#+end_src
+
+#+RESULTS: ttest
+: ("e" 104 105)
+
+
+****** Okay maybe not
+It looks like making a new record for each node as I traverse the maze it actually kind of tough. Giving it a name is hard. So rather than making a bunch of records, I think it's better to make it all in a tuple.
+
+...or is it a nested list of lists?
+
+I think I am going to change this around a little:
+
+Things to track:
+- Maze
+- current position
+- goal
+- places to visit
+- places done
+
+  Each place should contain not just where it is, but the path took to get there.
+
+  ...having written all this, this looks so darned state heavy. There must be a more functional way of solving this.
+
+ Let's see how they do it in Haskel
+
+Okay, Haskell solutions track two data structures, so I will too.
+
+I think I will store positions as the whole maze. I can use a marker to show the path travered. All potential places to visit from a point will be placed in the "places to visit" list. And once a "place has been visited, append the place to the places done list.
+
+
+...so I need a function that takes a maze with a current positon and returns one maze per porential move.
+
+Okay, I can write that.
+
+
+
+#+name:where-can-i-go
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.7)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+(defun format-maze (maze)
+  "take a maze and return something for printing to standard out"
+  (format-maze-r (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze) ()))
+
+(defun format-maze-r (maze accum)
+  "recurse through the maze and make a formatted list"
+  (if (=:= (length maze) 0)
+    accum
+    (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split 10 maze) 1) "\n")))))
+
+
+
+(defun list-open-spaces
+  ;; "pattern match to find the valid spaces from a given position"
+([1 10] '('(2 10) '(1 9)))
+([10 10] '('(9 10) '(10 9)))
+([1 1] '('(9 10) '(10 9)))
+([10 1] '('(10 2) '(9 1)))
+([1 n] (list (list 2 n) (list 1 (- n 1)) (list 1 (+ n 1))))
+([n 1] (list (list n 2) (list (- n 1) 1) (list (+ n 1) 1)))
+([10 n] (list (list 9 n) (list 10 (- n 1)) (list 10 (+ n 1))))
+([n 10] (list (list n 9) (list (- n 1) 10) (list (+ n 1) 10)))
+([n m] (list (list n (+ m 1)) (list n (- m 1)) (list (+ n 1) m) (list(- n 1) m))))
+
+;; (set my-maze (add-points (make-maze)))
+;; (lfe_io:format (format-maze my-maze) ())
+(list-open-spaces 4 5)
+#+end_src
+
+#+RESULTS: where-can-I-go
+#+begin_example
+lfe> ([n 1] (list (list n 2) (list (- n 1) 1) (list (+ n 1) 1)))
+lfe> ([10 n] (list (list 9 n) (list 10 (- n 1)) (list 10 (+ n 1))))
+lfe> ([n 10] (list (list n 9) (list (- n 1) 10) (list (+ n 1) 10)))
+lfe> ([n m] (list (list n (+ m 1)) (list n (- m 1)) (list (+ n 1) m) (list(- n 1) m))))
+list-open-spaces
+lfe> 
+lfe> ;; (set my-maze (add-points (make-maze)))
+lfe> ;; (lfe_io:format (format-maze my-maze) ())
+lfe> (list-open-spaces 4 5)
+((4 6) (4 4) (5 5) (3 5))
+#+end_example
+
+shucks. I think I should be pattern matching here. I want to say:
+
+Give me a list where col + 1 and row + 1 and col - 1 and row -1 and all their conbinations are combined. Then drop all the elements of the list where col or row is 0 or 11
+
+It just feels so wasteful when it's only ever going to be 4 items long. I kind of wish there was a way of expressing that without so many ifs. 
+
+It's like I only want to add the row + 1 if row + 1 is not 11. 
+
+Okay time for another digression.
+
+
+#+name:give-me-4-if-I-want-them
+#+begin_src lfe :results output
+(defmodule m)
+(defun my-match
+([1 _] '"The first item was a 1")
+([_ 1] '"The second item was a 1")
+([_ _] '"Catch all"))
+
+(my-match 1 2)
+
+#+end_src
+
+#+RESULTS: give-me-4-if-I-want-them
+: lfe> 
+: lfe> (my-match 1 2)
+: "The first item was a 1"
+
+Interesting. You can do pattern matching on the arguments passed to functions.
+
+All Right! I have made a way to pattern match my way to the valid spaces in a map using just... a bunch of clauses. lol. 
+
+I wonder if I can do this with a tuple?
+
+#+name:testtt
+#+begin_src lfe :results output
+(defmodule m)
+(defun my-match
+  ([#(1 _)] '"The first item was a 1")
+  ([#(_  1 )] '"The second item was a 1")
+  ([#(_ _)] '"Catch all"))
+
+(my-match #(1 2))
+#+end_src
+
+#+RESULTS: testtt
+: my-match
+: lfe> 
+: lfe> (my-match #(1 2))
+: ** exception error: no function clause matching
+: 
+
+I can't imagine it's impossible but it's not written like that at any rate
+
+
+
+#+name:where-can-i-go-2
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.7)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+(defun format-maze (maze)
+  "take a maze and return something for printing to standard out"
+  (format-maze-r (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze) ()))
+
+(defun format-maze-r (maze accum)
+  "recurse through the maze and make a formatted list"
+  (if (=:= (length maze) 0)
+    accum
+    (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split 10 maze) 1) "\n")))))
+
+
+
+(defun list-open-spaces
+  ;; "pattern match to find the valid spaces from a given position"
+([1 10] '(#(2 10) #(1 9)))
+([10 10] '(#(9 10) #(10 9)))
+([1 1] '(#(9 10) #(10 9)))
+([10 1] '(#(10 2) #(9 1)))
+([1 n] (list (tuple 2 n) (tuple 1 (- n 1)) (tuple 1 (+ n 1))))
+([n 1] (list (tuple n 2) (tuple (- n 1) 1) (tuple (+ n 1) 1)))
+([10 n] (list (tuple 9 n) (tuple 10 (- n 1)) (tuple 10 (+ n 1))))
+([n 10] (list (tuple n 9) (tuple (- n 1) 10) (tuple (+ n 1) 10)))
+([n m] (list (tuple n (+ m 1)) (tuple n (- m 1)) (tuple (+ n 1) m) (tuple(- n 1) m))))
+
+(defun valid-move-from-spacelist [s-list maze]
+  "take a list of spaces that could be moved to and a maze and return only those spaces could be a vaild move"
+  (lists:filter (lambda (y) (=:= (tref y 2) 0)) 
+                (lists:map (lambda (x) (lists:keyfind x 1 maze)) s-list)))
+
+
+
+;; (set my-maze (add-points (make-maze)))
+;; (lfe_io:format (format-maze my-maze) ())
+(set my-maze (add-points (make-maze)))
+(valid-move-from-spacelist (list-open-spaces 4 5) my-maze)
+#+end_src
+
+#+RESULTS: where-can-i-go-2
+#+begin_example
+lfe>          (new-pos-moves (cons pos-moves (vaild-move-from-spacelist (list-open-spaces (list-from-maze-space move-here)))))
+lfe>          (new-fin-moves (cons fin-moves move-here)))
+lfe>     (list new-maze goal new-pos-moves new-fin-moves)))
+return-new-simulation-set
+lfe> 
+lfe> 
+lfe> ;; (lfe_io:format (format-maze my-maze) ())
+lfe> (set my-maze (add-points (make-maze)))
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 0)
+ #(#(4 1) 6)
+ #(#(5 1) 0)
+ #(#(6 1) 0)
+ #(#(7 1) 0)
+ #(#(8 1) 1)
+ #(#(9 1) 1)
+ #(#(10 1) 0)
+ #(#(1 2) 0)
+ #(#(2 2) 0)
+ #(#(3 2) 0)
+ #(#(4 2) 0)
+ #(#(5 2) 0)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 0)
+ #(#(9 2) 0)
+ #(#(10 2) 0)
+ #(#(1 3) 0)
+ #(#(2 3) 1)
+ #(#(3 3) 1)
+ #(#(4 3) 0)
+ #(#(5 3) 0)
+ #(#(6 3) 0)
+ #(#(7 3) 0)
+ #(#(8 ...) 0)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (set initial (list my-maze
+lfe>                    (lists:keyfind 6 2 my-maze)
+lfe>                    (vaild-move-from-spacelist (list-open-spaces (list-from-maze-space (lists:keyfind 6 2 my-maze))))))
+,** exception error: function vaild-move-from-spacelist/1 undefined
+  in lfe_eval:eval_error/1 (src/lfe_eval.erl, line 1242)
+  in lists:map/2 (lists.erl, line 1243)
+  in lists:map/2 (lists.erl, line 1243)
+
+lfe> (return-new-simulation-set (lists:flatten initial '() (caddr initial)))
+,** exception error: function return-new-simulation-set/1 undefined
+
+#+end_example
+
+[2022-03-19 Sat]
+
+Done. Nice. With this I now have a way of taking a maze, and a list of places near a point (which would be the current position, and I can now return a list of spaces nearby but only if they are open spaces.
+
+That would represent a "step" in solving the maze. I would make the next step by changing on of those vaild steps as the current place, set the old currnet place to a "covered" idicator, and retunr a new maze, plus it's new potenially vaild moves.
+
+
+It's so close to being done
+
+
+***** make the data structure to hold each step
+
+Small digression, do I want to or need to track current square? Maybe it's better to just track which spaces have been visited and in what order. If I know where I am "currently" in the maze, I would be able to know where I can go from there, but if I do that, I also need to be able to re-try the maze if I hit a dead end and need to be able to re-try till I have exhausted all the routes I can take.
+
+If I just search from all possible options, I can just run the maze once, but I won't know which "route" was actually taken.
+
+So wait, what things do I need to track again?
+1. Current maze
+2. Current postion?
+3. list of possible moves
+4. list of visited spaces 
+
+Maybe just the list of spaces that were visited is enough. I don't really need to know where I am if have the visited spaces. Because I can just trace the path of where the solver when by connecting the dots between the guesses. So I can just list all the possibilities, make one of them "visited", re-calculated where I could go next, and return the new set. If there are no more options, call it a day. I need a step which I search to see if the goal has been "visited".
+
+I guess I could check the whole map to see if the goal space still exists?
+
+Or I could build into the function that picks which space to visit next choose the goal?
+
+No no, I want to see when it find the goals "by accident", so I want to check the goal thing before visiting the next space.
+
+Okay, so I should track if the goal has been visited. And I think the easier check is to check the list of visited spaces and see if it contains the goal space. And if I am calling this once per step, might as well keep the goal in the structure I pass to each step.
+
+
+1. Current maze
+2. list of possible moves
+3. list of visited spaces
+4. where the goal is
+
+That looks pretty good to me. I make the first set by searching the map for where the goal space is. place that at the end. run the first possible space function call, then return the whole set.
+
+I pass that to a function that:
+1. checks to see if the goal has been visited
+2. boogie if there are no more possible moves
+3. recursively takes a move from possible, calculates the next structure, and returns the next structure with the updated map, and list of moves made.
+
+#+name:maze-struct
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.7)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+(defun format-maze (maze)
+  "take a maze and return something for printing to standard out"
+  (format-maze-r (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze) ()))
+
+(defun format-maze-r (maze accum)
+  "recurse through the maze and make a formatted list"
+  (if (=:= (length maze) 0)
+    accum
+    (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split 10 maze) 1) "\n")))))
+
+(defun list-from-maze-space [tup]
+  "take a tuple, reutn a list witht the same two things"
+  (list (tref (tref tup 1) 1)
+        (tref (tref tup 1) 2)))
+
+(defun list-open-spaces
+  ;; "pattern match to find the valid spaces from a given position"
+([1 10] '(#(2 10) #(1 9)))
+([10 10] '(#(9 10) #(10 9)))
+([1 1] '(#(9 10) #(10 9)))
+([10 1] '(#(10 2) #(9 1)))
+([1 n] (list (tuple 2 n) (tuple 1 (- n 1)) (tuple 1 (+ n 1))))
+([n 1] (list (tuple n 2) (tuple (- n 1) 1) (tuple (+ n 1) 1)))
+([10 n] (list (tuple 9 n) (tuple 10 (- n 1)) (tuple 10 (+ n 1))))
+([n 10] (list (tuple n 9) (tuple (- n 1) 10) (tuple (+ n 1) 10)))
+([n m] (list (tuple n (+ m 1)) (tuple n (- m 1)) (tuple (+ n 1) m) (tuple(- n 1) m))))
+
+(defun valid-move-from-spacelist [s-list maze]
+  "take a list of spaces that could be moved to and a maze and return only those spaces could be a vaild move"
+  (lists:filter (lambda (y) (=:= (tref y 2) 0)) 
+                (lists:map (lambda (x) (lists:keyfind x 1 maze)) s-list)))
+
+(defun return-new-simulation-set (maze-set goal pos-moves fin-moves move-here)
+  "take a maze struct and return a new maze struct based on one of the moves being chossen" 
+  (let* (
+         (new-maze (lists:keyreplace (tref move-here 1) 1 maze-set (tuple (tref move-here 1) 6)))
+         (new-pos-moves (cons pos-moves (valid-move-from-spacelist 
+                                         (list-open-spaces  (car (list-from-maze-space move-here))
+                                                            (lists:nth 2 (list-from-maze-space move-here))) maze-set)))
+         (new-fin-moves (cons fin-moves move-here)))
+    (list new-maze goal new-pos-moves new-fin-moves)))
+
+
+(set my-maze (add-points (make-maze)))
+(set initial (list my-maze
+                   (lists:keyfind 7 2 my-maze)
+                   (valid-move-from-spacelist 
+                    (list-open-spaces  (car (list-from-maze-space (lists:keyfind 6 2 my-maze)))
+                                       (lists:nth 2 (list-from-maze-space (lists:keyfind 6 2 my-maze)))) my-maze)))
+
+(lfe_io:format (format-maze (car(return-new-simulation-set (car initial) (cadr initial) (caddr initial) '() (car (caddr initial))))) ())
+#+end_src
+
+#+RESULTS: maze-struct
+#+begin_example
+lfe>     (list new-maze goal new-pos-moves new-fin-moves)))
+return-new-simulation-set
+lfe> 
+lfe> 
+lfe> (set my-maze (add-points (make-maze)))
+(#(#(1 1) 0)
+ #(#(2 1) 0)
+ #(#(3 1) 1)
+ #(#(4 1) 1)
+ #(#(5 1) 0)
+ #(#(6 1) 0)
+ #(#(7 1) 0)
+ #(#(8 1) 6)
+ #(#(9 1) 1)
+ #(#(10 1) 0)
+ #(#(1 2) 0)
+ #(#(2 2) 1)
+ #(#(3 2) 0)
+ #(#(4 2) 1)
+ #(#(5 2) 0)
+ #(#(6 2) 0)
+ #(#(7 2) 0)
+ #(#(8 2) 0)
+ #(#(9 2) 1)
+ #(#(10 2) 1)
+ #(#(1 3) 0)
+ #(#(2 3) 0)
+ #(#(3 3) 1)
+ #(#(4 3) 0)
+ #(#(5 3) 1)
+ #(#(6 3) 0)
+ #(#(7 3) 0)
+ #(#(8 ...) 0)
+ #(#(...) ...)
+ #(...) ...)
+lfe> (set initial (list my-maze
+lfe>                    (lists:keyfind 7 2 my-maze)
+lfe>                    (valid-move-from-spacelist 
+lfe>                     (list-open-spaces  (car (list-from-maze-space (lists:keyfind 6 2 my-maze)))
+lfe>                                        (lists:nth 2 (list-from-maze-space (lists:keyfind 6 2 my-maze)))) my-maze)))
+((#(#(1 1) 0)
+  #(#(2 1) 0)
+  #(#(3 1) 1)
+  #(#(4 1) 1)
+  #(#(5 1) 0)
+  #(#(6 1) 0)
+  #(#(7 1) 0)
+  #(#(8 1) 6)
+  #(#(9 1) 1)
+  #(#(10 1) 0)
+  #(#(1 2) 0)
+  #(#(2 2) 1)
+  #(#(3 2) 0)
+  #(#(4 2) 1)
+  #(#(5 2) 0)
+  #(#(6 2) 0)
+  #(#(7 2) 0)
+  #(#(8 2) 0)
+  #(#(9 2) 1)
+  #(#(10 2) 1)
+  #(#(1 3) 0)
+  #(#(2 3) 0)
+  #(#(3 3) 1)
+  #(#(4 3) 0)
+  #(#(5 3) 1)
+  #(#(6 3) 0)
+  #(#(7 ...) 0)
+  #(#(...) ...)
+  #(...) ...)
+ #(#(1 10) 7)
+ (#(#(8 2) 0) #(#(7 1) 0)))
+lfe> 
+lfe> (lfe_io:format (format-maze (car(return-new-simulation-set (car initial) (cadr initial) (caddr initial) '() (car (caddr initial))))) ())
+0011000610
+0101000611
+0010100000
+1000000000
+0000010000
+0010010001
+0000001110
+1000100010
+1000011011
+7000001000
+ok
+#+end_example
+
+
+***** recurse through posobileties
+
+
+#+name:maze-recurse
+#+begin_src lfe :results output
+(defmodule m
+  (export all))
+
+(defun wall-or-path-please ()
+  "return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.6)
+    1
+    0))
+
+(defun wall-or-path-please (x)
+  "toss the x and return a 60% chance path, 40% chance wall"
+  (random:seed (erlang:system_time)(erlang:system_time)(erlang:system_time))
+  (if (> (random:uniform) 0.7)
+    1
+    0))
+
+(defun make-maze ()
+  "return 100 tuples of the map element's cordinates and element"
+  (let* ((obs (lists:flatten(lists:map (lambda (x)
+                                         (wall-or-path-please x)) (lists:duplicate 100 1))))
+         (rows (lists:flatmap (lambda (x)
+                                (lists:duplicate 10 x)) (lists:seq 1 10)))
+         (cols (lists:flatten (lists:duplicate 10 (lists:seq 1 10))))
+         (cords (lists:zip cols rows)))
+    (lists:zip cords obs)))
+
+(defun add-points (maze)
+  "take a maze and add the beginning point"
+  (let* ((start-point (tuple (tuple (random:uniform 10) 1) 6))
+         (end-point (tuple (tuple (random:uniform 10) 10) 7))
+         ;; (if (=:= (tref start-point 1) (tref end-point 1))
+         ;;   (add-points maze))
+         (new-map (lists:keyreplace (tref start-point 1) 1 maze start-point)))
+
+    (lists:keyreplace (tref end-point 1) 1 new-map end-point)))
+
+(defun format-maze (maze)
+  "take a maze and return something for printing to standard out"
+  (format-maze-r (lists:flatmap (lambda (x) (erlang:integer_to_list (tref x 2))) maze) ()))
+
+(defun format-maze-r (maze accum)
+  "recurse through the maze and make a formatted list"
+  (if (=:= (length maze) 0)
+    accum
+    (format-maze-r (tref (lists:split 10 maze) 2) (cons accum (list (tref (lists:split 10 maze) 1) "\n")))))
+
+(defun list-from-maze-space [tup]
+  "take a tuple, reutn a list witht the same two things"
+  (list (tref (tref tup 1) 1)
+        (tref (tref tup 1) 2)))
+
+(defun list-open-spaces
+  ;; "pattern match to find the valid spaces from a given position"
+  ([1 10] '(#(2 10) #(1 9)))
+  ([10 10] '(#(9 10) #(10 9)))
+  ([1 1] '(#(1 2) #(2 1)))
+  ([10 1] '(#(10 2) #(9 1)))
+  ([1 n] (list (tuple 2 n) (tuple 1 (- n 1)) (tuple 1 (+ n 1))))
+  ([n 1] (list (tuple n 2) (tuple (- n 1) 1) (tuple (+ n 1) 1)))
+  ([10 n] (list (tuple 9 n) (tuple 10 (- n 1)) (tuple 10 (+ n 1))))
+  ([n 10] (list (tuple n 9) (tuple (- n 1) 10) (tuple (+ n 1) 10)))
+  ([n m] (list (tuple n (+ m 1)) (tuple n (- m 1)) (tuple (+ n 1) m) (tuple(- n 1) m))))
+
+(defun valid-move-from-spacelist [s-list maze]
+  "take a list of spaces that could be moved to and a maze and return only those spaces could be a vaild move"
+  (lists:filter (lambda (y) (or (=:= (tref y 2) 0)
+                                (=:= (tref y 2) 7))) 
+                (lists:map (lambda (x) (lists:keyfind x 1 maze)) s-list)))
+
+(defun return-new-simulation-set (maze-set goal pos-moves fin-moves move-here)
+  "take a maze struct and return a new maze struct based on one of the moves being chossen" 
+  (let* (
+         (new-maze (lists:keyreplace (tref move-here 1) 1 maze-set (tuple (tref move-here 1) 6)))
+         (new-pos-moves (sets:to_list (sets:from_list
+(lists:flatten (list pos-moves (valid-move-from-spacelist 
+                                                        (list-open-spaces  (car (list-from-maze-space move-here))
+                                                                           (lists:nth 2 (list-from-maze-space move-here))) new-maze))))))
+         (new-fin-moves (lists:flatten (list fin-moves move-here))))
+    (list new-maze goal new-pos-moves new-fin-moves)))
+
+(defun maze-search ()
+  (let* ((my-maze (add-points (make-maze)))
+         (goal (lists:keyfind 7 2 my-maze))
+         (pos-spaces (valid-move-from-spacelist 
+                      (list-open-spaces  (car (list-from-maze-space (lists:keyfind 6 2 my-maze)))
+                                         (lists:nth 2 (list-from-maze-space (lists:keyfind 6 2 my-maze)))) my-maze))
+         (fin-moves (list (lists:keyfind 6 2 my-maze))))
+    (lfe_io:format (format-maze my-maze) ())
+    (maze-recur (list my-maze goal pos-spaces fin-moves))))
+
+(defun maze-recur [list-of-maze-stuff]
+  ;; (lfe_io:format (format-maze (car list-of-maze-stuff)) ())
+  ;; (lfe_io:format "~n" () )
+  (let* ((maze (car list-of-maze-stuff))
+         (goal (cadr list-of-maze-stuff))
+         (pos-moves (caddr list-of-maze-stuff))
+         (fin-moves (cadddr list-of-maze-stuff)))
+    (cond 
+     ((=:= (length (lists:filter (lambda (x) (=:= x goal)) fin-moves)) 1)
+      (list "goal" maze fin-moves))
+     ((=:= (length pos-moves) 0)
+      (list "no more posobileties" maze fin-moves))
+     ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves) fin-moves (car pos-moves)))))))
+
+(set result (maze-search))
+(set result-maze (format-maze (cadr result)))
+(lfe_io:format result-maze ())
+#+end_src
+
+#+RESULTS: maze-recurse
+#+begin_example
+lfe>          (goal (cadr list-of-maze-stuff))
+lfe>          (pos-moves (caddr list-of-maze-stuff))
+lfe>          (fin-moves (cadddr list-of-maze-stuff)))
+lfe>     (cond 
+lfe>      ((=:= (length (lists:filter (lambda (x) (=:= x goal)) fin-moves)) 1)
+lfe>       (list "goal" maze fin-moves))
+lfe>      ((=:= (length pos-moves) 0)
+lfe>       (list "no more posobileties" maze fin-moves))
+lfe>      ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves) fin-moves (car pos-moves)))))))
+maze-recur
+lfe> 
+lfe> (set result (maze-search))
+1001000060
+0000010010
+1010010010
+1010010001
+1000000001
+0100011000
+0101001010
+0001000001
+0100000100
+0010701000
+("goal"
+ (#(#(1 1) 1)
+  #(#(2 1) 0)
+  #(#(3 1) 0)
+  #(#(4 1) 1)
+  #(#(5 1) 0)
+  #(#(6 1) 0)
+  #(#(7 1) 6)
+  #(#(8 1) 6)
+  #(#(9 1) 6)
+  #(#(10 1) 6)
+  #(#(1 2) 0)
+  #(#(2 2) 0)
+  #(#(3 2) 0)
+  #(#(4 2) 0)
+  #(#(5 2) 0)
+  #(#(6 2) 1)
+  #(#(7 2) 6)
+  #(#(8 2) 0)
+  #(#(9 2) 1)
+  #(#(10 2) 6)
+  #(#(1 3) 1)
+  #(#(2 3) 0)
+  #(#(3 3) 1)
+  #(#(4 3) 0)
+  #(#(5 3) 0)
+  #(#(6 3) 1)
+  #(#(7 ...) 6)
+  #(#(...) ...)
+  #(...) ...)
+ (#(#(9 1) 6)
+  #(#(8 1) 0)
+  #(#(7 1) 0)
+  #(#(7 2) 0)
+  #(#(10 1) 0)
+  #(#(10 2) 0)
+  #(#(7 3) 0)
+  #(#(7 4) 0)
+  #(#(8 4) 0)
+  #(#(8 3) 0)
+  #(#(8 5) 0)
+  #(#(8 6) 0)
+  #(#(9 5) 0)
+  #(#(9 4) 0)
+  #(#(8 7) 0)
+  #(#(8 8) 0)
+  #(#(7 8) 0)
+  #(#(7 9) 0)
+  #(#(6 9) 0)
+  #(#(6 10) 0)
+  #(#(5 10) 7)))
+lfe> (set result-maze (format-maze (cadr result)))
+((((((((((() "1001006666" "\n") "0000016016" "\n") "1010016610" "\n")
+       "1010016661"
+       "\n")
+      "1000000661"
+      "\n")
+     "0100011600"
+     "\n")
+    "0101001610"
+    "\n")
+   "0001006601"
+   "\n")
+  "0100066100"
+  "\n")
+ "0010661000"
+ "\n")
+lfe> (lfe_io:format result-maze ())
+1001006666
+0000016016
+1010016610
+1010016661
+1000000661
+0100011600
+0101001610
+0001006601
+0100066100
+0010661000
+ok
+#+end_example
+
+*** Missionaries and Canibals 
+[2022-03-22 Tue]
+Wow, the last problem almost stopped me for a whole month. After getting slowed down by bouncing around in LFE, I kind want to just code in Elixir for a while. As much as I like LFE, I kind of want a little more editor support if I can get it.
+
+...okay looking at problem 3 it appears to be another tree traversal problem. The conditions are:
+1. The must always be more Missionaries than Cambials than... you know what can I make this cats and dogs?
+2. More dogs than cats
+3. only two can be in a boat at a time
+4. the boat must have at least one animal in it move.
+
+Hmn.
+
+The textbook looks like it does basically the same thing I did in LFE. I make a data structure that describes a "game state" and a function to list possible sequential options. Then add those to a cue, and generate more options.
+
+Don't forget you need to track the total number of dogs and cats on the opposite bank. And the goal is to move all animals to the other side.
+
+**** Let's get a data structure going
+Started on [2022-03-23 Wed] 
+
+Part of me thinks it's better to make a record and just write to it's fields the whole time. 
+
+Let's get a thing going and see what it can hold
+
+Wow, the Syntax is all brand new again. I wonder if I will be able to hold these Erlang languages in my head long enough to need them for work?
+
+#+name:dogs_and_cats
+#+begin_src elixir :results output
+defmodule dc do
+  require record
+  def myfun(num) do
+    1 + num
+  end
+  record.defrecord(:sim, text: "hi", num: 4)
+end
+
+require dc
+my_sim = dc.sim()
+#+end_src
+
+#+RESULTS: dogs_and_cats
+: [33mwarning: [0mredefining module Dc (current version defined in memory)
+:   iex:1
+: 
+: {:sim, "hi", 4}
+
+This is kind of cool.
+
+#+name:sessions
+#+begin_src elixir :results output
+new_sim = Dc.sim(my_sim, num: 55)
+#+end_src
+
+#+RESULTS: sessions
+: {:sim, "hi", 55}
+
+That is pretty cool. If I want to return a new "simulation state", I can just call this, and name the things I want changed and spit out the changes
+
+#+name:perminent
+#+begin_src elixir :results output
+new_sim
+#+end_src
+
+#+RESULTS: perminent
+: {:sim, "hi", 55}
+
+And it's immutable. So I can only return new copies. But I can imagine that working. 
+
+
+Let's do this with records this time.
+
+**** Get data structure defined
+
+#+name:DC_rec
+#+begin_src elixir :results output
+defmodule Dc do
+  
+  require Record
+  
+  def myfun(num) do
+    1 + num
+  end
+  
+  Record.defrecord(:sim, 
+    total_dogs: 5, 
+    total_cats: 5, 
+    goal_flag: false)
+
+  def add_5_dogs(rec) do
+    sim(rec, total_dogs: sim(rec, :total_dogs) + 5)
+  end
+  
+  def remove_2_cats(rec) do
+    sim(rec, total_cats: sim(rec, :total_cats) - 2)
+ end 
+  
+end
+
+require Dc
+my_sim = Dc.sim()
+|> Dc.add_5_dogs()
+|> Dc.remove_2_cats()
+#+end_src
+
+#+RESULTS: DC_rec
+#+begin_example
+,** (CompileError) iex:24: module Dc is not loaded but was defined. This happens when you depend on a module in the same context in which it is defined. For example:
+
+    defmodule MyApp do
+      defmodule Mod do
+      end
+
+      use Mod
+    end
+
+Try defining the module outside the context that uses it:
+
+    defmodule MyApp.Mod do 
+    end
+
+    defmodule MyApp do
+      use MyApp.Mod
+    end
+
+If the module is defined at the top-level and you are trying to use it at the top-level, this is not supported by Elixir
+    (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
+    iex:7: (file)
+#+end_example
+
+Okay that seems pretty good. I can make a record with fields, and then to use it, I can just instantiate a instance, and update it's fields with functions. 
+
+Tat is actually a lot easier than what I was doing in LFE. Man... I did that whole LFE thing the hard way. Updating a single field should have been so easy.
+
+**** Need a way to track where I have come from
+[2022-03-28 Mon]
+So I was thinking about this on my way home. I was trying to figure out how I am going to track which steps came before the step I am on. The maze problem never really posed this problem because I could always see what spaces had been visited, and I wanted to see the meandering along the way. But now I just want the result to show a nice clean set of steps with none of the other stuff tried along the way.
+
+I guess I could make "fields" for ancestry. Mark a branch as "alive" if it has leaves. Mark a branch as dead if all it's leaves and branches are dead. 
+
+...or I think if I just have a function that lets each step know who it's direct anccestor is, that might be all I need.
+
+What does that look like?
+
+
+#+name:DC_ancestor
+#+begin_src elixir :results output
+# defmodule Dc do
+  
+#   require Record
+
+#   def myfun(num) do
+#     1 + num
+#   end
+  
+#   Record.defrecord(:sim, 
+#     total_dogs: 5, 
+#     total_cats: 5, 
+#     goal_flag: false,
+#   parrent: :sim)
+
+#   def add_5_dogs(rec) do
+#     sim(rec, total_dogs: sim(rec, :total_dogs) + 5)
+#   end
+  
+#   def remove_2_cats(rec) do
+#     sim(rec, total_cats: sim(rec, :total_cats) - 2)
+#  end 
+  
+# end
+
+require Dc
+my_sim = Dc.sim()
+child = Dc.sim(parrent: my_sim)
+# Dc.sim(child, :parrent)
+
+#+end_src
+
+#+RESULTS: DC_ancestor
+: {:sim, 5, 5, false, {:sim, 5, 5, false, :sim}}
+
+Well this is certainly a way to nest records in each other.  And that is what I was doing in the... wait no I didn't nest them in the maze problem. I just listed the spaces I have visited in a list and kept that along with the simulation. That was a flat list. This code above lists a way you could put a record in a record. Nice for showing a parent who their parent is. And printing this out should be simple enough to do by just making a recursive call to each record to print it's self and then it's parent and their parent etc.
+
+So each leaf would be defined by how they got to be a leaf. And if they are unable to grow, how so I know not to visit it again and not go back... ah, I need to leave a marker to say I have visited a branch.
+
+
+Okay:
+
+1. Make a record that holds the game state
+2. It also needs to hold a record that shows where it came from, or what game state it was derived from
+3. I am going to make a list of these game states
+4. Each state will also hold what vaild states could results from where the game is now
+5. There will also be a boolean flag for is it has been "visited" or not
+6. I then pass the initial game state to a function that returns the next step of the simulations, or rather all the possible states that could result
+7. Each of those new possible states will get added to the list, and each posobilety will hold a slot that say where is came from. a nest or records.
+8. As each branch/leaf is visited, it is flipped to show the visited flag, and as the simunlation progresses, the outer most record is processed if it hasn't been visited.
+9. If a state is found to be the goal state, pass it to a function that prints out how to solve the simulation by looking at each ancestor in turn
+10. If there are no more states that have not been visited (meaning the last node visited has also returned no new posobileties, then the simulation has failed and there is no possible answer.
+
+
+That is not so bad.
+
+
+#+name:DC_ancestor2
+#+begin_src elixir :results output
+defmodule Dc do
+  require Record
+  
+  Record.defrecord(:sim, 
+    total_dogs_east: 5, 
+    total_cats_east: 5, 
+    boat_loc: "east",
+    visited: false,
+  parrent: "root")
+end
+
+require Dc
+start = Dc.sim()
+child = Dc.sim(parrent: start)
+Dc.sim(child)
+
+#+end_src
+
+#+RESULTS: DC_ancestor2
+: [
+:   total_dogs_east: 5,
+:   total_cats_east: 5,
+:   boat_loc: "east",
+:   visited: false,
+:   parrent: {:sim, 5, 5, "east", false, "root"}
+: ]
+
+**** It's getting there
+
+Let's split module definition and execution into two blocks
+
+#+name:record_block
+#+begin_src elixir :results output
+defmodule Dc do
+  require Record
+  
+  Record.defrecord(:sim, 
+    total_dogs_east: 5, 
+    total_cats_east: 5, 
+    boat_loc: "east",
+    visited: false,
+    parrent: "root")
+  
+  def return_child(s) do
+    sim(parrent: s)
+  end
+
+end
+#+end_src
+
+#+RESULTS: record_block
+: [33mwarning: [0mredefining module Dc (current version defined in memory)
+:   iex:1
+: 
+: {:module, Dc,
+:  <<70, 79, 82, 49, 0, 0, 8, 72, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 207,
+:    0, 0, 0, 21, 9, 69, 108, 105, 120, 105, 114, 46, 68, 99, 8, 95, 95, 105, 110,
+:    102, 111, 95, 95, 10, 97, 116, 116, ...>>, {:return_child, 1}}
+
+#+name:run_rec_block
+#+begin_src elixir :results output
+require Dc
+start = Dc.sim()
+child = Dc.return_child(Dc.sim(start, visited: true))
+a = Dc.sim(child, :parrent)
+#+end_src
+
+#+RESULTS: run_rec_block
+: {:sim, 5, 5, "east", true, "root"}
+
+Yeah to this really does do what I was doing with tuples in LFE, just much nicer.
+
+Let's try to make the list of legal moves.
+
+
+Hmn... okay the board can only hold two animals. So the move are either:
+1. one dog rides the boat
+2. one cat rides the boat
+3. two dogs ride the boat
+4. two cats ride the boat
+5. one cat and one dog ride the boat
+
+...wait why would you ever have one animal ride the boat? Because if you did that, they have to ride the boat back too.
+
+
+1. two dogs ride the boat
+2. two cats ride the boat
+3. one cat and one dog ride the boat
+
+   So these are the only options
+   
+And the equation that must be satisfied is
+
+
+- dogs on the east bank >= cats on the east bank
+
+- dogs on the west bank >= cats on the west bank
+
+As long as these two equations are true after the animals ride the boat, it's a legal move.
+
+I guess I produce 3 new nodes each time I visit a node, and just don't append the illegal state nodes and discard them 
+
+Each new node that gets through these checks will have as it's parent the node that generated it. And the function that draws a new node to visit will also check the node to see if the simulation is over. If there are no more nodes that can be visited (because they all have their visited flag set to true, fail the simulation. If not, keep visiting nodes one at a time till a solution is found.
+
+As I grab each node, I want to "take it off" the list of states to visit. That is going to be a list. So just return the list as being one item shorter and then set the node I just pulled off to have it's visited flag set to true.
+
+Let's do a quick test. Make a few generations of the simulation, and be sure I can see where they came from and what the other possible routes could be
+
+#+name:record_block_test
+#+begin_src elixir :results output
+defmodule Dc do
+  @moduledoc """
+  This module is for programming homeowrk problems from unit 2 of Classic Computer problems in Python which I am writing is lots of different langauges
+  The name Dc is short for Dogs and Cats
+  """
+  require Record
+  
+  Record.defrecord(:sim, 
+    total_dogs_east: 5, 
+    total_cats_east: 5, 
+    boat_loc: "east",
+    visited: false,
+    parrent: "root")
+  
+  @doc """
+  This function takes a simulation state and returs the state it was derrived from
+  """
+  def return_child(s) do
+    sim(parrent: s)
+  end
+  
+  @doc """
+  This is just a test function to get me states to test against and won't be used in the fina solution
+  It takes a list (which shoudl be the list that is all the states the run is tracking) and returns a new list that has 3 new posobileties
+  It also takes a simulation to make the parrent of the new options
+
+  And a apparently I can concatenate lists with "++"
+  """
+  def add_options(l, s) do
+    option1 = sim(parrent: s, total_dogs_east: 10)
+    option2 = sim(parrent: s, total_dogs_east: 11)
+    option3 = sim(parrent: s, total_dogs_east: 13)
+    [option1, option2, option3] ++ l
+  end
+end
+#+end_src
+
+#+RESULTS: record_block_test
+: [33mwarning: [0mredefining module Dc (current version defined in memory)
+:   iex:1
+: 
+: {:module, Dc,
+:  <<70, 79, 82, 49, 0, 0, 11, 4, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 219,
+:    0, 0, 0, 22, 9, 69, 108, 105, 120, 105, 114, 46, 68, 99, 8, 95, 95, 105, 110,
+:    102, 111, 95, 95, 10, 97, 116, 116, ...>>, {:add_options, 2}}
+#+name:run_rec_block_test
+#+begin_src elixir :results output
+require Dc
+start = Dc.sim()
+sim_list = [start]
+Dc.add_options(sim_list, start)
+#+end_src
+
+#+RESULTS: run_rec_block_test
+: [
+:   {:sim, 10, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
+:   {:sim, 11, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
+:   {:sim, 13, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
+:   {:sim, 5, 5, "east", false, "root"}
+: ]
+
+Cool. So if I have a list and a record, I know how I would go about tracking how things are moving along in the simulation. 
+
+Nice, and I can swap around the order of "++" and either stick the new options on the front or back of the list. That means I can just stick them on the front, grab on option off the head of the list and I have a DFS.
+
+What will really happen is instead of adding these pre-baked options, I would want to pass the simulation to a function that takes a state, and returns:
+1. The state set to visited
+2. The list of valid states that would result from that state
+3. The list of all simulation states with the visited state stuck on the back where I won't need it for a good long while
+
+Then I pass that function to a things that recursively calls the DFS. Grab the first option of the top and pass it to this function. Then if you get a state that has already been visited, return and say you exhausted all the options. Otherwise keep grabbing new possibilities off the top of the stack till you find one that satisfies the goal criteria.
+
+I wonder if it makes sense to keep a separate list of all the visited nodes? Is there even a reason to keep the visited nodes in the same list? Am I ever going to look at that again? No. In fact I probably don't even need the node around anymore after I visit it. I was thinking it would be nice to be able to count the nodes that were visited after a simulation to know how many times the visit function ran. But then again I guess you could do that with a separate list of visited nodes. No need to clutter the main list. 
+
+But that does mean I need to hold on to a list of visited nodes. That is one more list to keep track of. 
