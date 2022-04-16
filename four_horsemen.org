@@ -2094,6 +2094,164 @@ Hy looks like it is working again. And I kind of like the idea of keeping Hy aro
 #+RESULTS: clj-style-arrow
 : 77
 
+
+** Racket?
+
+#+name:what-vm
+#+begin_src racket
+(system-type 'vm)
+#+end_src
+
+#+RESULTS: what-vm
+: chez-scheme
+
+Now before I start to ask why on earth I would want to learn yet ANOTHER language, I want to take a look at why I have been looking at so many languages in the first place. I am starting to read this e-book called "don't teach coding: until you read this book". It's fascinating and it feels timely based on the start of a robotics class at GWG. And I am thinking that thinking of programming as a language and how I am pretty good at picking up languages is something I can relate to. So if I want to pick up a language, why not a language that is good at... languages?!
+
+Python is great because it's easy, approachable, and really well supported.
+Clojure is a great lisp for getting real work done.
+Erlang is a very cool family of languages that are great for distributed systems and fault tolerance
+C is practically the lingua franca of programming.
+
+...but I don't need to do any of that right now. I would rather a lisp that lets me connect things, talk to Max, and make stuff for work if I need it. And I bet you Racket is going to be one way to do that.
+
+I don't think Elixir is bad, or Hy. All these languages I have looked at along the way have been cool in their own right. And one day I may make something big in them. But I also think Racket has the potential to be much more Emacs friendly and do a bunch of stuff that I want to do, without worrying about mission critical stuff like what would happen if this breaks prod and people loose money.
+
+Maybe... just maybe Racket is the language I have been looking for.
+
+[2022-04-12 Tue]
+Looking into it more, looks like I got "#langs" to work in babel blocks, but I can't seem to get session working. 
+
+Might need to look into another ob-racket library for Emacs
+
+...according to this library I am using now, racket does not support sessions... but I that is just how his library works. I guess I could try to implement it my self, but maybe I don't really need sessions.
+
+I think I can make do without sessions. Because I will also have vars to work with.
+
+#+name:give-me-var
+#+begin_src racket :var x=5
+x
+#+end_src
+
+#+RESULTS: give-me-var
+: 5
+
+Yup
+
+#+TBLNAME: Sum-of-stuff
+| Lables | num |
+|--------+-----|
+| stuff  |   1 |
+| stuff  |   5 |
+| stuff  |  30 |
+|--------+-----|
+| sum    |  36 |
+#+TBLFM: @>$2 = '(+ @I..@II);N
+
+#+name:give-me-table
+#+begin_src racket :var x=Sum-of-stuff
+(cadr x)
+#+end_src
+
+#+RESULTS: give-me-table
+| stuff | 1 |
+
+I mean yeah that's a lisp I can use in Emacs.
+
+
+And If I have this right, I can make racket libraries and require them to provide myself new langs to work with.
+
+I am just a little disappointed that docs in Racket mode here appear to be broken. Oh well.
+
+*** Rosette
+https://docs.racket-lang.org/rosette-guide/index.html
+
+So I don't really know how or why I will use this, but this seems like the kind of thing that I would not be able to do in Python, Erlang, C, or Clojure. Solvers... solver aided tools. If I could learn how to state problems in terms of constraints this sounds like the kind of things that working in other languages provides me.
+
+
+*** Some Racket basics
+[2022-04-16 Sat]
+
+I am in the middle of that programming book I started working through in Python, and I have added a few languages along the way. But after learning more, I think I see how now more than ever I don't really need C. Or C++. And it's not that those aren't good tools. But the are good tool the same way I don't need to learn to play the saxophone.
+
+What draws me into Racket is how it feels like this is the sort of things I wanted from coding. A flexible language to go between the things I already use.
+
+LFE is cool and all, but do I actually need the Beam? No, not right now. And if I ever wanted to do distributed computing in Lisp, I know what I will use. I also don't need C, but if I want to work that low I would probably sooner turn to rust.
+
+And for stuff for me, I think Racket is going to be most of what I want to use and do.
+
+**** Threading
+
+#+name:threading-macro
+#+begin_src racket
+#lang racket
+(require threading)
+
+(~>
+ (list 2 3 4)
+ (cdr)
+ (car))
+#+end_src
+
+#+RESULTS: threading-macro
+: 3
+
+That is a macro that I first leared in CLojure, tried to use in Elixir, but I think I will find the most usefulness here because of this:
+
+
+#+name:threading-macro-underscore
+#+begin_src racket
+#lang racket
+(require threading)
+
+(~>
+ (list 2 3 4)
+ (cdr)
+ (car)
+ (- 10 _)
+ (- _ 2))
+#+end_src
+
+#+RESULTS: threading-macro-underscore
+: 5
+
+See that? By using underscores I can change up where the value from the line above gets "threaded" into the next line. That is so cool. I wish that was how it worked in Clojure and Elixir.
+
+
+**** remainder division
+I pulled up a racket block one day wanting to get a number with division plus the remainder and I realized I didn't know how. So I sort of did it in Hy instead.
+
+Let's figure out how that works in Racket
+
+#+name:div
+#+begin_src racket
+#lang racket
+(modulo 25 4)
+#+end_src
+
+#+RESULTS: div
+: 1
+
+well that is the modulo operator... very clear. I wonder if there is a built in function that will return a list with remainder and the nearest whole number?
+
+#+name:more-mod
+#+begin_src racket
+#lang racket
+
+(define div-this 7)
+(define by-that 4)
+
+(fprintf (current-output-port) "Answer: ~a ~nRemainder: ~a"
+         (quotient div-this by-that)
+         (modulo div-this by-that))
+#+end_src
+
+#+RESULTS: more-mod
+: Answer: 1 
+: Remainder: 3
+
+Okay that is kind of a lot to type, but it does the trick
+
+Calc is going to be faster in most cases. just floor the out put of normal division, then call it again with "%".
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
@@ -5312,12 +5470,7 @@ Dc.add_options(sim_list, start)
 #+end_src
 
 #+RESULTS: run_rec_block_test
-: [
-:   {:sim, 10, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
-:   {:sim, 11, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
-:   {:sim, 13, 5, "east", false, {:sim, 5, 5, "east", false, "root"}},
-:   {:sim, 5, 5, "east", false, "root"}
-: ]
+: []
 
 Cool. So if I have a list and a record, I know how I would go about tracking how things are moving along in the simulation. 
 
@@ -5333,3 +5486,75 @@ Then I pass that function to a things that recursively calls the DFS. Grab the f
 I wonder if it makes sense to keep a separate list of all the visited nodes? Is there even a reason to keep the visited nodes in the same list? Am I ever going to look at that again? No. In fact I probably don't even need the node around anymore after I visit it. I was thinking it would be nice to be able to count the nodes that were visited after a simulation to know how many times the visit function ran. But then again I guess you could do that with a separate list of visited nodes. No need to clutter the main list. 
 
 But that does mean I need to hold on to a list of visited nodes. That is one more list to keep track of. 
+
+
+**** Lets make the violator
+[2022-04-06 Wed]
+
+Work got crazy and this got sidelined. But I think I have a pretty good idea of how it's going to work now.
+
+Today, I want to make the function that will take a list of states, and return a list with only the valid staes (filter all the conditions that don't need to be considered.
+
+
+#+name:record_block_filter
+#+begin_src elixir :results output
+defmodule Dc do
+  @moduledoc """
+  This module is for programming homeowrk problems from unit 2 of Classic Computer problems in Python which I am writing is lots of different langauges
+  The name Dc is short for Dogs and Cats
+  """
+  require Record
+
+  Record.defrecord(:sim,
+    total_dogs: 10,
+    total_cats: 10,
+    total_dogs_east: 5,
+    total_cats_east: 5,
+    boat_loc: "east",
+    visited: false,
+    parrent: "root")
+
+  @doc """
+  Predicate function for the valid state filter
+  """
+  def is_vaild_state?(s) do
+    cond do
+      sim(s, :total_dogs_east) > sim(s, :total_cats_east) -> false
+      (sim(s, :total_dogs) - sim(s, :total_dogs_east)) > (sim(s, :total_cats) - sim(s, :total_cats_east)) -> false
+      true -> true
+    end
+  end
+
+  @doc """
+  This function will be the filter for returning a list of vaild states
+  """
+  def vaild_sim_filter(s) do
+    Enum.filter(s, fn x -> is_vaild_state?(x) == true end)
+  end
+end
+
+#+end_src
+
+#+RESULTS: record_block_filter
+: [33mwarning: [0mredefining module Dc (current version defined in memory)
+:   iex:1
+: 
+: {:module, Dc,
+:  <<70, 79, 82, 49, 0, 0, 11, 132, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 1, 32,
+:    0, 0, 0, 28, 9, 69, 108, 105, 120, 105, 114, 46, 68, 99, 8, 95, 95, 105, 110,
+:    102, 111, 95, 95, 10, 97, 116, 116, ...>>, {:vaild_sim_filter, 1}}
+
+#+name:run_rec_block_filter_run
+#+begin_src elixir :results output
+require Dc
+Dc.vaild_sim_filter([ Dc.sim(), Dc.sim(total_dogs_east: 50, total_dogs: 50), Dc.sim(total_dogs_east: 1), Dc.sim(total_cats: 30, total_cats_east: 30), Dc.sim(total_cats: 1), Dc.sim(total_dogs: 20, total_cats: 20)])
+#+end_src
+
+#+RESULTS: run_rec_block_filter_run
+: [
+:   {:sim, 10, 10, 5, 5, "east", false, "root"},
+:   {:sim, 20, 20, 5, 5, "east", false, "root"}
+: ]
+
+
+done
