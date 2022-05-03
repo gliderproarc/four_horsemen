@@ -2252,6 +2252,43 @@ well that is the modulo operator... very clear. I wonder if there is a built in 
 Okay that is kind of a lot to type, but it does the trick
 
 Calc is going to be faster in most cases. just floor the out put of normal division, then call it again with "%".
+
+*** Structs
+
+#+name:structs
+#+begin_src racket
+#lang racket
+
+(define-struct tree (branch-a branc-b))
+
+(tree-branch-a (make-tree "my-a" "my-b"))
+#+end_src
+
+#+RESULTS: structs
+: my-a
+
+That is not a very good introduction to how to use a struct in Racket, but it's getting at most of what I am going to use for the next problem in my programming book.
+
+I am doing a tree thing, so if I can the fields for a given state of some simulation I am walking through, this will do the trick.
+
+It's named fields in a data structure.
+
+
+** Clojure
+You know what, I wanted to add ClojureScript here, but it's impossible to get it working. Why not just stick to good old java clojure? That can't be the worst idea in the world. 
+
+It's sure bound to be nicer than learning C.
+
+#+name:does-it-still-work?
+#+begin_src clojure :results output
+(print "yes it does")
+#+end_src
+
+#+RESULTS: does-it-still-work?
+: yes it does
+
+
+
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
@@ -5558,3 +5595,946 @@ Dc.vaild_sim_filter([ Dc.sim(), Dc.sim(total_dogs_east: 50, total_dogs: 50), Dc.
 
 
 done
+
+**** Switching this to Racket part way through
+[2022-04-20 Wed]
+
+I am thinking of dropping my study of non-lisps, and focus mostly on Racket. LFE, Hy, and maybe some Clojure at some point
+
+#+name:swaping-to-racket
+#+begin_src racket
+#lang racket
+(require threading)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited 
+                    parrent))
+
+(define (vaild-sim? s) (cond
+                         [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+                         [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+                         [else #t]))
+
+
+(vaild-sim? (make-sim 50 50 0 0 "east" #f "root"))
+#+end_src
+
+#+RESULTS: swaping-to-racket
+: #t
+hmn... is that really all I need to make the predicate filter for a valid simulation state?
+
+okay so next is moving animals right? What are the posobileties?
+
+| opetion Num | dogs moving | cats moving |
+|-------------+-------------+-------------|
+|           1 |           1 |           0 |
+|           2 |           2 |           0 |
+|           3 |           0 |           1 |
+|           4 |           0 |           2 |
+|           5 |           1 |           1 |
+
+Yup, just 4.
+
+
+okay, let's make the function that returns the list of valid states that can result from one state
+
+
+#+name:add-sucsessor
+#+begin_src racket
+#lang racket
+(require threading)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited 
+                    parrent))
+
+(define (vaild-sim? s) 
+  ; Predicate for filtering for valid sim states
+  (cond
+    [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+    [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+    [(> 0 (sim-total-cats s)) #f]
+    [(> 0 (sim-total-dogs s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [else #t]))
+
+(define (m-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 1)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2dog s)
+  ; move 2 dogs and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "east")(make-sim
+                                          (- (sim-total-dogs s) 2)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 2)
+                                          (sim-total-cats-east s)
+                                          "west"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 2)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 2)
+                   (sim-total-cats-east s)
+                   "east"
+                   #f
+                   s)]))
+
+(define (m-1cat s)
+  ; move a cat and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 1)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2cat s)
+  ; move 2 cats and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 2)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 2)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 2)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 2)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (- (sim-total-dogs s) 1)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (+ (sim-total-dogs s) 1)
+                   (- (sim-total-cats-east s) 1)
+                   (- (sim-total-dogs-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (list-sucsessors s)
+; provide a filtered list of possible sucsessors from a sim state
+  (let* (
+[s1 (m-1dog s)]
+[s2 (m-2dog s)]
+[s3 (m-1cat s)]
+[s4 (m-2cat s)]
+[s5 (m-1cat-1dog s)])
+(filter vaild-sim? (list s1 s2 s3 s4)))) 
+
+(list-sucsessors (make-sim 5 10 5 10 "west" #f "root"))
+#+end_src
+
+#+RESULTS: add-sucsessor
+: '(#<sim> #<sim>)
+
+Okay, so I think I know how to finish this.
+
+I take a list, and I set it to have one element. The "seed" of the simulation.
+
+I run an "init run" that:
+1. takes the root and set's it's visited falg to true.
+2. calculte the sucsessors and attach the visited root to the end of a list called "all the states" or something like that
+
+ Next I start a recursive loop. 
+3. check to see if the first element of the list is the goal condition
+4. if it is, exit and call the "print me and my ancestors function
+5. take the first element of the list, and check to see if it has been visited
+6. If it has, pull out because that is the root, and there are no more posobileties
+7. take the sim state and calculate the sucsessors
+8. add the new sucsessors to the head of the list
+9. put the visited state at the back
+10. but before adding them, make sure they don't duplicate a state that has already existed in this list of visited states
+11. try again
+
+**** show the visited states
+
+
+#+name:show-me-the-past
+#+begin_src racket
+#lang racket
+(require threading)
+(require seq)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited 
+                    parrent))
+
+(define (vaild-sim? s) 
+  ; Predicate for filtering for valid sim states
+  (cond
+    [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+    [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+    [(> 0 (sim-total-cats s)) #f]
+    [(> 0 (sim-total-dogs s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [else #t]))
+
+(define (m-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 1)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2dog s)
+  ; move 2 dogs and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "east")(make-sim
+                                          (- (sim-total-dogs s) 2)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 2)
+                                          (sim-total-cats-east s)
+                                          "west"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 2)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 2)
+                   (sim-total-cats-east s)
+                   "east"
+                   #f
+                   s)]))
+
+(define (m-1cat s)
+  ; move a cat and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 1)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2cat s)
+  ; move 2 cats and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 2)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 2)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 2)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 2)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (- (sim-total-dogs s) 1)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (+ (sim-total-dogs s) 1)
+                   (- (sim-total-cats-east s) 1)
+                   (- (sim-total-dogs-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (list-sucsessors s)
+; provide a filtered list of possible sucsessors from a sim state
+  (let* (
+[s1 (m-1dog s)]
+[s2 (m-2dog s)]
+[s3 (m-1cat s)]
+[s4 (m-2cat s)]
+[s5 (m-1cat-1dog s)])
+(filter vaild-sim? (list s1 s2 s3 s4)))) 
+
+(define (is-dup-sim? sim s)
+ ; predicate for checking two sims to see if they represent the same state 
+  (cond
+    [(not (= (sim-total-cats sim) (sim-total-cats s))) #f]
+    [(not (= (sim-total-dogs sim) (sim-total-dogs s))) #f]
+    [(not (= (sim-total-cats-east sim) (sim-total-cats-east s))) #f]
+    [(not (= (sim-total-dogs-east sim) (sim-total-dogs-east s))) #f]
+    [else #t #t]))
+        
+
+(exists (curry is-dup-sim? (make-sim 5 10 5 10 "west" #f "root")) (list (make-sim 6 10 5 10 "west" #f "root")
+                                                                        (make-sim 7 10 5 10 "west" #f "root")
+                                                                        (make-sim 8 10 5 10 "west" #f "root")))
+;; (is-dup-sim? (make-sim 5 10 5 10 "west" #f "root") (make-sim 5 10 5 10 "west" #f "root"))
+
+#+end_src
+
+#+RESULTS: show-me-the-past
+: #f
+
+
+Woa, that got really complicated. But I think I see how curry works there. I am making a predicate that takes two args, adn tuning into into a uniary function by providing one.
+
+So when I get a list of possible new states, I am going to filter that list by the opposite of that exists statement
+
+
+...and you know what? this is a bit nicer than LFE was. I think it's just got more built in. Not necessarily more editor support. But this seems to move a lot faster and more easily then when I was trying this with LFE.
+
+So next I need a predicate to check goal condition. This is going to be quick.
+
+
+#+name:add-goal-pred
+#+begin_src racket
+#lang racket
+(require threading)
+(require seq)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited 
+                    parrent))
+
+(define (vaild-sim? s) 
+  ; Predicate for filtering for valid sim states
+  (cond
+    [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+    [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+    [(> 0 (sim-total-cats s)) #f]
+    [(> 0 (sim-total-dogs s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [else #t]))
+
+(define (m-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 1)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2dog s)
+  ; move 2 dogs and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "east")(make-sim
+                                          (- (sim-total-dogs s) 2)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 2)
+                                          (sim-total-cats-east s)
+                                          "west"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 2)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 2)
+                   (sim-total-cats-east s)
+                   "east"
+                   #f
+                   s)]))
+
+(define (m-1cat s)
+  ; move a cat and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 1)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2cat s)
+  ; move 2 cats and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 2)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 2)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 2)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 2)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (- (sim-total-dogs s) 1)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (+ (sim-total-dogs s) 1)
+                   (- (sim-total-cats-east s) 1)
+                   (- (sim-total-dogs-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (list-sucsessors s)
+; provide a filtered list of possible sucsessors from a sim state
+  (let* (
+[s1 (m-1dog s)]
+[s2 (m-2dog s)]
+[s3 (m-1cat s)]
+[s4 (m-2cat s)]
+[s5 (m-1cat-1dog s)])
+(filter vaild-sim? (list s1 s2 s3 s4)))) 
+
+(define (is-dup-sim? sim s)
+ ; predicate for checking two sims to see if they represent the same state 
+  (cond
+    [(not (= (sim-total-cats sim) (sim-total-cats s))) #f]
+    [(not (= (sim-total-dogs sim) (sim-total-dogs s))) #f]
+    [(not (= (sim-total-cats-east sim) (sim-total-cats-east s))) #f]
+    [(not (= (sim-total-dogs-east sim) (sim-total-dogs-east s))) #f]
+    [else #t #t]))
+
+(define (is-goal? s)
+  ; predicate to see if this new sim is the goal state
+  (cond
+    [(and (= (sim-total-cats s) 0)
+          (= (sim-total-dogs s) 0)) #t]
+    [else #t #f]))
+
+(is-goal? (make-sim 0 0 5 10 "west" #f "root"))
+
+#+end_src
+
+#+RESULTS: add-goal-pred
+: #t
+
+Cool. easy. Next.
+
+Today let's also make the thing that prints a state and how it got there
+
+#+name:print-the-history
+#+begin_src racket :results output
+#lang racket
+(require threading)
+(require seq)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited
+                    parrent))
+
+(define (vaild-sim? s) 
+  ; Predicate for filtering for valid sim states
+  (cond
+    [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+    [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+    [(> 0 (sim-total-cats s)) #f]
+    [(> 0 (sim-total-dogs s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [else #t]))
+
+(define (m-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 1)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2dog s)
+  ; move 2 dogs and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "east")(make-sim
+                                          (- (sim-total-dogs s) 2)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 2)
+                                          (sim-total-cats-east s)
+                                          "west"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 2)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 2)
+                   (sim-total-cats-east s)
+                   "east"
+                   #f
+                   s)]))
+
+(define (m-1cat s)
+  ; move a cat and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 1)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2cat s)
+  ; move 2 cats and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 2)
+                                          (sim-total-dogs s)
+                                          (+ (sim-total-cats-east s) 2)
+                                          (sim-total-dogs-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 2)
+                   (sim-total-dogs s)
+                   (- (sim-total-cats-east s) 2)
+                   (sim-total-dogs-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-cats s) 1)
+                                          (- (sim-total-dogs s) 1)
+                                          (+ (sim-total-cats-east s) 1)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-cats s) 1)
+                   (+ (sim-total-dogs s) 1)
+                   (- (sim-total-cats-east s) 1)
+                   (- (sim-total-dogs-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (list-sucsessors s)
+  ; provide a filtered list of possible sucsessors from a sim state
+  (let* (
+         [s1 (m-1dog s)]
+         [s2 (m-2dog s)]
+         [s3 (m-1cat s)]
+         [s4 (m-2cat s)]
+         [s5 (m-1cat-1dog s)])
+    (sequence->list (filter vaild-sim? (list s1 s2 s3 s4)))))
+
+(define (is-dup-sim? sim s)
+  ; predicate for checking two sims to see if they represent the same state 
+  (cond
+    [(not (= (sim-total-cats sim) (sim-total-cats s))) #f]
+    [(not (= (sim-total-dogs sim) (sim-total-dogs s))) #f]
+    [(not (= (sim-total-cats-east sim) (sim-total-cats-east s))) #f]
+    [(not (= (sim-total-dogs-east sim) (sim-total-dogs-east s))) #f]
+    [else #t #t]))
+
+(define (is-goal? s)
+  ; predicate to see if this new sim is the goal state
+  (cond
+    [(and (= (sim-total-cats s) 0)
+          (= (sim-total-dogs s) 0)) #t]
+    [else #t #f]))
+
+(define (print-one-sim s)
+  ; take a simk as the argument and print to console
+  (begin
+    (println "Text repper of a state of the simulation:")
+    (println (sim-total-cats s))
+    (println (sim-total-dogs s))
+    (println (sim-total-cats-east s))
+    (println (sim-total-dogs-east s))
+    (println (sim-boat-loc s))
+    (println (sim-visited s))
+    (println (sim-parrent s))))
+
+(define (print-all-children s)
+  ; recursively print a sim and all the children leading up to it
+  (if (equal? (sim-parrent s) "root")
+      (print-one-sim s)
+      (begin
+        (print-one-sim s)
+        (print-all-children (sim-parrent s)))))
+
+(define (not-dup-in-list? l s)
+  ; take a list of the sims visited so far and see if this new sim is already in the list or not
+(not (exists (curry is-dup-sim? s) l)))
+
+
+(define a (make-sim 3 0 5 10 "west" #f "root"))
+
+(define b (make-sim 2 0 5 10 "west" #f a))
+
+(define c (make-sim 1 0 5 10 "west" #f b))
+
+; this is how I will filter the new sims to add to the simulation
+;; (sequence->list (filter (curry not-dup-in-list? (list a c)) (list a b c)))
+
+; also useful, this is how to get a list of only visited sims
+; (sequence->list (filter sim-visited (list a b c)))
+
+
+#+end_src
+
+#+RESULTS: print-the-history
+: '(#<sim>)
+
+
+
+Hmn. Well that was a little trickier than I thought it was going to be, but I figured it out.
+
+By calling that print all function, I can get a sim to print, and all it's children in order. If I have a sim that is the goal, I should just need to pass it to that function and it and all it's children will print
+
+I need to make sure I am only comparing the a new sim to add to the list with sims that have been visited. I could either filter the list of sims each time, or I could keep two lists. one that hold that the "to visit" pile, and one that is the "visited pile"
+
+
+but that sounds like a lot of work. Let's filter it.
+
+[2022-05-01 Sun]
+
+Okay, I think it's time to write the function that finishes this.
+**** write the main function
+
+#+name:racket-dfs
+#+begin_src racket :results output
+#lang racket
+;; (require threading)
+(require seq)
+
+(define-struct sim (total-dogs
+                    total-cats
+                    total-dogs-east
+                    total-cats-east
+                    boat-loc
+                    visited
+                    parrent))
+
+(define (valid-sim? s) 
+  ; Predicate for filtering for valid sim states
+  (cond
+    [(> (sim-total-dogs-east s) (sim-total-cats-east s)) #f]
+    [(> (sim-total-dogs s) (sim-total-cats s)) #f]
+    [(> 0 (sim-total-cats s)) #f]
+    [(> 0 (sim-total-dogs s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [(> 0 (sim-total-dogs-east s)) #f]
+    [else #t #t]))
+
+(define (m-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 1)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2dog s)
+  ; move 2 dogs and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 2)
+                                          (sim-total-cats s)
+                                          (+ (sim-total-dogs-east s) 2)
+                                          (sim-total-cats-east s)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 2)
+                   (sim-total-cats s)
+                   (- (sim-total-dogs-east s) 2)
+                   (sim-total-cats-east s)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat s)
+  ; move a cat and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (sim-total-dogs s)
+                                          (- (sim-total-cats s) 1)
+                                          (sim-total-dogs-east s)
+                                          (+ (sim-total-cats-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (sim-total-dogs s)
+                   (+ (sim-total-cats s) 1)
+                   (sim-total-dogs-east s)
+                   (- (sim-total-cats-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-2cat s)
+  ; move 2 cats and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (sim-total-dogs s)
+                                          (- (sim-total-cats s) 2)
+                                          (sim-total-dogs-east s)
+                                          (+ (sim-total-cats-east s) 2)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (sim-total-dogs s)
+                   (+ (sim-total-cats s) 2)
+                   (sim-total-dogs-east s)
+                   (- (sim-total-cats-east s) 2)
+                   "west"
+                   #f
+                   s)]))
+
+(define (m-1cat-1dog s)
+  ; move a dog and base it on where the boat is
+  (cond [(equal? (sim-boat-loc s) "west")(make-sim
+                                          (- (sim-total-dogs s) 1)
+                                          (- (sim-total-cats s) 1)
+                                          (+ (sim-total-dogs-east s) 1)
+                                          (+ (sim-total-cats-east s) 1)
+                                          "east"
+                                          #f
+                                          s)]
+        [else #t  (make-sim
+                   (+ (sim-total-dogs s) 1)
+                   (+ (sim-total-cats s) 1)
+                   (- (sim-total-dogs-east s) 1)
+                   (- (sim-total-cats-east s) 1)
+                   "west"
+                   #f
+                   s)]))
+
+(define (list-sucsessors s)
+  ; provide a filtered list of possible sucsessors from a sim state
+  (let* (
+         [s1 (m-1dog s)]
+         [s2 (m-2dog s)]
+         [s3 (m-1cat s)]
+         [s4 (m-2cat s)]
+         [s5 (m-1cat-1dog s)])
+    (sequence->list (filter valid-sim? (list s1 s2 s3 s4 s5)))))
+
+(define (is-dup-sim? sim s)
+  ; predicate for checking two sims to see if they represent the same state 
+  (cond
+    [(not (= (sim-total-cats sim) (sim-total-cats s))) #f]
+    [(not (= (sim-total-dogs sim) (sim-total-dogs s))) #f]
+    [(not (= (sim-total-cats-east sim) (sim-total-cats-east s))) #f]
+    [(not (= (sim-total-dogs-east sim) (sim-total-dogs-east s))) #f]
+    [else #t #t]))
+
+(define (is-goal? s)
+  ; predicate to see if this new sim is the goal state
+  (cond
+    [(and (= (sim-total-cats s) 0)
+          (= (sim-total-dogs s) 0)) #t]
+    [else #t #f]))
+
+(define (print-one-sim s)
+  ; take a simk as the argument and print to console
+  (begin
+    (println "Text repper of a state of the simulation:")
+    (println (sim-total-cats s))
+    (println (sim-total-dogs s))
+    (println (sim-total-cats-east s))
+    (println (sim-total-dogs-east s))
+    (println (sim-boat-loc s))
+    (println (sim-visited s))
+    (println (sim-parrent s))))
+
+(define (print-all-children s)
+  ; recursively print a sim and all the children leading up to it
+  (if (equal? (sim-parrent s) "root")
+      (print-one-sim s)
+      (begin
+        (print-one-sim s)
+        (print-all-children (sim-parrent s)))))
+
+(define (dup-in-list? l s)
+  ; take a list of the sims visited so far and see if this new sim is already in the list or not
+  (exists (curry is-dup-sim? s) l))
+
+(define (mark-me-visited s)
+  ; take a sim and return the name sim but having been visited
+  (make-sim
+   (sim-total-cats s)
+   (sim-total-dogs s)
+   (sim-total-cats-east s)
+   (sim-total-dogs-east s)
+   (sim-boat-loc s)
+   #t
+   (sim-parrent s)))
+
+(define (main-solve initial-dogs initial-cats)
+  ; take two numbers to set the initial state for the simulation   
+  (cond
+    [(not (valid-sim? (make-sim initial-dogs initial-cats 0 0 "west" #f "root"))) "not valid starting state"]
+
+    [else #t (main-recur
+              (flatten (list
+                        (list-sucsessors (make-sim initial-dogs initial-cats 0 0 "west" #f "root"))
+                        (make-sim initial-dogs initial-cats 0 0 "west" #t "root"))))]))
+
+(define (main-recur l)
+  ; function for recursively calling solver
+  (let* (
+         [dup-list (sequence->list (filter sim-visited l))]
+         [curr-dup (curry dup-in-list? dup-list)]
+         [new-kids (list-sucsessors (car l))])
+
+    (cond
+      [(empty? l) "Empty list passed"]
+      [(is-goal? (car l)) (begin
+                            (print "goal state found"
+                                   (print-all-children (car l))))]
+      [(sim-visited (car l)) (print "No solution fond")]
+      [else #t (main-recur
+                (flatten (list
+                          (sequence->list (drop-when curr-dup new-kids))
+                          (cdr l)
+                          (mark-me-visited (car l)))))])))
+
+(main-solve 5 8)
+#+end_src
+
+#+RESULTS: racket-dfs
+
