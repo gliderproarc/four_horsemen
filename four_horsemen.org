@@ -100,7 +100,7 @@ Hmn. Okay, I think I got it. And for Lisps I think I would want to do this in re
 #+end_src
 
 #+RESULTS: Bubbles-sort-v1
-| 0 | 3 | 5 | 4 | 8 |
+"|" 0 "|" 3 "|" 5 "|" 4 "|" 8 "|"
 
 So if I am thinking about this right, I want nested recursive calls. One recursive call will run for each of the elements int he unsorted array. And the recursive call within will run to "bubble up" each of those elements through the resulting array.
 
@@ -146,14 +146,14 @@ There is a function I need to write in the bubble function. It can be a lambda i
 #+end_src
 
 #+RESULTS: Bubbles-sort-v2
-| 0 |
+"|" 0 "|"
 #+name:car-and-cons
 #+begin_src elisp
 (cons 3 '(4))
 #+end_src
 
 #+RESULTS: car-and-cons
-| 3 | 4 |
+"|" 3 "|" 4 "|"
 
 
 Okay, I give up. Let's take a look at an example.
@@ -204,7 +204,7 @@ Okay, what did I learn from this?
    #+end_src
 
    #+RESULTS: Bad-bubbles
-   | 1 | 2 | 2 | 2 | 3 | 4 | 5 | 6 | 7 | 7 | 9 |
+   "|" 1 "|" 2 "|" 2 "|" 2 "|" 3 "|" 4 "|" 5 "|" 6 "|" 7 "|" 7 "|" 9 "|"
 
 
    Got it.
@@ -319,10 +319,10 @@ I think I know what I want to make this do in Clojure, but to save time I really
 #+end_src
 
 #+RESULTS: Bubblesort-clojure
-| #'shadow.user/swap-two     |
-| #'shadow.user/bubble-recur |
-| #'shadow.user/bubble-sort  |
-| (1 2 3 4 5 6)              |
+"|" #'shadow.user/swap-two     "|"
+"|" #'shadow.user/bubble-recur "|"
+"|" #'shadow.user/bubble-sort  "|"
+"|" (1 2 3 4 5 6)              "|"
 
 So weird. That is a way to apply a function x times
 https://stackoverflow.com/questions/46655508/apply-a-function-n-times-on-a-starting-value
@@ -656,7 +656,7 @@ Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure so
   #+end_src 
 
   #+RESULTS: arrows
-  | 0 | 5 | 6 | 7 |
+  "|" 0 "|" 5 "|" 6 "|" 7 "|"
 
   I had looked this up once before and it's nice to see how nice and clean it is. Let's do it more like a data pipeline. How about all the even numbers under 20?
 
@@ -667,7 +667,7 @@ Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure so
   #+end_src 
 
   #+RESULTS: even-under-20
-  | 0 | 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 |
+  "|" 0 "|" 2 "|" 4 "|" 6 "|" 8 "|" 10 "|" 12 "|" 14 "|" 16 "|" 18 "|" 20 "|"
   
 I need to practice making predicates. But it works. And I can use that function just about anywhere here in Emacs. Particularly in tables.
 *** Companion Python script to the C string reversal problem.
@@ -813,8 +813,7 @@ So I was reading more about clojurescript and I can get this to work but it need
   #+end_src
 
   #+RESULTS: test
-  : hi
-  : :ok
+  : pvector([1, 2])
 *** I think I have a work around
    So I was be moaning the fact that I needed to output ClojureScript blocks by value. And if I wanted to get really fancy it might get me in trouble one day. But for the most part, I do think I can make this work without using the output of blocks. I can put functions in different blocks and just call to the functions if I need to pass the block to something else. 
    Yeah, after more testing this seems to do it.
@@ -840,11 +839,11 @@ Well that settles it. After poking around I have come to a conclusion. Hy is coo
   For some miraculous reason, I seem to get the values in the Org table, but when passing the results of clojure blocks to other languages, I run into problems. Less so when using Hy. So as long as what I am doing is mostly here in Emacs and Org mode, I can take advantage of a lot of cool without needing to sacrifice the interop with org-mode.
 **** Hy no func
   #+TBLNAME: the_ranks_4hy
-     | Name(rank) | rank |
-     |------------+------|
-     | Aa         | Aa   |
-     | Bb         | Bb   |
-     | Cc         | Cc   |
+     "|" Name(rank) "|" rank "|"
+     "|"------------+------"|"
+     "|" Aa         "|" Aa   "|"
+     "|" Bb         "|" Bb   "|"
+     "|" Cc         "|" Cc   "|"
   #+TBLFM: $2='(org-sbe "grab-hy" (text-hy $$1))
 
   #+name:grab-hy
@@ -853,11 +852,11 @@ text-hy
   #+end_src
 **** Clojure no func
   #+TBLNAME: the_ranks_4hy
-     | Name(rank) | rank |
-     |------------+------|
-     | Aa         | Aa   |
-     | Bb         | Bb   |
-     | Cc         | Cc   |
+     "|" Name(rank) "|" rank "|"
+     "|"------------+------"|"
+     "|" Aa         "|" Aa   "|"
+     "|" Bb         "|" Bb   "|"
+     "|" Cc         "|" Cc   "|"
   #+TBLFM: $2='(org-sbe "grab-clj" (text-clj $$1))
 
   #+name:grab-clj
@@ -866,11 +865,11 @@ text-clj
   #+end_src
 **** Hy with func
   #+TBLNAME: the_ranks_4hy
-     | Name(rank) | rank |
-     |------------+------|
-     | Aa         | Aa   |
-     | Bb         | Bb   |
-     | Cc         | Cc   |
+     "|" Name(rank) "|" rank "|"
+     "|"------------+------"|"
+     "|" Aa         "|" Aa   "|"
+     "|" Bb         "|" Bb   "|"
+     "|" Cc         "|" Cc   "|"
   #+TBLFM: $2='(org-sbe "grab-hyf" (text-hyf $$1))
 
   #+name:grab-hyf
@@ -883,11 +882,11 @@ text-clj
   Hy just seems to work really well, just like Python. If I can get it to work in Python, I can usually get it to work in Hy.
 **** Clojure with func
   #+TBLNAME: the_ranks_4hy
-     | Name(rank) | rank |
-     |------------+------|
-     | Aa         | Aa   |
-     | Bb         | Bb   |
-     | Cc         | Cc   |
+     "|" Name(rank) "|" rank "|"
+     "|"------------+------"|"
+     "|" Aa         "|" Aa   "|"
+     "|" Bb         "|" Bb   "|"
+     "|" Cc         "|" Cc   "|"
   #+TBLFM: $2='(org-sbe "grab-cljf" (text-cljf $$1))
 
   #+name:grab-cljf
@@ -898,8 +897,8 @@ text-clj
   #+end_src
 
   #+RESULTS: grab-cljf
-  | #'shadow.user/my-func |
-  | "text-cljf"           |
+  "|" #'shadow.user/my-func "|"
+  "|" "text-cljf"           "|"
 
  ...wow, the clojure actually worked really nicely. Even though the block output has that extra output thingy.
 **** Code block to code block
@@ -912,12 +911,12 @@ text-clj
   #+end_src
 
   #+RESULTS: make-clj-text
-  | #'cljs.user/my-func |
-  | "texter"            |
+  "|" #'cljs.user/my-func "|"
+  "|" "texter"            "|"
 
   #+RESULTS: make clj-text
-  | #'shadow.user/my-func |
-  | "text"                |
+  "|" #'shadow.user/my-func "|"
+  "|" "text"                "|"
 
  #+name:grab_it
  #+begin_src python :python python3 :results output :var thing=make-clj-text
@@ -978,6 +977,8 @@ def fact1(n, acc=1):
 print(fact1(10000, 1))
 #+end_src
 
+#+RESULTS: blows-the-stack
+
 #+RESULTS: tail-called
 
 I am convinced the best way to do recursion in Python is with slow nasty while loops
@@ -999,11 +1000,7 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: my-match
-: lfe> 
-: lfe> (my-match #(1 2))
-: ** exception error: no function clause matching
-: 
+: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1017,7 +1014,6 @@ or maybe I can do it as a reduce?
 #+end_src
 
 #+RESULTS: better-fact
-: 608281864034267560872252163321295376887552831379210240000000000
 
 That is a one liner. That is pretty cool. Does Python do that too? It's do able, but looking up how to use the reduce function was a pain. Hy makes it so easy.
 *** And it's back out... haha.
@@ -1852,16 +1848,15 @@ Follow up: Could you solve it without converting the integer to a string?
 It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
 
 1. Python/Hy
-2. Elixir (and a bit of Erlang? LFE?)
-3. Elisp
-4. C/C++
+2. Racket
+3. Elixir (and a bit of Erlang? LFE?)
+4. Elisp
 
 I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
 
 I wonder if it's worth my time to examine ob-hy and see if I can make vars and sessions work?
 ** Starting Elixir
 After a lot of hemming and hawing about how to move forward, I think Elixir rounds things out while also being fairly easy to work with here in Emacs and Org. There is a lot to get used to so let's try some things I have done in the other languages. How about rock-paper-scissors?
-
 *** rock paper scissors
 started [2022-01-13 Thu] 
 I want to finish this a night, but I don't know much of Elixir's syntax so this might take a bit
@@ -1945,7 +1940,7 @@ defmodule Bubble do
   
   # recursively sort a list by swapping the first two elements, then calling it's self in the tail of the list 
   def sort_two([l, r]) do
-    [head | tail] = l
+    [head "|" tail] = l
     case {head, tail} do
       {_head, tail} when tail == [] ->
         List.flatten([r] ++ [head])
@@ -2000,38 +1995,69 @@ I was looking online for how to get a data structure to implement a binary sort 
 
    I haven't seen this before, and it looks like good practice. So to practice it, let's make a very simple recursive function that calculates... the sum of a list. And rather than focusing on solveing the problem, I am just going to work on the above.
   
-**** Good form? 
-#+name:gf_elixir
+
+*** Elixir alias
+#+name:no_alias
 #+begin_src elixir :results output
-
-defmodule GoodForm do
-  @spec list_sum(list) :: {:ok, integer} | :empty_list
-  def list_sum(l) when length(l) == 0, do: :empty_list
-  def list_sum(l) when length(l) == 1, do: {:ok, l}
-  def list_sum(l) do
-    list_sum_recur(l, 0)
+defmodule My_mod do
+  def my_fun() do
+    List.flatten [1,2,[3,4,6]] 
     end
-  
-  defp list_sum_recur(l, acc) when length(l) == 1, do: {:ok, acc + hd(l)}
-  defp list_sum_recur(l, acc) do
-    [head | tail] = l
-    list_sum_recur(tail, acc + head)
-  end
-end
+ end
+My_mod.my_fun()
 
-GoodForm.list_sum([1, 2, 3, 4])
 #+end_src
 
-#+RESULTS: gf_elixir
-: [33mwarning: [0mredefining module GoodForm (current version defined in memory)
-:   iex:2
-: 
-: {:ok, 10}
+#+RESULTS: no_alias
+: [33mwarning: [0mredefining module My_mod (current version defined in memory)
+:   iex:1
 
-Wow, well that took me all morning but I finally figured it out. I could not for the life of me figure out what was wrong with that I had written above, until I went to the exact line and columm I was getting the error.
+#+name:with_alias
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule My_mod do
+  alias List, as: L
+  def my_fun() do
+    L.flatten [1,2,[3,4,7]] 
+    end
+ end
+My_mod.my_fun()
+#+end_src
 
-Turns out when you have this sort of function definition list going, the whens kind of make the whole thing work like a case statement. If the last one is a catch all, you need to use a do block.
+#+RESULTS: with_alias
+| 1 | 2 | 3 | 4 | 7 |
 
+
+#+name:with_require
+#+begin_src elixir :results output
+defmodule My_modud do
+  import List
+  def my_fun() do
+    flatten [1,2,[3,4,9]] 
+    end
+ end
+My_modud.my_fun()
+#+end_src
+
+#+RESULTS: with_require
+: [33mwarning: [0mredefining module My_modud (current version defined in memory)
+:   iex:1
+
+If I am going to be using module. It's good to require the module so I don't need to constantly require it.
+
+
+#+name:bare_require
+#+begin_src elixir :results output
+require List
+flatten [1,2,[6,7]]
+#+end_src
+
+#+RESULTS: bare_require
+: ** (CompileError) iex:2: undefined function flatten/1 (there is no such import)
+:     (iex 1.13.4) expanding macro: IEx.Helpers.import_file/1
+:     iex:25: (file)
+
+Hmn... looks like I can't do a require outside a module.
 ** LFE?
 
 #+name:test4
@@ -2072,6 +2098,79 @@ yeah, looks like LFE needs work before it can use variables from Org mode. But t
 
 I will keep it in stalled, but don't think I will really end up using it for much. 
 
+*** LFE is broken
+[2022-05-17 Tue]
+Just installed Emcas 28 and now LFE code blocks in Org mode are not running. Oh boy
+
+*** Don't forget to use the right ob-lfe
+https://github.com/M-I/ob-lfe
+
+If this is not the ob-lfe in use, switching to this will fix that
+
+
+*** Docs for LFE
+https://cnbbooks.github.io/lfe-manual/current/part1/repl/help.html
+
+Why couldn't Racket have done this for me?
+
+
+#+begin_quote
+LFE shell built-in functions
+
+(c file)       -- compile and load code in <file>
+(cd dir)       -- change working directory to <dir>
+(clear)        -- clear the REPL output
+(doc mod)      -- documentation of a module
+(doc mod:mac)  -- documentation of a macro
+(doc m:f/a)    -- documentation of a function
+(ec file)      -- compile and load code in erlang <file>
+(ep expr)      -- print a term in erlang form
+(epp expr)     -- pretty print a term in erlang form
+(exit)         -- quit - an alias for (q)
+(flush)        -- flush any messages sent to the shell
+(h)            -- an alias for (help)
+(help)         -- help info
+(i)            -- information about the system
+(i pids)       -- information about a list of pids
+(l module)     -- load or reload <module>
+(ls)           -- list files in the current directory
+(ls dir)       -- list files in directory <dir>
+(m)            -- which modules are loaded
+(m mod)        -- information about module <mod>
+(p expr)       -- print a term
+(pp expr)      -- pretty print a term
+(pid x y z)    -- convert <x>, <y> and <z> to a pid
+(pwd)          -- print working directory
+(q)            -- quit - shorthand for init:stop/0
+(regs)         -- information about registered processes
+
+LFE shell built-in commands
+
+(reset-environment)             -- reset the environment to its initial state
+(run file)                      -- execute all the shell commands in a <file>
+(set pattern expr)
+(set pattern (when guard) expr) -- evaluate <expr> and match the result with
+                                   pattern binding
+(slurp file)                    -- slurp in a LFE source <file> and makes
+                                   everything available in the shell
+(unslurp)                       -- revert back to the state before the last
+                                   slurp
+
+LFE shell built-in variables
+
++/++/+++      -- the tree previous expressions
+*/**/***      -- the values of the previous expressions
+-             -- the current expression output
+$ENV          -- the current LFE environment
+#+end_quote
+
+Why couldn't Racket have done this for me? I mean how nice is that? no need to go pull up some website to refer to docs
+
+*** Can't define modules
+[2022-05-29 Sun]
+I think I just realized why I was having problems with LFE and modules before. I was trying to use org babel blocks, which evaluate in the REPL, and modules can only be defined in files.
+
+Even better. That should mean I have very little to worry about in terms of finding 
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
 
@@ -2094,9 +2193,8 @@ Hy looks like it is working again. And I kind of like the idea of keeping Hy aro
 #+RESULTS: clj-style-arrow
 : 77
 
-
 ** Racket?
-
+*** Intro
 #+name:what-vm
 #+begin_src racket
 (system-type 'vm)
@@ -2138,13 +2236,13 @@ x
 Yup
 
 #+TBLNAME: Sum-of-stuff
-| Lables | num |
-|--------+-----|
-| stuff  |   1 |
-| stuff  |   5 |
-| stuff  |  30 |
-|--------+-----|
-| sum    |  36 |
+"|" Lables "|" num "|"
+"|"--------+-----"|"
+"|" stuff  "|"   1 "|"
+"|" stuff  "|"   5 "|"
+"|" stuff  "|"  30 "|"
+"|"--------+-----"|"
+"|" sum    "|"  36 "|"
 #+TBLFM: @>$2 = '(+ @I..@II);N
 
 #+name:give-me-table
@@ -2153,7 +2251,7 @@ Yup
 #+end_src
 
 #+RESULTS: give-me-table
-| stuff | 1 |
+"|" stuff "|" 1 "|"
 
 I mean yeah that's a lisp I can use in Emacs.
 
@@ -2167,7 +2265,6 @@ https://docs.racket-lang.org/rosette-guide/index.html
 
 So I don't really know how or why I will use this, but this seems like the kind of thing that I would not be able to do in Python, Erlang, C, or Clojure. Solvers... solver aided tools. If I could learn how to state problems in terms of constraints this sounds like the kind of things that working in other languages provides me.
 
-
 *** Some Racket basics
 [2022-04-16 Sat]
 
@@ -2178,7 +2275,6 @@ What draws me into Racket is how it feels like this is the sort of things I want
 LFE is cool and all, but do I actually need the Beam? No, not right now. And if I ever wanted to do distributed computing in Lisp, I know what I will use. I also don't need C, but if I want to work that low I would probably sooner turn to rust.
 
 And for stuff for me, I think Racket is going to be most of what I want to use and do.
-
 **** Threading
 
 #+name:threading-macro
@@ -2215,7 +2311,6 @@ That is a macro that I first leared in CLojure, tried to use in Elixir, but I th
 : 5
 
 See that? By using underscores I can change up where the value from the line above gets "threaded" into the next line. That is so cool. I wish that was how it worked in Clojure and Elixir.
-
 
 **** remainder division
 I pulled up a racket block one day wanting to get a number with division plus the remainder and I realized I didn't know how. So I sort of did it in Hy instead.
@@ -2254,7 +2349,6 @@ Okay that is kind of a lot to type, but it does the trick
 Calc is going to be faster in most cases. just floor the out put of normal division, then call it again with "%".
 
 *** Structs
-
 #+name:structs
 #+begin_src racket
 #lang racket
@@ -2272,7 +2366,83 @@ That is not a very good introduction to how to use a struct in Racket, but it's 
 I am doing a tree thing, so if I can the fields for a given state of some simulation I am walking through, this will do the trick.
 
 It's named fields in a data structure.
+*** Keyword args
+[2022-05-03 Tue]
 
+I just finished a homework assignment and I was getting burned by arguments being all over the place. Time to start learning how to make arguments named
+
+#+name:key-word-test
+#+begin_src racket
+#lang racket
+
+(define (my-sub #:this i #:that a)
+  (- i a))
+
+(my-sub #:that 5 #:this 10)
+#+end_src
+
+#+RESULTS: test
+: 5
+
+*** Name space collisions
+[2022-05-07 Sat]
+So I was trying to make Racket more like Clojure, and I came across a few libraries I wanted to use. Unfortunately it looks like name space collisions mean you need to prefix things. I wanted to use that "->list" call to make a list, and it turns out that collides with something in the point-free library. So if I want to use the names in something like relation with a library like point-free, I need to do stuff like this.
+
+#+name:lazy-test
+#+begin_src racket
+#lang lazy
+(require point-free seq (prefix-in r: relation))
+
+(print (r:->list (filter even? '(1 2 3 4 5 6))))
+;; (thrush+ 0 add1 positive?)
+
+#+end_src
+
+#+RESULTS: lazy-test
+"|" 2 "|" 4 "|" 6 "|"
+
+
+Thinking about it now, that is kind of like how the threading macro ended up looking in LFE
+
+*** Some basic Clojure tools
+
+#+name:Clojure-like
+#+begin_src racket
+#lang lazy
+(require seq relation threading data/pvector)
+
+;; (print  (->list (filter even? (pvector 1 2 3 4 5 6))))
+
+(define a (pvector 1 2 3 4 5 6 7 8))
+(cons 2 a)
+
+(print  (~> a
+            (filter even? _)
+            (->list)))
+#+end_src
+
+#+RESULTS: Clojure-like
+: '(2 . #<promise:a>)
+: '(2 4 6 8)
+
+This is quite a few of the tools I keep hearing about from Clojure people. This is immutable persistent vectors evaluated lazily with a nice threading macro.
+
+Here is it working with an infinite list
+
+#+name:Lazy-racket
+#+begin_src racket
+#lang lazy
+(require seq relation threading data/pvector )
+
+(print (~> (iterate add1 1)
+           (take 15 _)
+           (filter even? _)
+           (map (lambda (num) (+ 1 num)) _ )
+           (->list)))
+#+end_src
+
+#+RESULTS: Lazy-racket
+"|" 3 "|" 5 "|" 7 "|" 9 "|" 11 "|" 13 "|" 15 "|"
 
 ** Clojure
 You know what, I wanted to add ClojureScript here, but it's impossible to get it working. Why not just stick to good old java clojure? That can't be the worst idea in the world. 
@@ -2287,12 +2457,82 @@ It's sure bound to be nicer than learning C.
 #+RESULTS: does-it-still-work?
 : yes it does
 
+** Elisp
+While not exactly the language I intend to use for most things, it IS the language of Emacs, and I do intend to be using that a lot, so keeping some Elisp under my fingers is a good idea.
+
+And as a nice project, I want to see if I can get vars working in ob-elixir and ob-lfe. Let's see how far I can get on a Sunday.
+
+*** Turn Elisp vars into Elixir ones
+LFE if bound to have really similar syntax to Elisp, but Elixir is going to be slightly more involved. Let's see what this would look like
+
+#+name:var-parse
+#+begin_src elisp
+(cddr (list 2 3 (list 4 5)))
+#+end_src
+
+#+RESULTS: var-parse
+"|" 4 "|" 5 "|"
+
+Hmn... well it appears that lists and nested lists are kind of hard to look at coming out of an org mode block. They all turn into tables. I am 99% sure I know how to assign singular values. " x = 3 " would get me a var in Elizir that equals 3. And I can stick it at the top of the buffer when evaluating Elixir code. But I don't know how lists or nested lists will look comming into an elixir code block.
+
+checking the ob-racket file for reference, it looks like "orb-babel--get-vars params" will get me the variable assignments for a code block. Can you assign multiple variables?
 
 
+#+name:var1
+#+begin_src python :python python3 :results value
+return 4
+#+end_src
+
+#+name:var2
+#+begin_src python :python python3 :results value
+return 6
+#+end_src
+
+#+begin_src python :python python3 :var bob = var1 ann = var2 :results output
+print(bob + ann)
+#+end_src
+
+#+RESULTS:
+: 10
+
+Okay, you can assign multiple vars. They come into the block as a space separated list. And they are stated as pairs. 
+
+Here is the documentation for the funciton I think I will be calling
+
+#+begin_quote
+
+org-babel--get-vars is a compiled Lisp function in ‘ob-core.el’.
+
+(org-babel--get-vars PARAMS)
+
+Return the babel variable assignments in PARAMS.
+
+PARAMS is a quasi-alist of header args, which may contain
+multiple entries for the key ‘:var’.  This function returns a
+list of the cdr of all the ‘:var’ entries.
+#+end_quote
+
+Okay, it looks like there is a decent amount of cross over from Ruby. Let me see if I can just copy some of that and make some small adjustments for Elixir
+
+** Common lisp
+[2022-06-06 Mon]
+
+Clojure is great, and I still intend to learn and use it. But I am starting to think the Common lisp might actually be a way to get some performance without needing go to the JVM. And some people have been making common lisp implementations on LLVM. And that is fast. 
+
+#+name:common-lisp
+#+begin_src lisp :results value
+(+ 4 5)
+#+end_src
+
+#+RESULTS: common-lisp
+: 9
+
+I was watching a talk that was going over energy efficiency. And Erlang is great, but Erlang eats power to do what it does. So does Python, and of course that measn Hy does too. The JVM does a good job, so Clojure is fine too. But Apparently, Common-Lisp is pretty good too.
+
+Don't forget to run M-x slime before running the block.
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
-
 ** Fibonachi... why am I not surprised
 
 *** Python
@@ -2516,9 +2756,9 @@ printf("%b", 0b1010);
 
 #+RESULTS: binary
 : ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-OSholU/elixir-qf8kJX:1:17: syntax error before: "4"
-:     |
-:   1 | bin_data = << 3 4 55 >>
-:     |                 ^
+:     "|"
+:   1 "|" bin_data = << 3 4 55 >>
+:     "|"                 ^
 :     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
 :     iex:4: (file)
 
@@ -2579,7 +2819,7 @@ int main(void)
    c = a & b;       /* 12 = 0000 1100 */ 
    printf("Line 1 - Value of c is %d\n", c );
 
-   c = a | b;       /* 61 = 0011 1101 */
+   c = a "|" b;       /* 61 = 0011 1101 */
    printf("Line 2 - Value of c is %d\n", c );
 
    c = a ^ b;       /* 49 = 0011 0001 */
@@ -2717,7 +2957,7 @@ Man, I am kind of nervous about this. Hanoi towers I remember from when Big Jame
 #+begin_src elixir :results output
 list = [0,1,2,3,4]
 
-[h | t] = list
+[h "|" t] = list
 t
 #+end_src
 
@@ -2854,49 +3094,26 @@ defmodule H do
   end
 end
 
-H.hanoi(5)
+H.hanoi(4)
 
 #+end_src
 
 #+RESULTS: Hanoi_v2
-#+begin_example
-[33mwarning: [0mredefining module H (current version defined in memory)
-  iex:2
-
-[
-  [1, 1, "c"],
-  [2, 2, "b"],
-  [3, 1, "b"],
-  [4, 3, "c"],
-  [5, 1, "a"],
-  [6, 2, "c"],
-  [7, 1, "c"],
-  [8, 4, "b"],
-  [9, 1, "b"],
-  [10, 2, "a"],
-  [11, 1, "a"],
-  [12, 3, "b"],
-  [13, 1, "c"],
-  [14, 2, "b"],
-  [15, 1, "b"],
-  [16, 5, "c"],
-  [17, 1, "a"],
-  [18, 2, "c"],
-  [19, 1, "c"],
-  [20, 3, "a"],
-  [21, 1, "b"],
-  [22, 2, "a"],
-  [23, 1, "a"],
-  [24, 4, "c"],
-  [25, 1, "c"],
-  [26, 2, "b"],
-  [27, 1, "b"],
-  [28, 3, "c"],
-  [29, 1, "a"],
-  [30, 2, "c"],
-  [31, 1, "c"]
-]
-#+end_example
+|  1 | 1 | b |
+|  2 | 2 | c |
+|  3 | 1 | c |
+|  4 | 3 | b |
+|  5 | 1 | a |
+|  6 | 2 | b |
+|  7 | 1 | b |
+|  8 | 4 | c |
+|  9 | 1 | c |
+| 10 | 2 | a |
+| 11 | 1 | a |
+| 12 | 3 | c |
+| 13 | 1 | b |
+| 14 | 2 | c |
+| 15 | 1 | c |
 
 
 
@@ -3046,9 +3263,9 @@ Starting the last of the homework problems from Chapter 1. Let's see if this is 
 
 #+RESULTS: binary-test
 : ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-hlJJwp/elixir-OVaJuz:1:17: syntax error before: "4"
-:     |
-:   1 | bin_data = << 3 4 55 >>
-:     |                 ^
+:     "|"
+:   1 "|" bin_data = << 3 4 55 >>
+:     "|"                 ^
 :     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
 :     iex:3: (file)
 
@@ -3153,13 +3370,12 @@ Elixir might not have a data structure that lends it's self to binary search, so
 
 Hmn... looks like a tuple works. ...but can a tuple have 1,000,000 elements?
 *** Binary search drag race
-
 **** Elixir
 #+name:Elixir-Bsearch
 #+begin_src elixir :results output
 
 defmodule BinarySearch do
-  @spec search(tuple, integer) :: {:ok, integer} | :not_found
+  @spec search(tuple, integer) :: {:ok, integer} "|" :not_found
   def search({}, _), do: :not_found
   def search(numbers, key) do
     do_search(numbers, key, 0, tuple_size(numbers) - 1)
@@ -3433,7 +3649,7 @@ Let's start small and kick the tires on LFE
 
 #+name:nodes-in-lfe
 #+begin_src lfe :results output
-(io:put_chars "hi")
+(io:put_chars "hello")
 #+end_src
 
 #+RESULTS: nodes-in-lfe
@@ -4704,9 +4920,7 @@ That would represent a "step" in solving the maze. I would make the next step by
 
 It's so close to being done
 
-
 ***** make the data structure to hold each step
-
 Small digression, do I want to or need to track current square? Maybe it's better to just track which spaces have been visited and in what order. If I know where I am "currently" in the maze, I would be able to know where I can go from there, but if I do that, I also need to be able to re-try the maze if I hit a dead end and need to be able to re-try till I have exhausted all the routes I can take.
 
 If I just search from all possible options, I can just run the maze once, but I won't know which "route" was actually taken.
@@ -4919,10 +5133,7 @@ lfe> (lfe_io:format (format-maze (car(return-new-simulation-set (car initial) (c
 ok
 #+end_example
 
-
-***** recurse through posobileties
-
-
+***** recurse through possibilities
 #+name:maze-recurse
 #+begin_src lfe :results output
 (defmodule m
@@ -5045,98 +5256,105 @@ lfe>      ((=:= (length (lists:filter (lambda (x) (=:= x goal)) fin-moves)) 1)
 lfe>       (list "goal" maze fin-moves))
 lfe>      ((=:= (length pos-moves) 0)
 lfe>       (list "no more posobileties" maze fin-moves))
-lfe>      ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves) fin-moves (car pos-moves)))))))
+lfe>      ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves ) fin-moves (car pos-moves)))))))
 maze-recur
 lfe> 
 lfe> (set result (maze-search))
-1001000060
-0000010010
-1010010010
-1010010001
-1000000001
-0100011000
-0101001010
-0001000001
-0100000100
-0010701000
+0100060010
+0001101000
+0001000100
+0001010101
+0000100100
+1110000011
+1001010111
+1100001001 
+0000110100
+0100700000
 ("goal"
- (#(#(1 1) 1)
-  #(#(2 1) 0)
-  #(#(3 1) 0)
-  #(#(4 1) 1)
-  #(#(5 1) 0)
-  #(#(6 1) 0)
+ (#(#(1 1) 6)
+  #(#(2 1) 1)
+  #(#(3 1) 6)
+  #(#(4 1) 6)
+  #(#(5 1) 6)
+  #(#(6 1) 6)
   #(#(7 1) 6)
   #(#(8 1) 6)
-  #(#(9 1) 6)
-  #(#(10 1) 6)
-  #(#(1 2) 0)
-  #(#(2 2) 0)
-  #(#(3 2) 0)
-  #(#(4 2) 0)
-  #(#(5 2) 0)
-  #(#(6 2) 1)
-  #(#(7 2) 6)
+  #(#(9 1) 1)
+  #(#(10 1) 0)
+  #(#(1 2) 6)
+  #(#(2 2) 6)
+  #(#(3 2) 6)
+  #(#(4 2) 1)
+  #(#(5 2) 1)
+  #(#(6 2) 6)
+  #(#(7 2) 1)
   #(#(8 2) 0)
-  #(#(9 2) 1)
-  #(#(10 2) 6)
-  #(#(1 3) 1)
-  #(#(2 3) 0)
-  #(#(3 3) 1)
-  #(#(4 3) 0)
-  #(#(5 3) 0)
-  #(#(6 3) 1)
+  #(#(9 2) 0)
+  #(#(10 2) 0)
+  #(#(1 3) 6)
+  #(#(2 3) 6)
+  #(#(3 3) 6)
+  #(#(4 3) 1)
+  #(#(5 3) 6)
+  #(#(6 3) 6)
   #(#(7 ...) 6)
   #(#(...) ...)
   #(...) ...)
- (#(#(9 1) 6)
-  #(#(8 1) 0)
+ (#(#(6 1) 6)
+  #(#(6 2) 0)
+  #(#(6 3) 0)
+  #(#(5 1) 0)
+  #(#(5 3) 0)
+  #(#(4 1) 0)
   #(#(7 1) 0)
-  #(#(7 2) 0)
-  #(#(10 1) 0)
-  #(#(10 2) 0)
+  #(#(8 1) 0)
   #(#(7 3) 0)
   #(#(7 4) 0)
-  #(#(8 4) 0)
-  #(#(8 3) 0)
-  #(#(8 5) 0)
-  #(#(8 6) 0)
-  #(#(9 5) 0)
-  #(#(9 4) 0)
-  #(#(8 7) 0)
-  #(#(8 8) 0)
-  #(#(7 8) 0)
-  #(#(7 9) 0)
-  #(#(6 9) 0)
-  #(#(6 10) 0)
-  #(#(5 10) 7)))
+  #(#(3 1) 0)
+  #(#(3 2) 0)
+  #(#(3 3) 0)
+  #(#(2 3) 0)
+  #(#(3 4) 0)
+  #(#(3 5) 0)
+  #(#(2 5) 0)
+  #(#(1 3) 0)
+  #(#(1 2) 0)
+  #(#(1 4) 0)
+  #(#(1 1) 0)
+  #(#(2 2) 0)
+  #(#(1 5) 0)
+  #(#(4 5) 0)
+  #(#(4 6) 0)
+  #(#(5 ...) 0)
+  #(#(...) ...)
+  #(...) ...))
 lfe> (set result-maze (format-maze (cadr result)))
-((((((((((() "1001006666" "\n") "0000016016" "\n") "1010016610" "\n")
-       "1010016661"
+((((((((((() "6166666610" "\n") "6661161000" "\n") "6661666100" "\n")
+       "6061016101"
        "\n")
-      "1000000661"
+      "6666100100"
       "\n")
-     "0100011600"
+     "1116600011"
      "\n")
-    "0101001610"
+    "1001610111"
     "\n")
-   "0001006601"
+   "1106601001"
    "\n")
-  "0100066100"
+  "0066110100"
   "\n")
- "0010661000"
+ "0106600000"
  "\n")
 lfe> (lfe_io:format result-maze ())
-1001006666
-0000016016
-1010016610
-1010016661
-1000000661
-0100011600
-0101001610
-0001006601
-0100066100
-0010661000
+6166666610
+6661161000
+6661666100
+6061016101
+6666100100
+1116600011
+1001610111
+1106601001 
+0066110100
+0106600000
 ok
 #+end_example
 
@@ -5239,8 +5457,8 @@ end
 
 require Dc
 my_sim = Dc.sim()
-|> Dc.add_5_dogs()
-|> Dc.remove_2_cats()
+"|"> Dc.add_5_dogs()
+"|"> Dc.remove_2_cats()
 #+end_src
 
 #+RESULTS: DC_rec
@@ -5524,7 +5742,6 @@ I wonder if it makes sense to keep a separate list of all the visited nodes? Is 
 
 But that does mean I need to hold on to a list of visited nodes. That is one more list to keep track of. 
 
-
 **** Lets make the violator
 [2022-04-06 Wed]
 
@@ -5629,13 +5846,13 @@ hmn... is that really all I need to make the predicate filter for a valid simula
 
 okay so next is moving animals right? What are the posobileties?
 
-| opetion Num | dogs moving | cats moving |
-|-------------+-------------+-------------|
-|           1 |           1 |           0 |
-|           2 |           2 |           0 |
-|           3 |           0 |           1 |
-|           4 |           0 |           2 |
-|           5 |           1 |           1 |
+"|" opetion Num "|" dogs moving "|" cats moving "|"
+"|"-------------+-------------+-------------"|"
+"|"           1 "|"           1 "|"           0 "|"
+"|"           2 "|"           2 "|"           0 "|"
+"|"           3 "|"           0 "|"           1 "|"
+"|"           4 "|"           0 "|"           2 "|"
+"|"           5 "|"           1 "|"           1 "|"
 
 Yup, just 4.
 
@@ -6460,6 +6677,7 @@ Okay, I think it's time to write the function that finishes this.
     [(not (= (sim-total-dogs sim) (sim-total-dogs s))) #f]
     [(not (= (sim-total-cats-east sim) (sim-total-cats-east s))) #f]
     [(not (= (sim-total-dogs-east sim) (sim-total-dogs-east s))) #f]
+    [(not (equal? (sim-boat-loc sim) (sim-boat-loc s))) #f]
     [else #t #t]))
 
 (define (is-goal? s)
@@ -6473,10 +6691,10 @@ Okay, I think it's time to write the function that finishes this.
   ; take a simk as the argument and print to console
   (begin
     (println "Text repper of a state of the simulation:")
-    (println (sim-total-cats s))
     (println (sim-total-dogs s))
-    (println (sim-total-cats-east s))
+    (println (sim-total-cats s))
     (println (sim-total-dogs-east s))
+    (println (sim-total-cats-east s))
     (println (sim-boat-loc s))
     (println (sim-visited s))
     (println (sim-parrent s))))
@@ -6496,10 +6714,10 @@ Okay, I think it's time to write the function that finishes this.
 (define (mark-me-visited s)
   ; take a sim and return the name sim but having been visited
   (make-sim
-   (sim-total-cats s)
    (sim-total-dogs s)
-   (sim-total-cats-east s)
+   (sim-total-cats s)
    (sim-total-dogs-east s)
+   (sim-total-cats-east s)
    (sim-boat-loc s)
    #t
    (sim-parrent s)))
@@ -6516,25 +6734,1343 @@ Okay, I think it's time to write the function that finishes this.
 
 (define (main-recur l)
   ; function for recursively calling solver
-  (let* (
-         [dup-list (sequence->list (filter sim-visited l))]
-         [curr-dup (curry dup-in-list? dup-list)]
-         [new-kids (list-sucsessors (car l))])
-
     (cond
       [(empty? l) "Empty list passed"]
       [(is-goal? (car l)) (begin
-                            (print "goal state found"
-                                   (print-all-children (car l))))]
+                            (print "goal state found")
+                                   (print-all-children (car l)))]
       [(sim-visited (car l)) (print "No solution fond")]
       [else #t (main-recur
                 (flatten (list
-                          (sequence->list (drop-when curr-dup new-kids))
+                          (sequence->list (drop-when (curry dup-in-list? l) (list-sucsessors (car l))))
                           (cdr l)
-                          (mark-me-visited (car l)))))])))
+                          (mark-me-visited (car l)))))]))
 
-(main-solve 5 8)
+;; (for ([i (list-sucsessors (make-sim 4 9 1 1 "east" #f "test"))]) (print-one-sim i))
+(main-solve 2 3)
 #+end_src
 
 #+RESULTS: racket-dfs
+#+begin_example
+"goal state found""Text repper of a state of the simulation:"
+0
+0
+2
+3
+"east"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+1
+1
+1
+2
+"west"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+0
+1
+2
+2
+"east"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+1
+2
+1
+1
+"west"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+1
+1
+1
+2
+"east"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+2
+2
+0
+1
+"west"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+1
+2
+1
+1
+"east"
+#f
+#<sim>
+"Text repper of a state of the simulation:"
+2
+3
+0
+0
+"west"
+#f
+"root"
+#+end_example
 
+At last. Finished!!!!
+** 3.8 Excercises
+Started on [2022-05-10 Tue]
+
+Man, it's already May I and I am only at the end of unit 3. What is more, the further I get into the book, the more the code is just a bunch of python classes. I am not using any classes, not even in python. If OO is useful, it would seem to hold that a well written class would make it easier for me to re-use CSP for other kinds of problems. There is code overlap for all the exaple csp problems given in this book.
+
+I have been writting things in a new langauge every time, and there is no way to re-use code between langauges.
+
+I could write all this in datalog, but that feels like it's sort of cheating in a way. Anyway, let's write the problems down
+
+1. Do a word search CSP program that allows for letters to be shared between target words
+2. Build the circuit board layout solver
+3. Make a Sudoku solver using the chapter's frame work
+
+*** preamble 
+   I kind of like the idea of learning code re-use. When I did towers of Hanoe and the dogs and cats and the maze solver, there was a lot of re-used ideas, but no re-used code.
+
+
+...I wonder if I could re-use some of this between problems? Is there a way I could just make it in really generic lisp and run it in several langauges? Or maybe I can make an "engine" that I re-write in three of my languages and re-work with extra code to solve the 3 problems?
+
+I am feeling Hy for one of these. Racket for Datalog because it makes all the sense in the world and... Clojure?
+
+So how can I teach myself some code re-use when running these three different languages? Should I write all this all in Hy?
+
+And as long as I am thinking about how all this works, I have almost no idea how the machinery of this whole CSP thing even works. It was all swallowed up in classes and I don't really understand where the computation was getting done. 
+
+I never ended up making a generic DFS search "function". It was very much tailored to the problem. But having written it twice, I have a very good idea how I would write it again for a different problem.
+
+What if I really do make this all about code re-use. What if I pass org variables between code blocks and make the re-useable part in one language and the problem specific bits in another?
+
+...hmn. Okay so... Clojure is the fastest so it should get the number crunchy bits right? And then implement word search, circuit board, and Sudoku in 3 other lisps.
+
+I wonder how I am going to have one lisp spit out the rules for the constraint solver across bable blocks? Is that just a bad idea? I can see spitting out the list of values that get fed in being pretty simple. But the things like describing how a word search restrains the use of letters is hard to pass over to a new block that is not just source code for how to make these logical relationships.
+
+Okay, I have a clearer picture of how the backtracking search works. And it looks horribly inefficient. It's this nasty nested set of conditionals, and then it searches through this tree of possibilities to find a set of assignments that make everything fit. 
+
+the three I ended up making in Racket was pretty nasty. Each node was this nested store of a "self" and it's "ancestors". Each node down the chain was a set of what the simulating looked like at each step.
+
+So I guess what a CSP could do, is take a struct, and make a "second generation" of structs that are the second assignment of all the other possible "first moves". Each "generation", you run the checks to see if the new possible assignments are valid of not. As you go through each generation, you stop calculating for generations that are "dead" or have no more possible set of valid options for new assignments.
+
+
+Hmn... this seems more like a BFS than a DFS the way I am thinking about it here.
+
+But each generation I also start loping off branches so I don't need to re-run checks on paths that have no further possibilities. 
+
+*** All in Racket
+[2022-05-11 Wed]
+
+I am sure if I though about it long enough and hard enough I could come up with a cool way to make this all shareable. I could actually do these three in LFE, Elixir, and Gleam if I had those three running. But I don't. And I CAN see how these look in Datalog vs straight up Racket, so that works for me.
+
+If I understand what this chapter is saying I do, I actually already made something kind of like this is Racket for me last problem. I think I just need to make it generic so I can plug in an interface for the three kinds of problems I am going to tackle next.
+
+*** I'm already done?
+Wait what?
+https://towardsdatascience.com/backtracking-how-to-approach-search-programming-interview-questions-647a742197
+If this is right, I inadvertently made a back tracking search for the cannibals problem
+
+This makes more sense
+https://stackoverflow.com/questions/36964861/what-is-the-difference-of-dfs-and-backtracking
+
+So apparently the difference is that backtracking is given some way of knowing if a node needs to be explored more or if it can just prune it and move along. DFS just goes down, till it can't anymore.
+
+In a way, you could say that when building a tree of nodes you could build them such that you don't express all possibly successors, just the ones that get you closer and are worth exploring, and you would get very similar results. 
+
+So with the cannibals problem, I did do a backtracking search. I took a node and calculated it's children. And if it had no children, it was marked visited and send to the back of the line.
+
+So I probably can do something very similar for the Backtracking search, but I think now that I know what I am trying to build for these three problems, I have a better idea of how I want it to work
+
+[2022-05-12 Thu]
+
+Taking a look at what I wrote for the dogs and cats problem, I think the majority of that was broken out into smaller predicate functions. The final main recursively called function was so simple. Check to see if you are done, and if not:
+1. Add the new posobileties to the front of the list (as long as they are not dups)
+2. Plop the remaining list behind them
+3. Set the old head of the list to visited and stick it at the end
+
+ How do I make this backing tracking search for Sudoku? 
+
+ I would take in a "state of the board" and generate a list of possible next steps
+ The next steps would be made by iterating over all the posobileties and determining if they "follow the rules"
+ I would filter over all those by seeing if I have tried to "go there" before...
+
+
+...does that even help me? I guess it does. If I have this list of states that led to nothing, filtering over them each new generation is going to make for a LOT of filtering, but it's also going to mean I don't try things more times than I need to. 
+
+
+Yeah, I kind of like how this works now.
+
+I need 3?! functions
+
+1. List possibilities from a single "state"
+2. predicate to determine if I tried these (this one?) before
+3. Recursive solver that cycles a list of options around till either a solution is found or all options have been eliminated
+
+   That sounds pretty do-able. I ideally want to make the function to generate the list and the predicate modular so I can plug in the things I need to do Sudoku, word search, and the circuit board.
+
+   Here is a nice small project to test out if I am on the right track. Let's mock this up, and see if I can pass in functions as arguments to a function. I have very rarely done that, and I kind of want to be sure I can do that first.
+
+*** First class function test
+
+#+name:testing-first-class
+#+begin_src racket
+#lang lazy
+(require seq relation threading data/pvector)
+
+(define (my-list-gen num)
+  (list num (+ num 1)))
+
+(define (main func num)
+  (list (func num)))
+
+(print (main my-list-gen 3))
+#+end_src
+
+#+RESULTS: testing-first-class
+"|" 3 "|" 4 "|"
+
+
+Well look at that. I can just pass the name of a function and then call that in the body of another function just like that.
+
+
+
+...can I do that with a struct? ...wait but I can just define the struct and pass in a constructor function
+
+*** Let's make the re-usable bit first
+
+So if I understand what I am trying to do, I am going to make the bit of the code that is the recursively called machinery, and plug in a custom state, and predicate functions
+
+#+name:back-track
+#+begin_src racket
+#lang lazy
+(require seq relation threading data/pvector)
+
+(define (back-track-search variables domain contraints)
+  ;; This is the function which will handle the initail set up before a sepperate function is called recursively for proper TCO
+
+  ;; do the checks to know it's okay to run the whole thing here
+
+  (BTS-rec variables domain contraints cue))
+
+(define (BTS-rec variables domain contraints cue)
+ (cond
+   ;;check for sucsess
+   ;;check for failure
+   ;; else do work and recur
+   ))
+
+#+end_src
+
+hmn... I guess that is how it all works. I could almost make this one function, but I prefer moving the house keeping a sort of init function rather than calling the recursive function directly. 
+
+...I wonder if there is a better way to do the back tracking part of this. I am getting a DFS going with that cue, but according to that one definition I found, the thing that separates this from a simple DFS is that this needs to eliminate future trips down branches of the tree if it can be determined there is no further need to keep looking down a branch. A DFS would simple walk the tree to visit all nodes till it finds what it's looking for.
+
+I guess the best way of doing this is to use the "have a been here before check". But doing that check every run of the recursive run seems like I am going to waste SO much time. If there a way to memoize it or something?
+
+And the the tree I am walking is really... redundant. I end unded up passing the whole tree inside every node I walked. That was... kind of scary. I never blew the stack, but then again my computer has a lot of ram and I was just trying to figure out how to walk the path through a maze with 100 squares, or get cats and dogs in boats across a river. 
+
+What if I wanted to re-use some of that tree as I build it out? Is there a way to make this a persistent data structure?
+
+continued on [2022-05-17 Tue]
+
+So I think the reason it was getting to be this massive data structure before was because each "state" had it' entire lineage along for the ride. If there is a way to "refer" to where a state was derrived from without needing all the things that make it up, that would be nice.
+
+Let's assume I get the state to not exponentially grow to crazyness, what about defining a goal.
+
+How do I pass that into a CSP? If that it's own function? Are all CSP problems defined by having all their variables assigned a value? Can you ever solve a CSP where some things can be not assigned? Or is that a different problem?
+
+It kind of sounds like a solution is a set of variables assigned a domain value for which all constraints hold.
+
+How do I write a predicate like that? it kind of sounds like there is a for loop in there. Do I need to make that some kind of recursive call?
+
+... it kind of seems like there don't need to be there big discrete checks for success of failure. It's like I could check the constraints one at a time, and if I hit one that fails, I mark the whole branch stale and recur.
+
+If none of the constraints fail, then I check to see if all the variables have been assigned. If I have, then return the answer. If some are not done yet, add new options to the front of the list and go hunting.
+
+*** Another stab at the re-usable bits
+[2022-05-18 Wed]
+
+I came upon this riding the train
+
+#+begin_quote
+Anyway, I think I know how to make the machinery of the backtracking search. I want to take in the variables as a set. I take one variable and try to set it all it's possible domains. I filter the list of resulting states such that they are all valid and not repeated. I take the list and plop it at the head of the cue, and stick my completed variable at the back. 
+
+That is how the dogs and cats problem got solved and it's backtracking because that filter will stop searches beyond points where I know there is no more possibility space to explore. If a state results in no new children, it gets marked visited and no other state that reaches that point will ever move past there either.
+#+end_quote
+
+So I think I need a way of making new entires for the cue by taking one variable, then making a list, one for each of the domains it can be set two.
+
+Run all that through the contraints and duplicatn checker, then recur.
+
+
+#+name:re-use-me
+#+begin_src racket
+#lang lazy
+(require seq relation threading data/pvector)
+
+(define (back-track-search variables domain contraints)
+  ;; This is the function which will handle the initail set up before a sepperate function is called recursively for proper TCO
+
+  ;; do the checks to know it's okay to run the whole thing here
+
+  (BTS-rec variables domain contraints '()))
+
+(define (BTS-rec variables domain contraints cue)
+ (cond
+   ;;check for sucsess
+   ;;check for failure
+   ;; else do work and recur
+   ))
+
+#+end_src
+
+hmn... still stuck. Let's make this problem smaller.
+
+
+#+name:smaller
+#+begin_src racket
+#lang racket
+(require seq relation threading data/pvector)
+
+;; (define (vars '(a b c d)))
+
+;; (define (doms '(1 2 3)))
+
+(define (rule-1 a b c d)
+  (cond
+    [(> a c) #t]
+    [else #t #f]))
+
+(define (rule-2 a b c d)
+  (cond
+    [(> b c) #t]
+    [else #t #f]))
+
+(define (rule-3 a b c d)
+  (cond
+    [(and (> d a) (> d b)) #t]
+    [else #t #f]))
+
+(define constraints '(rule-1 rule-2 rule-3))
+
+;; (print (map (lambda (fun) (fun 2 1 2 3)) constraints))
+(print (sequence->list (cartesian-product constraints '(2 1 2 3))))
+
+#+end_src
+
+#+RESULTS: smaller
+"|" rule-1 "|" 2 "|"
+"|" rule-1 "|" 1 "|"
+"|" rule-1 "|" 2 "|"
+"|" rule-1 "|" 3 "|"
+"|" rule-2 "|" 2 "|"
+"|" rule-2 "|" 1 "|"
+"|" rule-2 "|" 2 "|"
+"|" rule-2 "|" 3 "|"
+"|" rule-3 "|" 2 "|"
+"|" rule-3 "|" 1 "|"
+"|" rule-3 "|" 2 "|"
+"|" rule-3 "|" 3 "|"
+
+Shucks, that is harder than I thought it would be
+
+Cartesian product is not the answer either.
+
+Do I just chain the predicates?
+
+#+name:chain-pred
+#+begin_src racket
+#lang racket
+(require seq relation threading data/pvector)
+
+;; (define (vars '(a b c d)))
+
+;; (define (doms '(1 2 3)))
+
+(define (rule-1 a b c d)
+  (cond
+    [(> a c) #t]
+    [else #t #f]))
+
+(define (rule-2 a b c d)
+  (cond
+    [(> b c) #t]
+    [else #t #f]))
+
+(define (rule-3 a b c d)
+  (cond
+    [(and (> d a) (> d b)) #t]
+    [else #t #f]))
+
+(define (rule-master a b c d)
+  (cond
+    [(and
+      (rule-1 a b c d)
+      (rule-2 a b c d)
+      (rule-3 a b c d)) #t]
+    [else #t #f]))
+
+(print (rule-master 2 2 1 3))
+
+#+end_src
+
+#+RESULTS: chain-pred
+: #t
+
+So the chained predicates works on the final set, but I don't think I wrote them right to show incremental steps
+
+Yeah, I can't even pass the predicate less than the full number of arguments
+
+*** And... I am changing the language to Python
+[2022-05-22 Sun]
+As much as I like Racket and Lisp, it's time to bring this back to Python. I need to learn Python and have things to show that I have made in Python, and this means I kind of need to write it in Python. Hy would be nice too, but it's kind of broken at the moment, so I don't want to try to fix it, or wait till it is fixed before I move on.
+
+So... I guess I go about this the same way I was thinking of doing it in Racket, but in Python. And try to not do any recursion.
+
+I wonder if there is at least a persistent data structure I can use?
+Right: https://pypi.org/project/pyrsistent/
+
+Oh and NVM, Hy is working on the last stable version of 0.20 and I can run it on Python 3.9. So TECHNICALLY I could do this is Hy. But I am going to be a good boy and write this in Vanilla Python. It's not really that bad.
+
+**** how do I even write a data class in Python?
+So if I am going to do this the way I was thinking of making it in Racket, I need a data class. I don't think I have even ever written a data class in Python.
+
+#+name:data_class
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+
+
+
+@dataclass
+class Simulation_state:
+    variables: list
+    domains: list
+    contraints: list
+
+a = "sue"
+b = "bill"
+c = "fred"
+
+def my_pred_1(sim_state):
+    True
+    
+def my_pred_2(sim_state):
+    True
+    
+def my_pred_3(sim_state):
+    True
+
+bob = Simulation_state([a, b, c], [1, 2, 3], [my_pred_1, my_pred_2, my_pred_3])
+
+print(bob.variables)
+#+end_src
+
+#+RESULTS: data_class
+: ['sue', 'bill', 'fred']
+
+Well that is not so bad.
+
+Let's see if I can make it persistent.
+
+I think pyrsistent calls is a PRecord
+
+
+
+#+name:PRecord_test
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+
+
+class Simulation_state(PRecord):
+    variables = field()
+    domains = field()
+    constraints = field()
+
+a = "sue"
+b = "bill"
+c = "fred"
+
+def my_pred_1(sim_state):
+    True
+    
+def my_pred_2(sim_state):
+    True
+    
+def my_pred_3(sim_state):
+    True
+
+bob = Simulation_state(variables = v(a, b, c), domains = v(1, 2, 3), constraints = v(my_pred_1, my_pred_2,  my_pred_3))
+
+print(bob.variables)
+
+dan = bob.set('variables', bob.variables.set(0, "dan"))
+print(dan.variables)
+#+end_src
+
+#+RESULTS: PRecord_test
+: pvector(['sue', 'bill', 'fred'])
+: pvector(['dan', 'bill', 'fred'])
+
+Cool. Well that was a lot of syntax to learn, but I got it.
+
+
+#+name:test_hy_pvec
+#+begin_src hy :results output
+(import [pyrsistent [*]])
+
+(print (py "v(1, 2)"))
+#+end_src
+
+#+RESULTS: test_hy_pvec
+: pvector([1, 2])
+
+
+Cool, and I can used them in Hy
+
+
+#+name:test_hy_pvec_2
+#+begin_src hy :results output
+(import [pyrsistent [*]])
+
+(print (v 1 3))
+#+end_src
+
+#+RESULTS: test_hy_pvec_2
+: pvector([1, 3])
+
+Ooh, even cleaner
+
+
+Right so, I think this is the way I am going to send data around the back tracker. I pass a list of variables, domains, and constraints, and I just keep sticking them onto a transformed version of the original set of states I am tracking. 
+
+...I wonder if because this is persistent, if I even need to write it the way I did before?
+
+**** Let's make a small mini-problem
+Rather than try to jump into something big, let's a make a generic solver for a really simple problem and see how if it can just be thrown bigger problems
+
+
+#+name:PRecord_test3
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+class Simulation_state(PRecord):
+    names = field()
+    domains = field()
+    ann = field()
+    bob = field()
+    phil = field()
+    constraints = field()
+
+lunch_vars = v("ann", "bob", "phil")
+
+lunch_domains = v(
+    ("breakfast", "Mon"),
+    ("breakfast", "Tue"),
+    ("lunch", "Mon"),
+    ("lunch", "Tue"),
+    ("dinner", "Mon"),
+    ("dinner", "Tue"))
+
+def my_pred_1(sim_state):
+    "predicate for determining of Ann is okay with the date"
+    if sim_state.ann == []:
+        return True
+    elif sim_state.ann[1] == "Mon":
+        return False
+    elif sim_state.ann[1] == "Wed":
+        return False
+    else:
+        return True
+        
+def my_pred_2(sim_state):
+    "predicate for determining of Bob is okay with the date"
+    if sim_state.bob == []:
+        return True
+    elif sim_state.bob[0] == "breakfast":
+        return False
+    elif sim_state.bob[0] == "dinner":
+        return False
+    else:
+        return True
+    
+def my_pred_3(sim_state):
+    "predicate for determining of Phil is okay with the date"
+    if sim_state.phil == []:
+        return True
+    elif sim_state.phil[0] == "breakfast":
+        return False
+    else:
+        return True
+    
+def master_pred(sim_state):
+    "predicate for checking all the other predicates"
+    if my_pred_1(sim_state) and my_pred_2(sim_state) and my_pred_3(sim_state):
+        return True
+    else:
+        False
+        
+def goal_pred(sim_state):
+    "predicate for checking non empty and master predicates"
+    if sim_state.ann != [] and sim_state.bob !=[] and sim_state.phil != [] and master_pred(sim_state):
+        return True
+    else:
+        return False
+        
+alpha = Simulation_state(names = v('ann', 'bob', 'phil'), domains = lunch_domains, ann = [], bob = [], phil = [], constraints = v(my_pred_1, my_pred_2, my_pred_3))
+
+alpha2 = alpha.set(alpha.names[0], lunch_domains[1])
+print(master_pred(alpha2))
+print(goal_pred(alpha2))
+
+#+end_src
+
+#+RESULTS: PRecord_test3
+: True
+: False
+
+
+
+
+
+**** This is getting a little verbose
+[2022-05-25 Wed]
+But it's not bad yet
+
+#+name:PRecord_test4
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+class Simulation_state(PRecord):
+    names = field()
+    domains = field()
+    ann = field()
+    bob = field()
+    phil = field()
+    m_pred = field()
+    g_pred = field()
+    cue = field()
+
+lunch_vars = v("ann", "bob", "phil")
+
+lunch_domains = v(
+    ("breakfast", "Mon"),
+    ("breakfast", "Tue"),
+    ("lunch", "Mon"),
+    ("lunch", "Tue"),
+    ("dinner", "Mon"),
+    ("dinner", "Tue"))
+
+def my_pred_1(sim_state):
+    "predicate for determining of Ann is okay with the date"
+    if sim_state.ann == []:
+        return True
+    elif sim_state.ann[1] == "Mon":
+        return False
+    elif sim_state.ann[1] == "Wed":
+        return False
+    else:
+        return True
+        
+def my_pred_2(sim_state):
+    "predicate for determining of Bob is okay with the date"
+    if sim_state.bob == []:
+        return True
+    elif sim_state.bob[0] == "breakfast":
+        return False
+    elif sim_state.bob[0] == "dinner":
+        return False
+    else:
+        return True
+    
+def my_pred_3(sim_state):
+    "predicate for determining of Phil is okay with the date"
+    if sim_state.phil == []:
+        return True
+    elif sim_state.phil[0] == "breakfast":
+        return False
+    else:
+        return True
+    
+def master_pred(sim_state):
+    "predicate for checking all the other predicates"
+    if my_pred_1(sim_state) and my_pred_2(sim_state) and my_pred_3(sim_state):
+        return True
+    else:
+        False
+        
+def goal_pred(sim_state):
+    "predicate for checking non empty and master predicates"
+    if sim_state.ann != [] and sim_state.bob !=[] and sim_state.phil != [] and master_pred(sim_state):
+        return True
+    else:
+        return False
+        
+alpha = Simulation_state(names = v('ann', 'bob', 'phil'),
+                         domains = lunch_domains, ann = [1], bob = [2], phil = [3],
+                         m_pred = master_pred,
+                         g_pred = goal_pred,
+                         cue = v())
+
+# def assign_next_name_its_dom(sim_state):
+#     "take a sim state and assign doms to first un-empty name and return a new state with the vaild sucsessors at the head of the list"
+
+print(alpha.names[0][0])
+
+#+end_src
+
+#+RESULTS: PRecord_test4
+: a
+
+Okay... I think I need to ditch the class naming the fields is making things so weird.
+
+Being able to replace a single field in a structure by calling set and the name of the things I want to change is cool. But what it if I don't know what the name of the thing is going to be yet? I need to be able to say things like the first un-empty filed.
+
+Let's make the whole things a Pmap. Oh wait, the Precord IS a Pmap. So let's make names a Pvector
+
+
+#+name:PRecord_test5
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+class Simulation_state(PRecord):
+    names = field()
+    domains = field()
+    m_pred = field()
+    g_pred = field()
+    cue = field()
+
+lunch_vars = v("ann", "bob", "phil")
+
+lunch_domains = v(
+    ("breakfast", "Mon"),
+    ("breakfast", "Tue"),
+    ("lunch", "Mon"),
+    ("lunch", "Tue"),
+    ("dinner", "Mon"),
+    ("dinner", "Tue"))
+
+def my_pred_1(sim_state):
+    "predicate for determining of Ann is okay with the date"
+    if sim_state.ann == []:
+        return True
+    elif sim_state.ann[1] == "Mon":
+        return False
+    elif sim_state.ann[1] == "Wed":
+        return False
+    else:
+        return True
+    
+def my_pred_2(sim_state):
+    "predicate for determining of Bob is okay with the date"
+    if sim_state.bob == []:
+        return True
+    elif sim_state.bob[0] == "breakfast":
+        return False
+    elif sim_state.bob[0] == "dinner":
+        return False
+    else:
+        return True
+    
+def my_pred_3(sim_state):
+    "predicate for determining of Phil is okay with the date"
+    if sim_state.phil == []:
+        return True
+    elif sim_state.phil[0] == "breakfast":
+        return False
+    else:
+        return True
+    
+def master_pred(sim_state):
+    "predicate for checking all the other predicates"
+    if my_pred_1(sim_state) and my_pred_2(sim_state) and my_pred_3(sim_state):
+        return True
+    else:
+        False
+        
+def goal_pred(sim_state):
+    "predicate for checking non empty and master predicates"
+    if sim_state.ann != [] and sim_state.bob !=[] and sim_state.phil != [] and master_pred(sim_state):
+        return True
+    else:
+        return False
+
+alpha = Simulation_state(names = v(v('ann',[]),
+                                   v('bob',[2]),
+                                   v('phil', [])),
+                         domains = lunch_domains,
+                         m_pred = master_pred,
+                         g_pred = goal_pred,
+                         cue = v())
+
+# def assign_next_name_its_dom(sim_state):
+#     "take a sim state and assign doms to first un-empty name and return a new state with the vaild sucsessors at the head of the list"
+#     first_empty = filter( lambda x: x[1] != [], sim_state.names)
+
+
+print(list(filter( lambda x: x[1] != [], alpha.names)))
+
+
+#+end_src
+
+#+RESULTS: PRecord_test5
+: [pvector(['bob', [2]])]
+
+much better. Now I can pragmatically call the names without needing to use the name to access the field
+
+**** I think I need the names to be a map
+[2022-05-26 Thu]
+
+If I understand maps correctly, I can call the name of a key in the map and get it's value. So I should still be able to work with them programmatically, and still call them by name when I want to do predicates where I will know the name of the things I am looking to validate
+
+
+#+name:PRecord_test6
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+class Simulation_state(PRecord):
+    names = field()
+    domains = field()
+    m_pred = field()
+    g_pred = field()
+
+lunch_vars = v("ann", "bob", "phil")
+
+lunch_domains = v(
+    ("breakfast", "Mon"),
+    ("breakfast", "Tue"),
+    ("lunch", "Mon"),
+    ("lunch", "Tue"),
+    ("dinner", "Mon"),
+    ("dinner", "Tue"))
+
+def my_pred_1(sim_state):
+    "predicate for determining of Ann is okay with the date"
+    if sim_state.names['ann'] == []:
+        return True
+    elif sim_state.names['ann'][1] == "Mon":
+        return False
+    elif sim_state.names['ann'][1] == "Wed":
+        return False
+    else:
+        return True
+    
+def my_pred_2(sim_state):
+    "predicate for determining of Bob is okay with the date"
+    if sim_state.names['bob'] == []:
+        return True
+    elif sim_state.names['bob'][0] == "breakfast":
+        return False
+    elif sim_state.names['bob'][0] == "dinner":
+        return False
+    else:
+        return True
+    
+def my_pred_3(sim_state):
+    "predicate for determining of Phil is okay with the date"
+    if sim_state.names['phil'] == []:
+        return True
+    elif sim_state.names['phil'][0] == "breakfast":
+        return False
+    else:
+        return True
+    
+def master_pred(sim_state):
+    "predicate for checking all the other predicates"
+    if my_pred_1(sim_state) and my_pred_2(sim_state) and my_pred_3(sim_state):
+        return True
+    else:
+        return False
+    
+def goal_pred(sim_state):
+    "predicate for checking non empty and master predicates"
+    if sim_state.names['ann'] != [] and sim_state.names['bob'] !=[] and sim_state.names['phil'] != [] and master_pred(sim_state):
+        return True
+    else:
+        return False
+
+alpha = Simulation_state(names = m(ann=[], bob=[0], phil = lunch_domains[0]),
+                         domains = lunch_domains,
+                         m_pred = master_pred,
+                         g_pred = goal_pred)
+
+def assign_next_name_its_dom(sim_state):
+    "take a sim state and assign doms to first un-empty name and return a new state with the vaild sucsessors at the head of the list"
+    list_of_names = list(sim_state.names)
+    return next((x for x in list_of_names if sim_state.names[x] == []), None)
+
+
+print( assign_next_name_its_dom(alpha) )
+#+end_src
+
+#+RESULTS: PRecord_test6
+: ann
+
+Well that isn't the whole thing, but this is great progress. With that function, I get the first empty name in list of names for a given sim state.
+**** Next I need a way to add new states
+
+Let's try assigning just ann a set of domains
+
+
+#+name:PRecord_test7
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+
+class Simulation_state(PRecord):
+    names = field()
+    domains = field()
+    m_pred = field()
+    g_pred = field()
+
+lunch_vars = v("ann", "bob", "phil")
+
+lunch_domains = v(
+    ("breakfast", "Mon"),
+    ("breakfast", "Tue"),
+    ("lunch", "Mon"),
+    ("lunch", "Tue"),
+    ("dinner", "Mon"),
+    ("dinner", "Tue"))
+
+def my_pred_1(sim_state):
+    "predicate for determining of Ann is okay with the date"
+    if sim_state.names['ann'] == []:
+        return True
+    elif sim_state.names['ann'][1] == "Mon":
+        return False
+    elif sim_state.names['ann'][1] == "Wed":
+        return False
+    else:
+        return True
+    
+def my_pred_2(sim_state):
+    "predicate for determining of Bob is okay with the date"
+    if sim_state.names['bob'] == []:
+        return True
+    elif sim_state.names['bob'][0] == "breakfast":
+        return False
+    elif sim_state.names['bob'][0] == "dinner":
+        return False
+    else:
+        return True
+    
+def my_pred_3(sim_state):
+    "predicate for determining of Phil is okay with the date"
+    if sim_state.names['phil'] == []:
+        return True
+    elif sim_state.names['phil'][0] == "breakfast":
+        return False
+    else:
+        return True
+    
+def master_pred(sim_state):
+    "predicate for checking all the other predicates"
+    if my_pred_1(sim_state) and my_pred_2(sim_state) and my_pred_3(sim_state):
+        return True
+    else:
+        return False
+    
+def goal_pred(sim_state):
+    "predicate for checking non empty and master predicates"
+    if sim_state.names['ann'] != [] and sim_state.names['bob'] !=[] and sim_state.names['phil'] != [] and master_pred(sim_state):
+        return True
+    else:
+        return False
+
+alpha = Simulation_state(names = m(ann = [], bob=[], phil = []),
+                         domains = lunch_domains,
+                         m_pred = master_pred,
+                         g_pred = goal_pred)
+
+def get_next_empty_name(sim_state):
+    "take a sim state and assign doms to first un-empty name and return a new state with the vaild sucsessors at the head of the list"
+    list_of_names = list(sim_state.names)
+    return next((x for x in list_of_names if sim_state.names[x] == []), None)
+
+def assign_empty(sim_state, cue):
+    if get_next_empty_name(sim_state) == []:
+        return cue
+    else:
+        empty_name = get_next_empty_name(sim_state)
+        new_cue = map(lambda x : sim_state.set('names', sim_state.names.set(empty_name, x)), sim_state.domains)
+        final_cue = filter(sim_state.m_pred, new_cue)
+        return list(final_cue)
+    
+print(assign_empty(alpha, v()))
+#+end_src
+
+#+RESULTS: PRecord_test7
+: [Simulation_state(domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')]), g_pred=<function goal_pred at 0x102a4cee0>, m_pred=<function master_pred at 0x102a4ce50>, names=pmap({'ann': ('breakfast', 'Tue'), 'phil': [], 'bob': []})), Simulation_state(domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')]), g_pred=<function goal_pred at 0x102a4cee0>, m_pred=<function master_pred at 0x102a4ce50>, names=pmap({'ann': ('lunch', 'Tue'), 'phil': [], 'bob': []})), Simulation_state(domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')]), g_pred=<function goal_pred at 0x102a4cee0>, m_pred=<function master_pred at 0x102a4ce50>, names=pmap({'ann': ('dinner', 'Tue'), 'phil': [], 'bob': []}))]
+
+Okay, so I need a way to pass in one state at a time from this list, and keep around the old list of states, but this is looking pretty good.
+
+**** From here on out, I am going to keep the code for these in a source code file
+[2022-05-31 Tue]
+
+Org code blocks are nice, and they certainly make navigating between the different parts if these things nice. But I a going to need to start putting things into source code files at some point anyway. Might as well use the full blown mode for the language while writing too right?
+
+- [[file:3.8_CSP_python/csp.py][file:~/four_horsemen/3.8_CSP_python/csp.py]]
+
+Okay so what is next... oh right, I need a function that takes 
+
+End of the session, well I seem to have his a bit of a hickup. I want to make a new list to pass as the return, but I am getting this weird error that I can't "append" to a None type?
+
+Not sure what I am missing
+
+But working in a true python buffer was quite nice. heheh
+**** Should I ditch pyrsistent?
+[2022-06-02 Thu]
+Part of me thinks I am just struggling with the sytax that comes about from using the pyrsistent library. Surely this would go away if I just wrote it wiht regular python lists right?
+
+Let's figure out how to write it in vanilla Python today, and see how hard that would be to re-do in the current project.
+
+...well that went quickly. I found out two things.I
+
+I learned how to unpack a map into a pvector: 
+
+#+begin_quote
+    final_list = v(*final_cue)
+#+end_quote
+
+and I solved the other issues I was having. So it's back on track
+
+
+The assign empty function is almost done. But I need to understand in the context of how it will work with the final machinery that will solve all these.
+
+**** Time to handle the cue
+[2022-06-06 Mon]
+
+I took a little break to write some useful Python for work, but now it's back to CSPs. I think I know what I need to write next. I need a function that will go through a cue and handle each item one at a time
+
+I took a little break to write some useful Python for work, but now it's back to CSPs. I think I know what I need to write next. I need a function that will go through a cue and handle each item one at a time.
+
+hmn... I am kind of missing a few things. I need to assign things to getting visited after visiting them, and I need a way to remove duplicated, and avoid things already visited.
+
+**** some hour keeping
+[2022-06-07 Tue]
+
+I am going to make the function for marking a sim visited and the duplicate checker
+
+Shucks, I just realized something. I don't know when to mark a sim visited. If I add the possible domains to one name, I can't mark it visited yet. I need to assign the other names first, or determine this sim had no hope of fulfilling then goal, then I can mark it visited 
+
+no wait. If I visit a node, and assign all it's legally possible children, I never need to come back to it. I already have all the places it could go as unvisited children
+
+I need to fix the "process next in cue" function. It is calling assing empty on a sim, and I need to pass it a list.
+
+I think I am going to make a function that cylces through the first items in the list, and then if it can be assigned, assign it. Other wise, stick it on the back of the list. And check before that to see if it has been visited, in which case you are probably done because a visited sim got to the head of the cue and those are getting stuck on at the bottom while unvisited ones are getting pegged onto the top
+
+**** Do I handle one at a time and itterate?
+[2022-06-08 Wed]
+
+I think I want to make the process next in cue function just run through things one at a time rather than deal with how to itterate.
+
+**** It's getting closer
+[2022-06-09 Thu]
+
+Today I want to see what is going on with these things getting passed around. I seem to be passing the wring things to the wrong functions
+
+okay, pretty good progress today. I found what is giving me problems, and I just need to figure out what I am missing in terms of dealing with these lists
+#+begin_quote
+pvector([pvector([Simulation_state(g_pred=<function goal_pred at 0x1037e6040>, visited=False, names=pmap({'bob': ('lunch', 'Mon'), 'ann': [], 'phil': []}), m_pred=<function master_pred at 0x1037e0f70>, domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')])), Simulation_state(g_pred=<function goal_pred at 0x1037e6040>, visited=False, names=pmap({'bob': ('lunch', 'Tue'), 'ann': [], 'phil': []}), m_pred=<function master_pred at 0x1037e0f70>, domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')]))]),
+
+
+pvector([]),
+
+Simulation_state(g_pred=<function goal_pred at 0x1037e6040>, visited=True, names=pmap({'bob': [], 'ann': [], 'phil': []}), m_pred=<function master_pred at 0x1037e0f70>, domains=pvector([('breakfast', 'Mon'), ('breakfast', 'Tue'), ('lunch', 'Mon'), ('lunch', 'Tue'), ('dinner', 'Mon'), ('dinner', 'Tue')]))])
+#+end_quote 
+
+I get this weird empty list in the middle, and I need to get rid of it and have just one nice list
+
+**** Need to fugure out this list thing
+[2022-06-13 Mon]
+I am getting there, but this weird list parse thing is throwing me for a loop
+
+...man this does not need to be this hard. Maybe I will switch it back to Racket?
+
+
+**** Let's give it another shot
+[2022-06-14 Tue]
+Python really doesn't support this list passing style I am used to from Lisp, but maybe I can still salvage this.
+
+...woa. I was really close to being done. And I think I am about ready to try on of the solvers this generic thing is supposed to be.
+
+
+**** Now that it works, I need to make it a word search solver
+[2022-06-15 Wed]
+I see how the basics of the machinery needs to work. It sounds like the domains are are going to be a list of coordinates for each place a word can go. The names are going to be the words in the puzzle. And the constraints are going to be a list of rules making sure the interior letters of each word not occupy the same space as any other word.
+
+The example is the book has a bunch of classes I don't want to copy but I do think I can copy how they generate all those domains.
+
+I hate the potential complexity that arrises from checking the interal location of letters for each word. Is that what, two nested for loops?
+
+
+For each word
+For each interior letter of that word
+for each interrior letter of each of the other words
+
+make sure they are not the same as the others.
+
+
+not the same... that sounds like the only way of knowing it is not the same is to look at each at the same time.
+
+but really, I there is another way. You could have the goal predicate take the list of all interrior letter potiisons for all words. Compare that with the length of the set of all interrior letter positions. If they are the same length, there are no duplicates. If the set (removed diplicated) is shorter, there is a duplicatoion and the goal has not been found.
+
+The domains sounds like it's a lot of data to generate. I do that by... passing each word in the names to a function that spits out all the orientations it could be, then I just take the ones that fit in my initial grid. Man that's a CSP problem too. haha.
+
+...dare I really runt he CSP engine twice? once for the domains, and again to see how they fit?
+
+
+The textbook hints at a way of speeding up the computatin of all possible orientations of a word. And I think I can think of one way. Memoize it. 
+
+
+If I make a list of all possible orientations of words form length 2 through the length of the longest axis, I should be able to get a list of all the possible locations a word of a given size could be. I then take a list of words and assign them the possible locations they could exist from that list. 
+
+
+But wait.. This is calculating domains. That means some names can only get certain domains. I didn't really account for that in my solution excexpt to make a contraint of for which domains a name could get with predicate functions.
+
+Yeah, I mean I could add the domain to set each word to be part of the search, but the book is right. That's a lot of cycling around trying bad ideas. I didn't build a way to limit the domains a name is assigned except by using these predicate functions.
+
+Yeah, Each pass where I assign a name all the domains, I do a filter on the master pred. I could cull the bad assignments there. And I guess that it not the worst thing in the world.
+
+I could make a predicate that check the number of coordinate pairs in a names's assigned domain and make sure they are the same length. That is one way. 
+
+
+**** Oh man, this is hard
+[2022-06-16 Thu]
+So I think I know what I need to do, I need to write enough predicates to describe how the words can fit in the grid. And I need a function to spit out the enumeration of how many possibilities there are.
+
+Ideally I made the size of the grid set able. I also want the number of words to be flexible.
+
+So...  How do I list out all the possible ways a words can be placed in a grid? Part of me says I pick a square, and describe spaces above, to each side, and blow, and see if the words can be rotated after starting at this point, and just keeping the ones that all fall in the grid.
+
+I also like the idea of keeping the number of letters long the space can fit in as part of the domain. I kind of want to cheat a little and add a bit in the predicates that looks at an extra value and compare the length of the word in question with the length of word this is compatible with. That actually does sounds like a good idea.
+
+Let's sketch it out here instead of running it in the main file a bunch of times. 
+
+
+#+name:gird-test
+#+begin_src python :python python3 :results output
+import itertools
+
+
+grid_dim = 10
+
+nums = list(range(0, grid_dim))
+spots = list(itertools.product(nums, repeat=2))
+print(spots)
+
+#+end_src
+
+#+RESULTS: gird-test
+: [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9), (1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), (4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8), (5, 9), (6, 0), (6, 1), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8), (6, 9), (7, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8), (7, 9), (8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9), (9, 0), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9)]
+
+okay, those are all the coordinates on a 10x10 grid. Now I need a quick way of taking a single coordinate, and returning all the rotations of that space based on a length.
+
+
+#+name:cords-from-word-legnth
+#+begin_src python :python python3 :results output
+import itertools
+import functools
+
+
+def make_spots(dimensions):
+    nums = list(range(0, dimensions))
+    return list(itertools.product(nums, repeat=2))
+
+def cords_from_word_length(length, cord, s_list):
+    x = cord[0]
+    y = cord[1]
+    
+    x_list = list(range(x, x+length))
+    x_list_rep = [x] * length
+    x_list_neg = list(reversed(range((x - length) + 1, x + 1)))
+    
+    y_list = list(range(y, y+length))
+    y_list_rep = [y] * length
+    y_list_neg = list(reversed(range((y - length) + 1, y + 1)))
+    
+    rot0 = list(zip(x_list, y_list_rep))
+    rot45 = list(zip(x_list, y_list_neg))
+    rot90 = list(zip(x_list_rep, y_list_neg))
+    rot135 = list(zip(x_list_neg, y_list_neg))
+    rot180 = list(zip(x_list_neg, y_list_rep))
+    rot225 = list(zip(x_list_neg, y_list))
+    rot270 = list(zip(x_list_rep, y_list))
+    rot315 = list(zip(x_list, y_list))
+    
+    temp_pred = functools.partial(in_bounds_pred, s_list)
+    rot_list = [rot0, rot45, rot90, rot135, rot180, rot225, rot270, rot315]
+    ret = filter(temp_pred, rot_list)
+    return list(ret)
+
+def in_bounds_pred(spots_list, rot):
+    ret = [r in spots_list for r in rot]
+    return all(ret)
+
+def word_lengths_list(words):
+    ret = [len(word) for word in words]
+    return list(set(ret))
+
+my_spots = make_spots(10)        
+
+words = ["hi", "Yellow", "submarine"]
+doms = []
+for num in word_lengths_list(words):
+    for spot in my_spots:
+       doms = doms + cords_from_word_length(num, spot, my_spots)
+        
+print(doms)
+    
+#+end_src
+
+#+RESULTS: cords-from-word-legnth
+: [[(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)], [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8)], [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8)], [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1)], [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9)], [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9)], [(0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2)], [(0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3)], [(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (7, 4), (8, 4)], [(0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5), (8, 5)], [(0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6), (8, 6)], [(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7), (8, 7)], [(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8)], [(0, 8), (1, 7), (2, 6), (3, 5), (4, 4), (5, 3), (6, 2), (7, 1), (8, 0)], [(0, 8), (0, 7), (0, 6), (0, 5), (0, 4), (0, 3), (0, 2), (0, 1), (0, 0)], [(0, 9), (1, 9), (2, 9), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9), (8, 9)], [(0, 9), (1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)], [(0, 9), (0, 8), (0, 7), (0, 6), (0, 5), (0, 4), (0, 3), (0, 2), (0, 1)], [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8)], [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8)], [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)], [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9)], [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9)], [(1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (9, 2)], [(1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (9, 3)], [(1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (7, 4), (8, 4), (9, 4)], [(1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5), (8, 5), (9, 5)], [(1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6), (8, 6), (9, 6)], [(1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7), (8, 7), (9, 7)], [(1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8), (9, 8)], [(1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1), (9, 0)], [(1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (1, 1), (1, 0)], [(1, 9), (2, 9), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9), (8, 9), (9, 9)], [(1, 9), (2, 8), (3, 7), (4, 6), (5, 5), (6, 4), (7, 3), (8, 2), (9, 1)], [(1, 9), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (1, 1)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8)], [(2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9)], [(2, 8), (2, 7), (2, 6), (2, 5), (2, 4), (2, 3), (2, 2), (2, 1), (2, 0)], [(2, 9), (2, 8), (2, 7), (2, 6), (2, 5), (2, 4), (2, 3), (2, 2), (2, 1)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8)], [(3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9)], [(3, 8), (3, 7), (3, 6), (3, 5), (3, 4), (3, 3), (3, 2), (3, 1), (3, 0)], [(3, 9), (3, 8), (3, 7), (3, 6), (3, 5), (3, 4), (3, 3), (3, 2), (3, 1)], [(4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8)], [(4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9)], [(4, 8), (4, 7), (4, 6), (4, 5), (4, 4), (4, 3), (4, 2), (4, 1), (4, 0)], [(4, 9), (4, 8), (4, 7), (4, 6), (4, 5), (4, 4), (4, 3), (4, 2), (4, 1)], [(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8)], [(5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8), (5, 9)], [(5, 8), (5, 7), (5, 6), (5, 5), (5, 4), (5, 3), (5, 2), (5, 1), (5, 0)], [(5, 9), (5, 8), (5, 7), (5, 6), (5, 5), (5, 4), (5, 3), (5, 2), (5, 1)], [(6, 0), (6, 1), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8)], [(6, 1), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8), (6, 9)], [(6, 8), (6, 7), (6, 6), (6, 5), (6, 4), (6, 3), (6, 2), (6, 1), (6, 0)], [(6, 9), (6, 8), (6, 7), (6, 6), (6, 5), (6, 4), (6, 3), (6, 2), (6, 1)], [(7, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8)], [(7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8), (7, 9)], [(7, 8), (7, 7), (7, 6), (7, 5), (7, 4), (7, 3), (7, 2), (7, 1), (7, 0)], [(7, 9), (7, 8), (7, 7), (7, 6), (7, 5), (7, 4), (7, 3), (7, 2), (7, 1)], [(8, 0), (7, 0), (6, 0), (5, 0), (4, 0), (3, 0), (2, 0), (1, 0), (0, 0)], [(8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7), (0, 8)], [(8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8)], [(8, 1), (7, 1), (6, 1), (5, 1), (4, 1), (3, 1), (2, 1), (1, 1), (0, 1)], [(8, 1), (7, 2), (6, 3), (5, 4), (4, 5), (3, 6), (2, 7), (1, 8), (0, 9)], [(8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9)], [(8, 2), (7, 2), (6, 2), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2), (0, 2)], [(8, 3), (7, 3), (6, 3), (5, 3), (4, 3), (3, 3), (2, 3), (1, 3), (0, 3)], [(8, 4), (7, 4), (6, 4), (5, 4), (4, 4), (3, 4), (2, 4), (1, 4), (0, 4)], [(8, 5), (7, 5), (6, 5), (5, 5), (4, 5), (3, 5), (2, 5), (1, 5), (0, 5)], [(8, 6), (7, 6), (6, 6), (5, 6), (4, 6), (3, 6), (2, 6), (1, 6), (0, 6)], [(8, 7), (7, 7), (6, 7), (5, 7), (4, 7), (3, 7), (2, 7), (1, 7), (0, 7)], [(8, 8), (8, 7), (8, 6), (8, 5), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0)], [(8, 8), (7, 7), (6, 6), (5, 5), (4, 4), (3, 3), (2, 2), (1, 1), (0, 0)], [(8, 8), (7, 8), (6, 8), (5, 8), (4, 8), (3, 8), (2, 8), (1, 8), (0, 8)], [(8, 9), (8, 8), (8, 7), (8, 6), (8, 5), (8, 4), (8, 3), (8, 2), (8, 1)], [(8, 9), (7, 8), (6, 7), (5, 6), (4, 5), (3, 4), (2, 3), (1, 2), (0, 1)], [(8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9), (0, 9)], [(9, 0), (8, 0), (7, 0), (6, 0), (5, 0), (4, 0), (3, 0), (2, 0), (1, 0)], [(9, 0), (8, 1), (7, 2), (6, 3), (5, 4), (4, 5), (3, 6), (2, 7), (1, 8)], [(9, 0), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (9, 8)], [(9, 1), (8, 1), (7, 1), (6, 1), (5, 1), (4, 1), (3, 1), (2, 1), (1, 1)], [(9, 1), (8, 2), (7, 3), (6, 4), (5, 5), (4, 6), (3, 7), (2, 8), (1, 9)], [(9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9)], [(9, 2), (8, 2), (7, 2), (6, 2), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2)], [(9, 3), (8, 3), (7, 3), (6, 3), (5, 3), (4, 3), (3, 3), (2, 3), (1, 3)], [(9, 4), (8, 4), (7, 4), (6, 4), (5, 4), (4, 4), (3, 4), (2, 4), (1, 4)], [(9, 5), (8, 5), (7, 5), (6, 5), (5, 5), (4, 5), (3, 5), (2, 5), (1, 5)], [(9, 6), (8, 6), (7, 6), (6, 6), (5, 6), (4, 6), (3, 6), (2, 6), (1, 6)], [(9, 7), (8, 7), (7, 7), (6, 7), (5, 7), (4, 7), (3, 7), (2, 7), (1, 7)], [(9, 8), (9, 7), (9, 6), (9, 5), (9, 4), (9, 3), (9, 2), (9, 1), (9, 0)], [(9, 8), (8, 7), (7, 6), (6, 5), (5, 4), (4, 3), (3, 2), (2, 1), (1, 0)], [(9, 8), (8, 8), (7, 8), (6, 8), (5, 8), (4, 8), (3, 8), (2, 8), (1, 8)], [(9, 9), (9, 8), (9, 7), (9, 6), (9, 5), (9, 4), (9, 3), (9, 2), (9, 1)], [(9, 9), (8, 8), (7, 7), (6, 6), (5, 5), (4, 4), (3, 3), (2, 2), (1, 1)], [(9, 9), (8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9)], [(0, 0), (1, 0)], [(0, 0), (0, 1)], [(0, 0), (1, 1)], [(0, 1), (1, 1)], [(0, 1), (1, 0)], [(0, 1), (0, 0)], [(0, 1), (0, 2)], [(0, 1), (1, 2)], [(0, 2), (1, 2)], [(0, 2), (1, 1)], [(0, 2), (0, 1)], [(0, 2), (0, 3)], [(0, 2), (1, 3)], [(0, 3), (1, 3)], [(0, 3), (1, 2)], [(0, 3), (0, 2)], [(0, 3), (0, 4)], [(0, 3), (1, 4)], [(0, 4), (1, 4)], [(0, 4), (1, 3)], [(0, 4), (0, 3)], [(0, 4), (0, 5)], [(0, 4), (1, 5)], [(0, 5), (1, 5)], [(0, 5), (1, 4)], [(0, 5), (0, 4)], [(0, 5), (0, 6)], [(0, 5), (1, 6)], [(0, 6), (1, 6)], [(0, 6), (1, 5)], [(0, 6), (0, 5)], [(0, 6), (0, 7)], [(0, 6), (1, 7)], [(0, 7), (1, 7)], [(0, 7), (1, 6)], [(0, 7), (0, 6)], [(0, 7), (0, 8)], [(0, 7), (1, 8)], [(0, 8), (1, 8)], [(0, 8), (1, 7)], [(0, 8), (0, 7)], [(0, 8), (0, 9)], [(0, 8), (1, 9)], [(0, 9), (1, 9)], [(0, 9), (1, 8)], [(0, 9), (0, 8)], [(1, 0), (2, 0)], [(1, 0), (0, 0)], [(1, 0), (0, 1)], [(1, 0), (1, 1)], [(1, 0), (2, 1)], [(1, 1), (2, 1)], [(1, 1), (2, 0)], [(1, 1), (1, 0)], [(1, 1), (0, 0)], [(1, 1), (0, 1)], [(1, 1), (0, 2)], [(1, 1), (1, 2)], [(1, 1), (2, 2)], [(1, 2), (2, 2)], [(1, 2), (2, 1)], [(1, 2), (1, 1)], [(1, 2), (0, 1)], [(1, 2), (0, 2)], [(1, 2), (0, 3)], [(1, 2), (1, 3)], [(1, 2), (2, 3)], [(1, 3), (2, 3)], [(1, 3), (2, 2)], [(1, 3), (1, 2)], [(1, 3), (0, 2)], [(1, 3), (0, 3)], [(1, 3), (0, 4)], [(1, 3), (1, 4)], [(1, 3), (2, 4)], [(1, 4), (2, 4)], [(1, 4), (2, 3)], [(1, 4), (1, 3)], [(1, 4), (0, 3)], [(1, 4), (0, 4)], [(1, 4), (0, 5)], [(1, 4), (1, 5)], [(1, 4), (2, 5)], [(1, 5), (2, 5)], [(1, 5), (2, 4)], [(1, 5), (1, 4)], [(1, 5), (0, 4)], [(1, 5), (0, 5)], [(1, 5), (0, 6)], [(1, 5), (1, 6)], [(1, 5), (2, 6)], [(1, 6), (2, 6)], [(1, 6), (2, 5)], [(1, 6), (1, 5)], [(1, 6), (0, 5)], [(1, 6), (0, 6)], [(1, 6), (0, 7)], [(1, 6), (1, 7)], [(1, 6), (2, 7)], [(1, 7), (2, 7)], [(1, 7), (2, 6)], [(1, 7), (1, 6)], [(1, 7), (0, 6)], [(1, 7), (0, 7)], [(1, 7), (0, 8)], [(1, 7), (1, 8)], [(1, 7), (2, 8)], [(1, 8), (2, 8)], [(1, 8), (2, 7)], [(1, 8), (1, 7)], [(1, 8), (0, 7)], [(1, 8), (0, 8)], [(1, 8), (0, 9)], [(1, 8), (1, 9)], [(1, 8), (2, 9)], [(1, 9), (2, 9)], [(1, 9), (2, 8)], [(1, 9), (1, 8)], [(1, 9), (0, 8)], [(1, 9), (0, 9)], [(2, 0), (3, 0)], [(2, 0), (1, 0)], [(2, 0), (1, 1)], [(2, 0), (2, 1)], [(2, 0), (3, 1)], [(2, 1), (3, 1)], [(2, 1), (3, 0)], [(2, 1), (2, 0)], [(2, 1), (1, 0)], [(2, 1), (1, 1)], [(2, 1), (1, 2)], [(2, 1), (2, 2)], [(2, 1), (3, 2)], [(2, 2), (3, 2)], [(2, 2), (3, 1)], [(2, 2), (2, 1)], [(2, 2), (1, 1)], [(2, 2), (1, 2)], [(2, 2), (1, 3)], [(2, 2), (2, 3)], [(2, 2), (3, 3)], [(2, 3), (3, 3)], [(2, 3), (3, 2)], [(2, 3), (2, 2)], [(2, 3), (1, 2)], [(2, 3), (1, 3)], [(2, 3), (1, 4)], [(2, 3), (2, 4)], [(2, 3), (3, 4)], [(2, 4), (3, 4)], [(2, 4), (3, 3)], [(2, 4), (2, 3)], [(2, 4), (1, 3)], [(2, 4), (1, 4)], [(2, 4), (1, 5)], [(2, 4), (2, 5)], [(2, 4), (3, 5)], [(2, 5), (3, 5)], [(2, 5), (3, 4)], [(2, 5), (2, 4)], [(2, 5), (1, 4)], [(2, 5), (1, 5)], [(2, 5), (1, 6)], [(2, 5), (2, 6)], [(2, 5), (3, 6)], [(2, 6), (3, 6)], [(2, 6), (3, 5)], [(2, 6), (2, 5)], [(2, 6), (1, 5)], [(2, 6), (1, 6)], [(2, 6), (1, 7)], [(2, 6), (2, 7)], [(2, 6), (3, 7)], [(2, 7), (3, 7)], [(2, 7), (3, 6)], [(2, 7), (2, 6)], [(2, 7), (1, 6)], [(2, 7), (1, 7)], [(2, 7), (1, 8)], [(2, 7), (2, 8)], [(2, 7), (3, 8)], [(2, 8), (3, 8)], [(2, 8), (3, 7)], [(2, 8), (2, 7)], [(2, 8), (1, 7)], [(2, 8), (1, 8)], [(2, 8), (1, 9)], [(2, 8), (2, 9)], [(2, 8), (3, 9)], [(2, 9), (3, 9)], [(2, 9), (3, 8)], [(2, 9), (2, 8)], [(2, 9), (1, 8)], [(2, 9), (1, 9)], [(3, 0), (4, 0)], [(3, 0), (2, 0)], [(3, 0), (2, 1)], [(3, 0), (3, 1)], [(3, 0), (4, 1)], [(3, 1), (4, 1)], [(3, 1), (4, 0)], [(3, 1), (3, 0)], [(3, 1), (2, 0)], [(3, 1), (2, 1)], [(3, 1), (2, 2)], [(3, 1), (3, 2)], [(3, 1), (4, 2)], [(3, 2), (4, 2)], [(3, 2), (4, 1)], [(3, 2), (3, 1)], [(3, 2), (2, 1)], [(3, 2), (2, 2)], [(3, 2), (2, 3)], [(3, 2), (3, 3)], [(3, 2), (4, 3)], [(3, 3), (4, 3)], [(3, 3), (4, 2)], [(3, 3), (3, 2)], [(3, 3), (2, 2)], [(3, 3), (2, 3)], [(3, 3), (2, 4)], [(3, 3), (3, 4)], [(3, 3), (4, 4)], [(3, 4), (4, 4)], [(3, 4), (4, 3)], [(3, 4), (3, 3)], [(3, 4), (2, 3)], [(3, 4), (2, 4)], [(3, 4), (2, 5)], [(3, 4), (3, 5)], [(3, 4), (4, 5)], [(3, 5), (4, 5)], [(3, 5), (4, 4)], [(3, 5), (3, 4)], [(3, 5), (2, 4)], [(3, 5), (2, 5)], [(3, 5), (2, 6)], [(3, 5), (3, 6)], [(3, 5), (4, 6)], [(3, 6), (4, 6)], [(3, 6), (4, 5)], [(3, 6), (3, 5)], [(3, 6), (2, 5)], [(3, 6), (2, 6)], [(3, 6), (2, 7)], [(3, 6), (3, 7)], [(3, 6), (4, 7)], [(3, 7), (4, 7)], [(3, 7), (4, 6)], [(3, 7), (3, 6)], [(3, 7), (2, 6)], [(3, 7), (2, 7)], [(3, 7), (2, 8)], [(3, 7), (3, 8)], [(3, 7), (4, 8)], [(3, 8), (4, 8)], [(3, 8), (4, 7)], [(3, 8), (3, 7)], [(3, 8), (2, 7)], [(3, 8), (2, 8)], [(3, 8), (2, 9)], [(3, 8), (3, 9)], [(3, 8), (4, 9)], [(3, 9), (4, 9)], [(3, 9), (4, 8)], [(3, 9), (3, 8)], [(3, 9), (2, 8)], [(3, 9), (2, 9)], [(4, 0), (5, 0)], [(4, 0), (3, 0)], [(4, 0), (3, 1)], [(4, 0), (4, 1)], [(4, 0), (5, 1)], [(4, 1), (5, 1)], [(4, 1), (5, 0)], [(4, 1), (4, 0)], [(4, 1), (3, 0)], [(4, 1), (3, 1)], [(4, 1), (3, 2)], [(4, 1), (4, 2)], [(4, 1), (5, 2)], [(4, 2), (5, 2)], [(4, 2), (5, 1)], [(4, 2), (4, 1)], [(4, 2), (3, 1)], [(4, 2), (3, 2)], [(4, 2), (3, 3)], [(4, 2), (4, 3)], [(4, 2), (5, 3)], [(4, 3), (5, 3)], [(4, 3), (5, 2)], [(4, 3), (4, 2)], [(4, 3), (3, 2)], [(4, 3), (3, 3)], [(4, 3), (3, 4)], [(4, 3), (4, 4)], [(4, 3), (5, 4)], [(4, 4), (5, 4)], [(4, 4), (5, 3)], [(4, 4), (4, 3)], [(4, 4), (3, 3)], [(4, 4), (3, 4)], [(4, 4), (3, 5)], [(4, 4), (4, 5)], [(4, 4), (5, 5)], [(4, 5), (5, 5)], [(4, 5), (5, 4)], [(4, 5), (4, 4)], [(4, 5), (3, 4)], [(4, 5), (3, 5)], [(4, 5), (3, 6)], [(4, 5), (4, 6)], [(4, 5), (5, 6)], [(4, 6), (5, 6)], [(4, 6), (5, 5)], [(4, 6), (4, 5)], [(4, 6), (3, 5)], [(4, 6), (3, 6)], [(4, 6), (3, 7)], [(4, 6), (4, 7)], [(4, 6), (5, 7)], [(4, 7), (5, 7)], [(4, 7), (5, 6)], [(4, 7), (4, 6)], [(4, 7), (3, 6)], [(4, 7), (3, 7)], [(4, 7), (3, 8)], [(4, 7), (4, 8)], [(4, 7), (5, 8)], [(4, 8), (5, 8)], [(4, 8), (5, 7)], [(4, 8), (4, 7)], [(4, 8), (3, 7)], [(4, 8), (3, 8)], [(4, 8), (3, 9)], [(4, 8), (4, 9)], [(4, 8), (5, 9)], [(4, 9), (5, 9)], [(4, 9), (5, 8)], [(4, 9), (4, 8)], [(4, 9), (3, 8)], [(4, 9), (3, 9)], [(5, 0), (6, 0)], [(5, 0), (4, 0)], [(5, 0), (4, 1)], [(5, 0), (5, 1)], [(5, 0), (6, 1)], [(5, 1), (6, 1)], [(5, 1), (6, 0)], [(5, 1), (5, 0)], [(5, 1), (4, 0)], [(5, 1), (4, 1)], [(5, 1), (4, 2)], [(5, 1), (5, 2)], [(5, 1), (6, 2)], [(5, 2), (6, 2)], [(5, 2), (6, 1)], [(5, 2), (5, 1)], [(5, 2), (4, 1)], [(5, 2), (4, 2)], [(5, 2), (4, 3)], [(5, 2), (5, 3)], [(5, 2), (6, 3)], [(5, 3), (6, 3)], [(5, 3), (6, 2)], [(5, 3), (5, 2)], [(5, 3), (4, 2)], [(5, 3), (4, 3)], [(5, 3), (4, 4)], [(5, 3), (5, 4)], [(5, 3), (6, 4)], [(5, 4), (6, 4)], [(5, 4), (6, 3)], [(5, 4), (5, 3)], [(5, 4), (4, 3)], [(5, 4), (4, 4)], [(5, 4), (4, 5)], [(5, 4), (5, 5)], [(5, 4), (6, 5)], [(5, 5), (6, 5)], [(5, 5), (6, 4)], [(5, 5), (5, 4)], [(5, 5), (4, 4)], [(5, 5), (4, 5)], [(5, 5), (4, 6)], [(5, 5), (5, 6)], [(5, 5), (6, 6)], [(5, 6), (6, 6)], [(5, 6), (6, 5)], [(5, 6), (5, 5)], [(5, 6), (4, 5)], [(5, 6), (4, 6)], [(5, 6), (4, 7)], [(5, 6), (5, 7)], [(5, 6), (6, 7)], [(5, 7), (6, 7)], [(5, 7), (6, 6)], [(5, 7), (5, 6)], [(5, 7), (4, 6)], [(5, 7), (4, 7)], [(5, 7), (4, 8)], [(5, 7), (5, 8)], [(5, 7), (6, 8)], [(5, 8), (6, 8)], [(5, 8), (6, 7)], [(5, 8), (5, 7)], [(5, 8), (4, 7)], [(5, 8), (4, 8)], [(5, 8), (4, 9)], [(5, 8), (5, 9)], [(5, 8), (6, 9)], [(5, 9), (6, 9)], [(5, 9), (6, 8)], [(5, 9), (5, 8)], [(5, 9), (4, 8)], [(5, 9), (4, 9)], [(6, 0), (7, 0)], [(6, 0), (5, 0)], [(6, 0), (5, 1)], [(6, 0), (6, 1)], [(6, 0), (7, 1)], [(6, 1), (7, 1)], [(6, 1), (7, 0)], [(6, 1), (6, 0)], [(6, 1), (5, 0)], [(6, 1), (5, 1)], [(6, 1), (5, 2)], [(6, 1), (6, 2)], [(6, 1), (7, 2)], [(6, 2), (7, 2)], [(6, 2), (7, 1)], [(6, 2), (6, 1)], [(6, 2), (5, 1)], [(6, 2), (5, 2)], [(6, 2), (5, 3)], [(6, 2), (6, 3)], [(6, 2), (7, 3)], [(6, 3), (7, 3)], [(6, 3), (7, 2)], [(6, 3), (6, 2)], [(6, 3), (5, 2)], [(6, 3), (5, 3)], [(6, 3), (5, 4)], [(6, 3), (6, 4)], [(6, 3), (7, 4)], [(6, 4), (7, 4)], [(6, 4), (7, 3)], [(6, 4), (6, 3)], [(6, 4), (5, 3)], [(6, 4), (5, 4)], [(6, 4), (5, 5)], [(6, 4), (6, 5)], [(6, 4), (7, 5)], [(6, 5), (7, 5)], [(6, 5), (7, 4)], [(6, 5), (6, 4)], [(6, 5), (5, 4)], [(6, 5), (5, 5)], [(6, 5), (5, 6)], [(6, 5), (6, 6)], [(6, 5), (7, 6)], [(6, 6), (7, 6)], [(6, 6), (7, 5)], [(6, 6), (6, 5)], [(6, 6), (5, 5)], [(6, 6), (5, 6)], [(6, 6), (5, 7)], [(6, 6), (6, 7)], [(6, 6), (7, 7)], [(6, 7), (7, 7)], [(6, 7), (7, 6)], [(6, 7), (6, 6)], [(6, 7), (5, 6)], [(6, 7), (5, 7)], [(6, 7), (5, 8)], [(6, 7), (6, 8)], [(6, 7), (7, 8)], [(6, 8), (7, 8)], [(6, 8), (7, 7)], [(6, 8), (6, 7)], [(6, 8), (5, 7)], [(6, 8), (5, 8)], [(6, 8), (5, 9)], [(6, 8), (6, 9)], [(6, 8), (7, 9)], [(6, 9), (7, 9)], [(6, 9), (7, 8)], [(6, 9), (6, 8)], [(6, 9), (5, 8)], [(6, 9), (5, 9)], [(7, 0), (8, 0)], [(7, 0), (6, 0)], [(7, 0), (6, 1)], [(7, 0), (7, 1)], [(7, 0), (8, 1)], [(7, 1), (8, 1)], [(7, 1), (8, 0)], [(7, 1), (7, 0)], [(7, 1), (6, 0)], [(7, 1), (6, 1)], [(7, 1), (6, 2)], [(7, 1), (7, 2)], [(7, 1), (8, 2)], [(7, 2), (8, 2)], [(7, 2), (8, 1)], [(7, 2), (7, 1)], [(7, 2), (6, 1)], [(7, 2), (6, 2)], [(7, 2), (6, 3)], [(7, 2), (7, 3)], [(7, 2), (8, 3)], [(7, 3), (8, 3)], [(7, 3), (8, 2)], [(7, 3), (7, 2)], [(7, 3), (6, 2)], [(7, 3), (6, 3)], [(7, 3), (6, 4)], [(7, 3), (7, 4)], [(7, 3), (8, 4)], [(7, 4), (8, 4)], [(7, 4), (8, 3)], [(7, 4), (7, 3)], [(7, 4), (6, 3)], [(7, 4), (6, 4)], [(7, 4), (6, 5)], [(7, 4), (7, 5)], [(7, 4), (8, 5)], [(7, 5), (8, 5)], [(7, 5), (8, 4)], [(7, 5), (7, 4)], [(7, 5), (6, 4)], [(7, 5), (6, 5)], [(7, 5), (6, 6)], [(7, 5), (7, 6)], [(7, 5), (8, 6)], [(7, 6), (8, 6)], [(7, 6), (8, 5)], [(7, 6), (7, 5)], [(7, 6), (6, 5)], [(7, 6), (6, 6)], [(7, 6), (6, 7)], [(7, 6), (7, 7)], [(7, 6), (8, 7)], [(7, 7), (8, 7)], [(7, 7), (8, 6)], [(7, 7), (7, 6)], [(7, 7), (6, 6)], [(7, 7), (6, 7)], [(7, 7), (6, 8)], [(7, 7), (7, 8)], [(7, 7), (8, 8)], [(7, 8), (8, 8)], [(7, 8), (8, 7)], [(7, 8), (7, 7)], [(7, 8), (6, 7)], [(7, 8), (6, 8)], [(7, 8), (6, 9)], [(7, 8), (7, 9)], [(7, 8), (8, 9)], [(7, 9), (8, 9)], [(7, 9), (8, 8)], [(7, 9), (7, 8)], [(7, 9), (6, 8)], [(7, 9), (6, 9)], [(8, 0), (9, 0)], [(8, 0), (7, 0)], [(8, 0), (7, 1)], [(8, 0), (8, 1)], [(8, 0), (9, 1)], [(8, 1), (9, 1)], [(8, 1), (9, 0)], [(8, 1), (8, 0)], [(8, 1), (7, 0)], [(8, 1), (7, 1)], [(8, 1), (7, 2)], [(8, 1), (8, 2)], [(8, 1), (9, 2)], [(8, 2), (9, 2)], [(8, 2), (9, 1)], [(8, 2), (8, 1)], [(8, 2), (7, 1)], [(8, 2), (7, 2)], [(8, 2), (7, 3)], [(8, 2), (8, 3)], [(8, 2), (9, 3)], [(8, 3), (9, 3)], [(8, 3), (9, 2)], [(8, 3), (8, 2)], [(8, 3), (7, 2)], [(8, 3), (7, 3)], [(8, 3), (7, 4)], [(8, 3), (8, 4)], [(8, 3), (9, 4)], [(8, 4), (9, 4)], [(8, 4), (9, 3)], [(8, 4), (8, 3)], [(8, 4), (7, 3)], [(8, 4), (7, 4)], [(8, 4), (7, 5)], [(8, 4), (8, 5)], [(8, 4), (9, 5)], [(8, 5), (9, 5)], [(8, 5), (9, 4)], [(8, 5), (8, 4)], [(8, 5), (7, 4)], [(8, 5), (7, 5)], [(8, 5), (7, 6)], [(8, 5), (8, 6)], [(8, 5), (9, 6)], [(8, 6), (9, 6)], [(8, 6), (9, 5)], [(8, 6), (8, 5)], [(8, 6), (7, 5)], [(8, 6), (7, 6)], [(8, 6), (7, 7)], [(8, 6), (8, 7)], [(8, 6), (9, 7)], [(8, 7), (9, 7)], [(8, 7), (9, 6)], [(8, 7), (8, 6)], [(8, 7), (7, 6)], [(8, 7), (7, 7)], [(8, 7), (7, 8)], [(8, 7), (8, 8)], [(8, 7), (9, 8)], [(8, 8), (9, 8)], [(8, 8), (9, 7)], [(8, 8), (8, 7)], [(8, 8), (7, 7)], [(8, 8), (7, 8)], [(8, 8), (7, 9)], [(8, 8), (8, 9)], [(8, 8), (9, 9)], [(8, 9), (9, 9)], [(8, 9), (9, 8)], [(8, 9), (8, 8)], [(8, 9), (7, 8)], [(8, 9), (7, 9)], [(9, 0), (8, 0)], [(9, 0), (8, 1)], [(9, 0), (9, 1)], [(9, 1), (9, 0)], [(9, 1), (8, 0)], [(9, 1), (8, 1)], [(9, 1), (8, 2)], [(9, 1), (9, 2)], [(9, 2), (9, 1)], [(9, 2), (8, 1)], [(9, 2), (8, 2)], [(9, 2), (8, 3)], [(9, 2), (9, 3)], [(9, 3), (9, 2)], [(9, 3), (8, 2)], [(9, 3), (8, 3)], [(9, 3), (8, 4)], [(9, 3), (9, 4)], [(9, 4), (9, 3)], [(9, 4), (8, 3)], [(9, 4), (8, 4)], [(9, 4), (8, 5)], [(9, 4), (9, 5)], [(9, 5), (9, 4)], [(9, 5), (8, 4)], [(9, 5), (8, 5)], [(9, 5), (8, 6)], [(9, 5), (9, 6)], [(9, 6), (9, 5)], [(9, 6), (8, 5)], [(9, 6), (8, 6)], [(9, 6), (8, 7)], [(9, 6), (9, 7)], [(9, 7), (9, 6)], [(9, 7), (8, 6)], [(9, 7), (8, 7)], [(9, 7), (8, 8)], [(9, 7), (9, 8)], [(9, 8), (9, 7)], [(9, 8), (8, 7)], [(9, 8), (8, 8)], [(9, 8), (8, 9)], [(9, 8), (9, 9)], [(9, 9), (9, 8)], [(9, 9), (8, 8)], [(9, 9), (8, 9)], [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0)], [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5)], [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)], [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1)], [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)], [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)], [(0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2)], [(0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)], [(0, 2), (1, 3), (2, 4), (3, 5), (4, 6), (5, 7)], [(0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3)], [(0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8)], [(0, 3), (1, 4), (2, 5), (3, 6), (4, 7), (5, 8)], [(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4)], [(0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9)], [(0, 4), (1, 5), (2, 6), (3, 7), (4, 8), (5, 9)], [(0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5)], [(0, 5), (1, 4), (2, 3), (3, 2), (4, 1), (5, 0)], [(0, 5), (0, 4), (0, 3), (0, 2), (0, 1), (0, 0)], [(0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6)], [(0, 6), (1, 5), (2, 4), (3, 3), (4, 2), (5, 1)], [(0, 6), (0, 5), (0, 4), (0, 3), (0, 2), (0, 1)], [(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7)], [(0, 7), (1, 6), (2, 5), (3, 4), (4, 3), (5, 2)], [(0, 7), (0, 6), (0, 5), (0, 4), (0, 3), (0, 2)], [(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8)], [(0, 8), (1, 7), (2, 6), (3, 5), (4, 4), (5, 3)], [(0, 8), (0, 7), (0, 6), (0, 5), (0, 4), (0, 3)], [(0, 9), (1, 9), (2, 9), (3, 9), (4, 9), (5, 9)], [(0, 9), (1, 8), (2, 7), (3, 6), (4, 5), (5, 4)], [(0, 9), (0, 8), (0, 7), (0, 6), (0, 5), (0, 4)], [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0)], [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5)], [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5)], [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1)], [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6)], [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)], [(1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2)], [(1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)], [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7)], [(1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3)], [(1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8)], [(1, 3), (2, 4), (3, 5), (4, 6), (5, 7), (6, 8)], [(1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (6, 4)], [(1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9)], [(1, 4), (2, 5), (3, 6), (4, 7), (5, 8), (6, 9)], [(1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5)], [(1, 5), (2, 4), (3, 3), (4, 2), (5, 1), (6, 0)], [(1, 5), (1, 4), (1, 3), (1, 2), (1, 1), (1, 0)], [(1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6)], [(1, 6), (2, 5), (3, 4), (4, 3), (5, 2), (6, 1)], [(1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (1, 1)], [(1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7)], [(1, 7), (2, 6), (3, 5), (4, 4), (5, 3), (6, 2)], [(1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2)], [(1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8)], [(1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3)], [(1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3)], [(1, 9), (2, 9), (3, 9), (4, 9), (5, 9), (6, 9)], [(1, 9), (2, 8), (3, 7), (4, 6), (5, 5), (6, 4)], [(1, 9), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4)], [(2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)], [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5)], [(2, 0), (3, 1), (4, 2), (5, 3), (6, 4), (7, 5)], [(2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1)], [(2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6)], [(2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6)], [(2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2)], [(2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7)], [(2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)], [(2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3)], [(2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8)], [(2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8)], [(2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (7, 4)], [(2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9)], [(2, 4), (3, 5), (4, 6), (5, 7), (6, 8), (7, 9)], [(2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5)], [(2, 5), (3, 4), (4, 3), (5, 2), (6, 1), (7, 0)], [(2, 5), (2, 4), (2, 3), (2, 2), (2, 1), (2, 0)], [(2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6)], [(2, 6), (3, 5), (4, 4), (5, 3), (6, 2), (7, 1)], [(2, 6), (2, 5), (2, 4), (2, 3), (2, 2), (2, 1)], [(2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)], [(2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2)], [(2, 7), (2, 6), (2, 5), (2, 4), (2, 3), (2, 2)], [(2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8)], [(2, 8), (3, 7), (4, 6), (5, 5), (6, 4), (7, 3)], [(2, 8), (2, 7), (2, 6), (2, 5), (2, 4), (2, 3)], [(2, 9), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9)], [(2, 9), (3, 8), (4, 7), (5, 6), (6, 5), (7, 4)], [(2, 9), (2, 8), (2, 7), (2, 6), (2, 5), (2, 4)], [(3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)], [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5)], [(3, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 5)], [(3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1)], [(3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6)], [(3, 1), (4, 2), (5, 3), (6, 4), (7, 5), (8, 6)], [(3, 2), (4, 2), (5, 2), (6, 2), (7, 2), (8, 2)], [(3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7)], [(3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7)], [(3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3)], [(3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8)], [(3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8)], [(3, 4), (4, 4), (5, 4), (6, 4), (7, 4), (8, 4)], [(3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9)], [(3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9)], [(3, 5), (4, 5), (5, 5), (6, 5), (7, 5), (8, 5)], [(3, 5), (4, 4), (5, 3), (6, 2), (7, 1), (8, 0)], [(3, 5), (3, 4), (3, 3), (3, 2), (3, 1), (3, 0)], [(3, 6), (4, 6), (5, 6), (6, 6), (7, 6), (8, 6)], [(3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)], [(3, 6), (3, 5), (3, 4), (3, 3), (3, 2), (3, 1)], [(3, 7), (4, 7), (5, 7), (6, 7), (7, 7), (8, 7)], [(3, 7), (4, 6), (5, 5), (6, 4), (7, 3), (8, 2)], [(3, 7), (3, 6), (3, 5), (3, 4), (3, 3), (3, 2)], [(3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 8)], [(3, 8), (4, 7), (5, 6), (6, 5), (7, 4), (8, 3)], [(3, 8), (3, 7), (3, 6), (3, 5), (3, 4), (3, 3)], [(3, 9), (4, 9), (5, 9), (6, 9), (7, 9), (8, 9)], [(3, 9), (4, 8), (5, 7), (6, 6), (7, 5), (8, 4)], [(3, 9), (3, 8), (3, 7), (3, 6), (3, 5), (3, 4)], [(4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0)], [(4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (4, 5)], [(4, 0), (5, 1), (6, 2), (7, 3), (8, 4), (9, 5)], [(4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)], [(4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6)], [(4, 1), (5, 2), (6, 3), (7, 4), (8, 5), (9, 6)], [(4, 2), (5, 2), (6, 2), (7, 2), (8, 2), (9, 2)], [(4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7)], [(4, 2), (5, 3), (6, 4), (7, 5), (8, 6), (9, 7)], [(4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (9, 3)], [(4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8)], [(4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8)], [(4, 4), (5, 4), (6, 4), (7, 4), (8, 4), (9, 4)], [(4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9)], [(4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9)], [(4, 5), (5, 5), (6, 5), (7, 5), (8, 5), (9, 5)], [(4, 5), (5, 4), (6, 3), (7, 2), (8, 1), (9, 0)], [(4, 5), (4, 4), (4, 3), (4, 2), (4, 1), (4, 0)], [(4, 6), (5, 6), (6, 6), (7, 6), (8, 6), (9, 6)], [(4, 6), (5, 5), (6, 4), (7, 3), (8, 2), (9, 1)], [(4, 6), (4, 5), (4, 4), (4, 3), (4, 2), (4, 1)], [(4, 7), (5, 7), (6, 7), (7, 7), (8, 7), (9, 7)], [(4, 7), (5, 6), (6, 5), (7, 4), (8, 3), (9, 2)], [(4, 7), (4, 6), (4, 5), (4, 4), (4, 3), (4, 2)], [(4, 8), (5, 8), (6, 8), (7, 8), (8, 8), (9, 8)], [(4, 8), (5, 7), (6, 6), (7, 5), (8, 4), (9, 3)], [(4, 8), (4, 7), (4, 6), (4, 5), (4, 4), (4, 3)], [(4, 9), (5, 9), (6, 9), (7, 9), (8, 9), (9, 9)], [(4, 9), (5, 8), (6, 7), (7, 6), (8, 5), (9, 4)], [(4, 9), (4, 8), (4, 7), (4, 6), (4, 5), (4, 4)], [(5, 0), (4, 0), (3, 0), (2, 0), (1, 0), (0, 0)], [(5, 0), (4, 1), (3, 2), (2, 3), (1, 4), (0, 5)], [(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5)], [(5, 1), (4, 1), (3, 1), (2, 1), (1, 1), (0, 1)], [(5, 1), (4, 2), (3, 3), (2, 4), (1, 5), (0, 6)], [(5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6)], [(5, 2), (4, 2), (3, 2), (2, 2), (1, 2), (0, 2)], [(5, 2), (4, 3), (3, 4), (2, 5), (1, 6), (0, 7)], [(5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7)], [(5, 3), (4, 3), (3, 3), (2, 3), (1, 3), (0, 3)], [(5, 3), (4, 4), (3, 5), (2, 6), (1, 7), (0, 8)], [(5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8)], [(5, 4), (4, 4), (3, 4), (2, 4), (1, 4), (0, 4)], [(5, 4), (4, 5), (3, 6), (2, 7), (1, 8), (0, 9)], [(5, 4), (5, 5), (5, 6), (5, 7), (5, 8), (5, 9)], [(5, 5), (5, 4), (5, 3), (5, 2), (5, 1), (5, 0)], [(5, 5), (4, 4), (3, 3), (2, 2), (1, 1), (0, 0)], [(5, 5), (4, 5), (3, 5), (2, 5), (1, 5), (0, 5)], [(5, 6), (5, 5), (5, 4), (5, 3), (5, 2), (5, 1)], [(5, 6), (4, 5), (3, 4), (2, 3), (1, 2), (0, 1)], [(5, 6), (4, 6), (3, 6), (2, 6), (1, 6), (0, 6)], [(5, 7), (5, 6), (5, 5), (5, 4), (5, 3), (5, 2)], [(5, 7), (4, 6), (3, 5), (2, 4), (1, 3), (0, 2)], [(5, 7), (4, 7), (3, 7), (2, 7), (1, 7), (0, 7)], [(5, 8), (5, 7), (5, 6), (5, 5), (5, 4), (5, 3)], [(5, 8), (4, 7), (3, 6), (2, 5), (1, 4), (0, 3)], [(5, 8), (4, 8), (3, 8), (2, 8), (1, 8), (0, 8)], [(5, 9), (5, 8), (5, 7), (5, 6), (5, 5), (5, 4)], [(5, 9), (4, 8), (3, 7), (2, 6), (1, 5), (0, 4)], [(5, 9), (4, 9), (3, 9), (2, 9), (1, 9), (0, 9)], [(6, 0), (5, 0), (4, 0), (3, 0), (2, 0), (1, 0)], [(6, 0), (5, 1), (4, 2), (3, 3), (2, 4), (1, 5)], [(6, 0), (6, 1), (6, 2), (6, 3), (6, 4), (6, 5)], [(6, 1), (5, 1), (4, 1), (3, 1), (2, 1), (1, 1)], [(6, 1), (5, 2), (4, 3), (3, 4), (2, 5), (1, 6)], [(6, 1), (6, 2), (6, 3), (6, 4), (6, 5), (6, 6)], [(6, 2), (5, 2), (4, 2), (3, 2), (2, 2), (1, 2)], [(6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7)], [(6, 2), (6, 3), (6, 4), (6, 5), (6, 6), (6, 7)], [(6, 3), (5, 3), (4, 3), (3, 3), (2, 3), (1, 3)], [(6, 3), (5, 4), (4, 5), (3, 6), (2, 7), (1, 8)], [(6, 3), (6, 4), (6, 5), (6, 6), (6, 7), (6, 8)], [(6, 4), (5, 4), (4, 4), (3, 4), (2, 4), (1, 4)], [(6, 4), (5, 5), (4, 6), (3, 7), (2, 8), (1, 9)], [(6, 4), (6, 5), (6, 6), (6, 7), (6, 8), (6, 9)], [(6, 5), (6, 4), (6, 3), (6, 2), (6, 1), (6, 0)], [(6, 5), (5, 4), (4, 3), (3, 2), (2, 1), (1, 0)], [(6, 5), (5, 5), (4, 5), (3, 5), (2, 5), (1, 5)], [(6, 6), (6, 5), (6, 4), (6, 3), (6, 2), (6, 1)], [(6, 6), (5, 5), (4, 4), (3, 3), (2, 2), (1, 1)], [(6, 6), (5, 6), (4, 6), (3, 6), (2, 6), (1, 6)], [(6, 7), (6, 6), (6, 5), (6, 4), (6, 3), (6, 2)], [(6, 7), (5, 6), (4, 5), (3, 4), (2, 3), (1, 2)], [(6, 7), (5, 7), (4, 7), (3, 7), (2, 7), (1, 7)], [(6, 8), (6, 7), (6, 6), (6, 5), (6, 4), (6, 3)], [(6, 8), (5, 7), (4, 6), (3, 5), (2, 4), (1, 3)], [(6, 8), (5, 8), (4, 8), (3, 8), (2, 8), (1, 8)], [(6, 9), (6, 8), (6, 7), (6, 6), (6, 5), (6, 4)], [(6, 9), (5, 8), (4, 7), (3, 6), (2, 5), (1, 4)], [(6, 9), (5, 9), (4, 9), (3, 9), (2, 9), (1, 9)], [(7, 0), (6, 0), (5, 0), (4, 0), (3, 0), (2, 0)], [(7, 0), (6, 1), (5, 2), (4, 3), (3, 4), (2, 5)], [(7, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5)], [(7, 1), (6, 1), (5, 1), (4, 1), (3, 1), (2, 1)], [(7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6)], [(7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6)], [(7, 2), (6, 2), (5, 2), (4, 2), (3, 2), (2, 2)], [(7, 2), (6, 3), (5, 4), (4, 5), (3, 6), (2, 7)], [(7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7)], [(7, 3), (6, 3), (5, 3), (4, 3), (3, 3), (2, 3)], [(7, 3), (6, 4), (5, 5), (4, 6), (3, 7), (2, 8)], [(7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8)], [(7, 4), (6, 4), (5, 4), (4, 4), (3, 4), (2, 4)], [(7, 4), (6, 5), (5, 6), (4, 7), (3, 8), (2, 9)], [(7, 4), (7, 5), (7, 6), (7, 7), (7, 8), (7, 9)], [(7, 5), (7, 4), (7, 3), (7, 2), (7, 1), (7, 0)], [(7, 5), (6, 4), (5, 3), (4, 2), (3, 1), (2, 0)], [(7, 5), (6, 5), (5, 5), (4, 5), (3, 5), (2, 5)], [(7, 6), (7, 5), (7, 4), (7, 3), (7, 2), (7, 1)], [(7, 6), (6, 5), (5, 4), (4, 3), (3, 2), (2, 1)], [(7, 6), (6, 6), (5, 6), (4, 6), (3, 6), (2, 6)], [(7, 7), (7, 6), (7, 5), (7, 4), (7, 3), (7, 2)], [(7, 7), (6, 6), (5, 5), (4, 4), (3, 3), (2, 2)], [(7, 7), (6, 7), (5, 7), (4, 7), (3, 7), (2, 7)], [(7, 8), (7, 7), (7, 6), (7, 5), (7, 4), (7, 3)], [(7, 8), (6, 7), (5, 6), (4, 5), (3, 4), (2, 3)], [(7, 8), (6, 8), (5, 8), (4, 8), (3, 8), (2, 8)], [(7, 9), (7, 8), (7, 7), (7, 6), (7, 5), (7, 4)], [(7, 9), (6, 8), (5, 7), (4, 6), (3, 5), (2, 4)], [(7, 9), (6, 9), (5, 9), (4, 9), (3, 9), (2, 9)], [(8, 0), (7, 0), (6, 0), (5, 0), (4, 0), (3, 0)], [(8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5)], [(8, 0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5)], [(8, 1), (7, 1), (6, 1), (5, 1), (4, 1), (3, 1)], [(8, 1), (7, 2), (6, 3), (5, 4), (4, 5), (3, 6)], [(8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6)], [(8, 2), (7, 2), (6, 2), (5, 2), (4, 2), (3, 2)], [(8, 2), (7, 3), (6, 4), (5, 5), (4, 6), (3, 7)], [(8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7)], [(8, 3), (7, 3), (6, 3), (5, 3), (4, 3), (3, 3)], [(8, 3), (7, 4), (6, 5), (5, 6), (4, 7), (3, 8)], [(8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8)], [(8, 4), (7, 4), (6, 4), (5, 4), (4, 4), (3, 4)], [(8, 4), (7, 5), (6, 6), (5, 7), (4, 8), (3, 9)], [(8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9)], [(8, 5), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0)], [(8, 5), (7, 4), (6, 3), (5, 2), (4, 1), (3, 0)], [(8, 5), (7, 5), (6, 5), (5, 5), (4, 5), (3, 5)], [(8, 6), (8, 5), (8, 4), (8, 3), (8, 2), (8, 1)], [(8, 6), (7, 5), (6, 4), (5, 3), (4, 2), (3, 1)], [(8, 6), (7, 6), (6, 6), (5, 6), (4, 6), (3, 6)], [(8, 7), (8, 6), (8, 5), (8, 4), (8, 3), (8, 2)], [(8, 7), (7, 6), (6, 5), (5, 4), (4, 3), (3, 2)], [(8, 7), (7, 7), (6, 7), (5, 7), (4, 7), (3, 7)], [(8, 8), (8, 7), (8, 6), (8, 5), (8, 4), (8, 3)], [(8, 8), (7, 7), (6, 6), (5, 5), (4, 4), (3, 3)], [(8, 8), (7, 8), (6, 8), (5, 8), (4, 8), (3, 8)], [(8, 9), (8, 8), (8, 7), (8, 6), (8, 5), (8, 4)], [(8, 9), (7, 8), (6, 7), (5, 6), (4, 5), (3, 4)], [(8, 9), (7, 9), (6, 9), (5, 9), (4, 9), (3, 9)], [(9, 0), (8, 0), (7, 0), (6, 0), (5, 0), (4, 0)], [(9, 0), (8, 1), (7, 2), (6, 3), (5, 4), (4, 5)], [(9, 0), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5)], [(9, 1), (8, 1), (7, 1), (6, 1), (5, 1), (4, 1)], [(9, 1), (8, 2), (7, 3), (6, 4), (5, 5), (4, 6)], [(9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 6)], [(9, 2), (8, 2), (7, 2), (6, 2), (5, 2), (4, 2)], [(9, 2), (8, 3), (7, 4), (6, 5), (5, 6), (4, 7)], [(9, 2), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7)], [(9, 3), (8, 3), (7, 3), (6, 3), (5, 3), (4, 3)], [(9, 3), (8, 4), (7, 5), (6, 6), (5, 7), (4, 8)], [(9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (9, 8)], [(9, 4), (8, 4), (7, 4), (6, 4), (5, 4), (4, 4)], [(9, 4), (8, 5), (7, 6), (6, 7), (5, 8), (4, 9)], [(9, 4), (9, 5), (9, 6), (9, 7), (9, 8), (9, 9)], [(9, 5), (9, 4), (9, 3), (9, 2), (9, 1), (9, 0)], [(9, 5), (8, 4), (7, 3), (6, 2), (5, 1), (4, 0)], [(9, 5), (8, 5), (7, 5), (6, 5), (5, 5), (4, 5)], [(9, 6), (9, 5), (9, 4), (9, 3), (9, 2), (9, 1)], [(9, 6), (8, 5), (7, 4), (6, 3), (5, 2), (4, 1)], [(9, 6), (8, 6), (7, 6), (6, 6), (5, 6), (4, 6)], [(9, 7), (9, 6), (9, 5), (9, 4), (9, 3), (9, 2)], [(9, 7), (8, 6), (7, 5), (6, 4), (5, 3), (4, 2)], [(9, 7), (8, 7), (7, 7), (6, 7), (5, 7), (4, 7)], [(9, 8), (9, 7), (9, 6), (9, 5), (9, 4), (9, 3)], [(9, 8), (8, 7), (7, 6), (6, 5), (5, 4), (4, 3)], [(9, 8), (8, 8), (7, 8), (6, 8), (5, 8), (4, 8)], [(9, 9), (9, 8), (9, 7), (9, 6), (9, 5), (9, 4)], [(9, 9), (8, 8), (7, 7), (6, 6), (5, 5), (4, 4)], [(9, 9), (8, 9), (7, 9), (6, 9), (5, 9), (4, 9)]]
+
+That's more like it. Now I filter that such that the max nums never go over... the grid_dim?
+
+[2022-06-21 Tue]
+Okay, so I made a thing that takes a board, and can pass all the valid rotations of a word on a spot for the length of the word.
+
+So to get all the domains for a word I need... wait.
+
+I would put all these possible "safe" orientations for a word in a big list. And I would need to write predicates where the domain a variable gets assigned needs to match the length of the word. 
+
+Then I need a predicate something like: "None of the interior "spots" in a domain assigned to a var can be the same spot, expert for the first or last and even then they need to be the same letter.
+
+That sounds horrible.
+
+It sounds like I need to do two nested for loops. One for each length of word in the vars, and another for each spot in the grid.
+
+[2022-06-22 Wed]
+Okay, let's do the nested loop and get all the coordinates. I also want to make the numbers look at the words getting passed in so I need to make the numbers of words parameterized.
+
+...wow. That's a LOT of doms. Anyway
+
+I think next I need to make the predicates. Which is going to require I do a loop per pred because I don't know how many names need to get checked, and they are checking each other. 
+
+Something like:
+
+for each name in the sim
+check the domain it is trying to be assigned. Fail it if the lenghts don't match
+
+that will be like the "length check"
+
+Next is the nice neighbor check
+
+for cord in a names's dom, loop up what letter in the current name is
+IF any of the other names have a dom, check if the name cord appears in any of those.
+If it does, then check if that maps to the same lette.
+If so , fail it.
+
+Other wise it passes.
+
+
+..so many ifs.
+**** Let's try some preds
+[2022-06-23 Thu]
+
+I grabbed the plumbing I made here and put it into the CSP file
+
+...no. I am going to re-factor. I need to get the doms out of the leaves of the branches that are growing. There is no need to pass ALL that around each step of the way
+
+Man, Functional programming IS nice. That was a pretty painless refactor. Just pass along the doms in the chain of function calls, and don't make it a field in the data class, and it basically just worked.
+
+...man I don't like writting in that Big file. I feel like I am going to break something. I would rather write in small bit I can run, and copy it in later.
+
+#+name:length_pre_test
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from pyrsistent import *
+import functools
+import operator
+import itertools
+
+
+class Simulation_state(PRecord):
+    "Hold the parts of a Simulation"
+    names = field()
+    m_pred = field()
+    g_pred = field()
+    visited = field()
+
+words = ["hi", "mountain", "fire"]
+
+alpha = Simulation_state(names = m(hi = [], mountain=[], fire = []),
+                         m_pred = master_pred,
+                         g_pred = goal_pred,
+                         visited = False)
+
+#+end_src
+
+...so wait. Am I going to measure the length of the name of the var? That sounds weird. I should have the word's length stored somewhere so I can do a predicate match on it. Where does that go?
+
+
+**** And more preds
+
+[2022-06-27 Mon]
+Man trying to make these all not clash with each other is starting to make me wonder what the right way to do this really is. Surely some kind of "for all" is not the way to go?
+
+Let's try some string indexing
+
+#+name:string_index
+#+begin_src python :python python3 :results output
+thread = "big"
+tup = [(1,1),(5,8),(2,4)]
+print(len(thread))
+print(len(tup))
+#+end_src
+
+#+RESULTS: string_index
+: 3
+: 3
+
+Okay cool. So if a name has been assigned a word, the domain of the word at a given index has to be the same letter as when indexed to the other name at the index it has the same tuple.
+
+Okay, now my next problem. The name of a name is a var not a string. And vars don't have lengths. They return the legnth of what they hold
+**** Let's try the comparison to other names pred
+[2022-06-28 Tue]
+This one is maybe the hardest, but also one of the last. Man how long have I been working on this CSP stuff?
+
+It's been a two month project, but I did kind of stall a bit at the top with trying to make it in Racket. Anyway, let's wrap this up and move on.
+
+
+#+name:zip_with_string
+#+begin_src python :python python3 :results output
+word = "hello"
+l_list = [1,2,3,4,5]
+print(list(zip(word,l_list)))
+#+end_src
+
+#+RESULTS: zip_with_string
+: [('h', 1), ('e', 2), ('l', 3), ('l', 4), ('o', 5)]
+
+Can I zip from two places in a list comprehension?
+
+#+name:zip_from_two
+#+begin_src python :python python3 :results output
+words = ["hi","hello"]
+l_list = [[[1,1],[2,2]],[[3,3],[4,4],[5,5],[6,6],[7,7]]]
+the_list = [list(zip(x,y)) for x in words for y in l_list]
+print(the_list)
+#+end_src
+
+#+RESULTS: zip_from_two
+: [[('h', [1, 1]), ('i', [2, 2])], [('h', [3, 3]), ('i', [4, 4])], [('h', [1, 1]), ('e', [2, 2])], [('h', [3, 3]), ('e', [4, 4]), ('l', [5, 5]), ('l', [6, 6]), ('o', [7, 7])]]
+
+Hmn, okay the pred is not done, but it's showing progress
+**** Let's fix that
+[2022-06-29 Wed]
+I got really close to getting the pred I started making last night done. But it was spitting out weird results. Let's see if some time away from the problem has helped.
+
+Nice. I DID get it working. Took some doing but it's working. Now I need a new goal pred
