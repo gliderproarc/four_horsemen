@@ -113,22 +113,22 @@ def member_pred(sim_state):
 def master_pred(sim_state):
     "predicate for checking all the other predicates"
     if False in[member_pred(sim_state),
-                length_pred(sim_state),]:
+                length_pred(sim_state)]:
         return False
     else:
         return True
 
 def goal_pred(sim_state):
     "predicate for checking non empty and master predicates"
-    if False in[sim_state.names['ann'] != [],
-                sim_state.names['bob'] !=[],
-                sim_state.names['phil'] != [],
-                master_pred(sim_state),
-                sim_state.names['ann'] == sim_state.names['bob'],
-                sim_state.names['bob'] == sim_state.names['phil']]:
+    all_names = list(sim_state.names)
+    assigned_doms = [sim_state.names[x] for x in all_names]
+    checks = []
+    if [] in assigned_doms:
         return False
-    else:
-        return True
+    if len(assigned_doms) != len(set(tuple(i) for i in assigned_doms)):
+        checks = checks + [False]
+    checks = checks + [master_pred(sim_state)]
+    return all(checks)
 
 def names_all_assigned_pred(sim_state):
     "predicate for knowing if a state has had all it's names assigned"
@@ -153,10 +153,7 @@ def assign_empty(cue, doms):
     first_cue = filter(sim_state.m_pred, new_cue)
     final_cue = filter(cue_pred, first_cue)
     final_list = [*final_cue]
-    # return final_list + cue[1:] + mark_sim_visited(cue[0])
-
     intermediate_rep = final_list + cue[1:]
-    # flat = functools.reduce(operator.iconcat, intermediate_rep, [])
     return intermediate_rep + [mark_sim_visited(cue[0])]
 
 def process_next_in_cue(cue, doms):
@@ -185,7 +182,12 @@ def is_dup_pred(cue, sim):
 
 def main_loop():
     "run the simulation"
-    alpha = Simulation_state(names = m(ann = [], bob=[], phil = []),
+    alpha = Simulation_state(names = m(anker = [],
+                                       Scott=[],
+                                       Bobby = [],
+                                       zone = [],
+                                       gopro = [],
+                                       polar = []),
                              m_pred = master_pred,
                              g_pred = goal_pred,
                              visited = False)
@@ -193,7 +195,7 @@ def main_loop():
     stopper = True
     final = ""
     solition = []
-    domains = lunch_domains
+    domains = word_search_prep(["anker","Scott","Bobby","zone","gopro","polar"],6)
     while stopper:
         c_head = the_cue[0]
         if goal_pred(c_head):
@@ -209,9 +211,4 @@ def main_loop():
     print(solution.names)
 
 if __name__ == '__main__':
-    # main_loop()
-    alpha = Simulation_state(names = m(ti = [(0,5),(2,1)], tot = [(0,0),(1,1),(3,3)], phil = []),
-                             m_pred = master_pred,
-                             g_pred = goal_pred,
-                             visited = False)
-    print(member_pred(alpha))
+    main_loop()

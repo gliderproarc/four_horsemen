@@ -100,7 +100,7 @@ Hmn. Okay, I think I got it. And for Lisps I think I would want to do this in re
 #+end_src
 
 #+RESULTS: Bubbles-sort-v1
-"|" 0 "|" 3 "|" 5 "|" 4 "|" 8 "|"
+| 0 | 3 | 5 | 4 | 8 |
 
 So if I am thinking about this right, I want nested recursive calls. One recursive call will run for each of the elements int he unsorted array. And the recursive call within will run to "bubble up" each of those elements through the resulting array.
 
@@ -146,14 +146,14 @@ There is a function I need to write in the bubble function. It can be a lambda i
 #+end_src
 
 #+RESULTS: Bubbles-sort-v2
-"|" 0 "|"
+| 0 |
 #+name:car-and-cons
 #+begin_src elisp
 (cons 3 '(4))
 #+end_src
 
 #+RESULTS: car-and-cons
-"|" 3 "|" 4 "|"
+| 3 | 4 |
 
 
 Okay, I give up. Let's take a look at an example.
@@ -204,7 +204,7 @@ Okay, what did I learn from this?
    #+end_src
 
    #+RESULTS: Bad-bubbles
-   "|" 1 "|" 2 "|" 2 "|" 2 "|" 3 "|" 4 "|" 5 "|" 6 "|" 7 "|" 7 "|" 9 "|"
+   | 1 | 2 | 2 | 2 | 3 | 4 | 5 | 6 | 7 | 7 | 9 |
 
 
    Got it.
@@ -319,10 +319,10 @@ I think I know what I want to make this do in Clojure, but to save time I really
 #+end_src
 
 #+RESULTS: Bubblesort-clojure
-"|" #'shadow.user/swap-two     "|"
-"|" #'shadow.user/bubble-recur "|"
-"|" #'shadow.user/bubble-sort  "|"
-"|" (1 2 3 4 5 6)              "|"
+| #'shadow.user/swap-two     |
+| #'shadow.user/bubble-recur |
+| #'shadow.user/bubble-sort  |
+| (1 2 3 4 5 6)              |
 
 So weird. That is a way to apply a function x times
 https://stackoverflow.com/questions/46655508/apply-a-function-n-times-on-a-starting-value
@@ -656,7 +656,7 @@ Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure so
   #+end_src 
 
   #+RESULTS: arrows
-  "|" 0 "|" 5 "|" 6 "|" 7 "|"
+  | 0 | 5 | 6 | 7 |
 
   I had looked this up once before and it's nice to see how nice and clean it is. Let's do it more like a data pipeline. How about all the even numbers under 20?
 
@@ -667,7 +667,7 @@ Hmn. It's a bit of extra work, but I think I figured out how to make Cloujure so
   #+end_src 
 
   #+RESULTS: even-under-20
-  "|" 0 "|" 2 "|" 4 "|" 6 "|" 8 "|" 10 "|" 12 "|" 14 "|" 16 "|" 18 "|" 20 "|"
+  | 0 | 2 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20 |
   
 I need to practice making predicates. But it works. And I can use that function just about anywhere here in Emacs. Particularly in tables.
 *** Companion Python script to the C string reversal problem.
@@ -839,11 +839,11 @@ Well that settles it. After poking around I have come to a conclusion. Hy is coo
   For some miraculous reason, I seem to get the values in the Org table, but when passing the results of clojure blocks to other languages, I run into problems. Less so when using Hy. So as long as what I am doing is mostly here in Emacs and Org mode, I can take advantage of a lot of cool without needing to sacrifice the interop with org-mode.
 **** Hy no func
   #+TBLNAME: the_ranks_4hy
-     "|" Name(rank) "|" rank "|"
-     "|"------------+------"|"
-     "|" Aa         "|" Aa   "|"
-     "|" Bb         "|" Bb   "|"
-     "|" Cc         "|" Cc   "|"
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
   #+TBLFM: $2='(org-sbe "grab-hy" (text-hy $$1))
 
   #+name:grab-hy
@@ -852,11 +852,11 @@ text-hy
   #+end_src
 **** Clojure no func
   #+TBLNAME: the_ranks_4hy
-     "|" Name(rank) "|" rank "|"
-     "|"------------+------"|"
-     "|" Aa         "|" Aa   "|"
-     "|" Bb         "|" Bb   "|"
-     "|" Cc         "|" Cc   "|"
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
   #+TBLFM: $2='(org-sbe "grab-clj" (text-clj $$1))
 
   #+name:grab-clj
@@ -865,11 +865,11 @@ text-clj
   #+end_src
 **** Hy with func
   #+TBLNAME: the_ranks_4hy
-     "|" Name(rank) "|" rank "|"
-     "|"------------+------"|"
-     "|" Aa         "|" Aa   "|"
-     "|" Bb         "|" Bb   "|"
-     "|" Cc         "|" Cc   "|"
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
   #+TBLFM: $2='(org-sbe "grab-hyf" (text-hyf $$1))
 
   #+name:grab-hyf
@@ -882,11 +882,11 @@ text-clj
   Hy just seems to work really well, just like Python. If I can get it to work in Python, I can usually get it to work in Hy.
 **** Clojure with func
   #+TBLNAME: the_ranks_4hy
-     "|" Name(rank) "|" rank "|"
-     "|"------------+------"|"
-     "|" Aa         "|" Aa   "|"
-     "|" Bb         "|" Bb   "|"
-     "|" Cc         "|" Cc   "|"
+     | Name(rank) | rank |
+     |------------+------|
+     | Aa         | Aa   |
+     | Bb         | Bb   |
+     | Cc         | Cc   |
   #+TBLFM: $2='(org-sbe "grab-cljf" (text-cljf $$1))
 
   #+name:grab-cljf
@@ -897,8 +897,8 @@ text-clj
   #+end_src
 
   #+RESULTS: grab-cljf
-  "|" #'shadow.user/my-func "|"
-  "|" "text-cljf"           "|"
+  | #'shadow.user/my-func |
+  | "text-cljf"           |
 
  ...wow, the clojure actually worked really nicely. Even though the block output has that extra output thingy.
 **** Code block to code block
@@ -911,12 +911,12 @@ text-clj
   #+end_src
 
   #+RESULTS: make-clj-text
-  "|" #'cljs.user/my-func "|"
-  "|" "texter"            "|"
+  | #'cljs.user/my-func |
+  | "texter"            |
 
   #+RESULTS: make clj-text
-  "|" #'shadow.user/my-func "|"
-  "|" "text"                "|"
+  | #'shadow.user/my-func |
+  | "text"                |
 
  #+name:grab_it
  #+begin_src python :python python3 :results output :var thing=make-clj-text
@@ -1000,7 +1000,7 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+: 543
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1940,7 +1940,7 @@ defmodule Bubble do
   
   # recursively sort a list by swapping the first two elements, then calling it's self in the tail of the list 
   def sort_two([l, r]) do
-    [head "|" tail] = l
+    [head | tail] = l
     case {head, tail} do
       {_head, tail} when tail == [] ->
         List.flatten([r] ++ [head])
@@ -1981,7 +1981,7 @@ Bubble.b_sort([5, 4, 3, 2, 1])
 : [1, 2, 3, 4, 5]
 
 Finished on [2022-01-16 Sun]
-It's kind of weird to need to make the recur and sort and interface all separate functions. But I basically did this in Clojure too. Clojure did not have a really good way of making a "do times" function. Python handled that very nicely but this whole thing is just very tasteful. A sorting scheme that doesn't require so much mutation would be much more natural to write.
+It's kind of weird to need to make the recur and sort and interface all separate functions. But I basically did this in Clojure too. Clojure did not have a really good way of making a "do times" function. Python handled that very nicely but this whole thing is just very statefull. A sorting scheme that doesn't require so much mutation would be much more natural to write.
 
 *** Elixir function patterns
 [2022-02-23 Wed]
@@ -1994,7 +1994,49 @@ I was looking online for how to get a data structure to implement a binary sort 
 6. With the expensive functions, build them to call them selves recursively at the end
 
    I haven't seen this before, and it looks like good practice. So to practice it, let's make a very simple recursive function that calculates... the sum of a list. And rather than focusing on solveing the problem, I am just going to work on the above.
+
+**** good habits
+[2022-07-02 Sat]
+
+I have finished chapter 3 of my programming textbook and I am much more certain that I want to write as much as I can in Elixir. I will keep tabs on LFE and try to squeeze it in where it makes sense. But if I am going to be writing lots of Elixir, it's good to make good habits now.
+
+#+name:good-habbits
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule G_habbits do
+  @moduledoc """
+  Practicing good habbits like providing documentation
+  """
   
+  import Enum
+  
+  @spec sum_list(list) :: integer
+  
+  @doc """
+  This function takes a list a re returns it's sum
+  """
+  def sum_list(list) do
+    reduce(list, fn x, acc -> x + acc end)
+  end
+end
+
+G_habbits.sum_list([1,2,3,4,5,6])
+#+end_src
+
+#+RESULTS: good-habbits
+
+Hmn... well that is not so bad. I don't demonstrate the public and private function part of a module, but it does have the docs and the specs where they would need to be.
+
+I am guessing you put the specs for functions after the module doc, then the functions. So from top to bottom:
+1. Define the module
+2. Module docs
+3. imports/requires/alias
+4. specs
+5. functions
+6. private functions
+
+   That seems like a pretty reasonable way to structure things. And from Org-babel blocks to real Elixir modules, I just need to strip away that compiler option bit
 
 *** Elixir alias
 #+name:no_alias
@@ -2058,6 +2100,218 @@ flatten [1,2,[6,7]]
 :     iex:25: (file)
 
 Hmn... looks like I can't do a require outside a module.
+
+#+name:req-in-mod
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule My_models do
+  import List
+  def the_fun() do
+    flatten [1,2,[6,7]]
+  end
+end
+
+My_models.the_fun()
+#+end_src
+
+#+RESULTS: req-in-mod
+| 1 | 2 | 6 | 7 |
+
+There we go.
+
+
+*** Move where the pipe goes
+[2022-07-02 Sat]
+This was less syntax than I thought it was going to be
+
+
+#+name:pipe_second
+#+begin_src elixir :results output
+5.5
+|> floor()
+|> then(&rem(6,&1))
+#+end_src
+
+#+RESULTS: pipe_second
+: 1
+
+Compare that with:
+
+#+name:pipe_first
+#+begin_src elixir :results output
+5.5
+|> floor()
+|> rem(6)
+#+end_src
+
+#+RESULTS: pipe_first
+: 5
+
+So the syntax is, you "capture" the thing heading into the pipe with an "&" symbol infront of the function call, wrap the thing in a call to "then" and use a &1 to show where the thing need to go into the function.
+
+That is not very elegant, but it means pipes are actually going to be enough for me and not be enough of a reason to want to use LFE.
+
+Oh my gosh wait, that is also Elixir's syntax for partial function application?
+
+#+name:elixir_partial
+#+begin_src elixir :results output
+double = &(&1 * 2)
+double.(2)
+#+end_src
+
+#+RESULTS: elixir_partial
+: 4
+
+Okay to that then() thing is just to invoke the thing. But I can capture a arity two function with one arg set into a variable.
+
+#+begin_quote
+In other words, &(&1 * 2) is equivalent to fn x -> x * 2 end.
+#+end_quote
+
+from: https://hexdocs.pm/elixir/Kernel.SpecialForms.html
+
+Cool.
+
+*** Elixir for comprehension
+#+name:for_comp
+#+begin_src elixir :results output
+for x <- [1, 1, 2, 3], uniq: true, do: x * 2
+#+end_src
+
+#+RESULTS: for_comp
+| 2 | 4 | 6 |
+
+oh wow it can do gaurds too
+
+
+#+name:for_comp_gaurd
+#+begin_src elixir :results output
+for x when x > 3 <- [1, 1, 2, 3, 5, 5, 75, 75], uniq: true, do: x * 2
+#+end_src
+
+#+RESULTS: for_comp_gaurd
+| 10 | 150 |
+
+woa. 
+
+*** Intermission break
+I need a small problem to kind of stretch my fingers a bit with Elixir. Let's go find a random leet code problem
+
+https://leetcode.com/problems/add-two-numbers/
+
+This looks pretty good.
+
+I get two linked lists, they are backwards and the 3 numbers in list are the ones, tens, and hundred of a number. Add the numbers described in the two lists.
+
+so two lists of 123 and 456 would represent the numbers 321 and 654 totaling 975.
+
+#+name:add-two-numbers
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+l1 = [1,2,3]
+l2 = [4,5,5]
+#+end_src
+
+
+I suppose I could multiply the numbers in the lists by 1, 10, then 100 the add all the numbers together to get their totals?
+
+Oh, the number is of arbitrary length. Up to 100 digits. 
+
+Well that might actually take a while
+[2022-07-05 Tue]
+
+or not. I think I just use map reduce.
+
+If I have a list, I just zip it with another list that has 1...10...100 in a stream. Then I run map reduce where each element is mutipled (it's head times it's tail) and then added to the acculator.
+
+Easy.
+
+#+name:add_2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+l1 = [3,4,5] #will become 543.
+l2 = [1,2,3] #so 321.
+
+s_list = Stream.map([1,1,1,1,1], fn x -> x * 10 end)
+five_list = Stream.take(s_list, 5)
+Enum.to_list(s_list)
+#+end_src
+
+#+RESULTS: add_2
+: \n\n\n\n\n
+
+
+wait wait wait, that was cool and all, but there is a function for this
+
+#+name:add_two_two
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+l1 = [3,4,5] #will become 543.
+l2 = [1,2,3] #so 321.
+
+defmodule P do
+  
+  defp make_num(l) do
+    l
+    |> Enum.reverse()
+    |> Integer.undigits()
+  end
+
+  def add_them(l1,l2) do
+    make_num(l1) + make_num(l2)
+  end
+end
+
+P.add_them(l1,l2)
+
+
+#+end_src
+
+#+RESULTS: add_two_two
+: 864
+
+Done. Too easy.
+
+I want to figure our that thing I was going to do before.
+
+#+name:add_3
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+l1 = [3,4,5] #will become 543.
+l2 = [1,2,3] #so 321.
+
+s_list = Enum.map([1,2,3,4,5], fn x -> x * 10 end)
+#+end_src
+
+#+RESULTS: add_3
+| 10 | 20 | 30 | 40 | 50 |
+
+Oh, I think I see that the problem is. Its not that it was not working. I was literally getting a bunch of 10s.
+
+I need an accumlator, or some kind of state to pass to each call to this function
+
+Let's try unfold
+
+#+name:unfold
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+Stream.unfold(1, fn
+  n -> {n, n * 10} end)
+  |> Enum.take(6)
+#+end_src
+
+#+RESULTS: unfold
+| 1 | 10 | 100 | 1000 | 10000 | 100000 |
+
+Whoo hoo!
+
+So what I was going to do was zip that with the original list, and map over the thing. But the Integer module made it way too simple.
 ** LFE?
 
 #+name:test4
@@ -2236,13 +2490,13 @@ x
 Yup
 
 #+TBLNAME: Sum-of-stuff
-"|" Lables "|" num "|"
-"|"--------+-----"|"
-"|" stuff  "|"   1 "|"
-"|" stuff  "|"   5 "|"
-"|" stuff  "|"  30 "|"
-"|"--------+-----"|"
-"|" sum    "|"  36 "|"
+| Lables | num |
+|--------+-----|
+| stuff  |   1 |
+| stuff  |   5 |
+| stuff  |  30 |
+|--------+-----|
+| sum    |  36 |
 #+TBLFM: @>$2 = '(+ @I..@II);N
 
 #+name:give-me-table
@@ -2251,7 +2505,7 @@ Yup
 #+end_src
 
 #+RESULTS: give-me-table
-"|" stuff "|" 1 "|"
+| stuff | 1 |
 
 I mean yeah that's a lisp I can use in Emacs.
 
@@ -2399,7 +2653,7 @@ So I was trying to make Racket more like Clojure, and I came across a few librar
 #+end_src
 
 #+RESULTS: lazy-test
-"|" 2 "|" 4 "|" 6 "|"
+| 2 | 4 | 6 |
 
 
 Thinking about it now, that is kind of like how the threading macro ended up looking in LFE
@@ -2442,7 +2696,7 @@ Here is it working with an infinite list
 #+end_src
 
 #+RESULTS: Lazy-racket
-"|" 3 "|" 5 "|" 7 "|" 9 "|" 11 "|" 13 "|" 15 "|"
+| 3 | 5 | 7 | 9 | 11 | 13 | 15 |
 
 ** Clojure
 You know what, I wanted to add ClojureScript here, but it's impossible to get it working. Why not just stick to good old java clojure? That can't be the worst idea in the world. 
@@ -2471,7 +2725,7 @@ LFE if bound to have really similar syntax to Elisp, but Elixir is going to be s
 #+end_src
 
 #+RESULTS: var-parse
-"|" 4 "|" 5 "|"
+| 4 | 5 |
 
 Hmn... well it appears that lists and nested lists are kind of hard to look at coming out of an org mode block. They all turn into tables. I am 99% sure I know how to assign singular values. " x = 3 " would get me a var in Elizir that equals 3. And I can stick it at the top of the buffer when evaluating Elixir code. But I don't know how lists or nested lists will look comming into an elixir code block.
 
@@ -2756,9 +3010,9 @@ printf("%b", 0b1010);
 
 #+RESULTS: binary
 : ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-OSholU/elixir-qf8kJX:1:17: syntax error before: "4"
-:     "|"
-:   1 "|" bin_data = << 3 4 55 >>
-:     "|"                 ^
+:     |
+:   1 | bin_data = << 3 4 55 >>
+:     |                 ^
 :     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
 :     iex:4: (file)
 
@@ -2819,7 +3073,7 @@ int main(void)
    c = a & b;       /* 12 = 0000 1100 */ 
    printf("Line 1 - Value of c is %d\n", c );
 
-   c = a "|" b;       /* 61 = 0011 1101 */
+   c = a | b;       /* 61 = 0011 1101 */
    printf("Line 2 - Value of c is %d\n", c );
 
    c = a ^ b;       /* 49 = 0011 0001 */
@@ -2957,7 +3211,7 @@ Man, I am kind of nervous about this. Hanoi towers I remember from when Big Jame
 #+begin_src elixir :results output
 list = [0,1,2,3,4]
 
-[h "|" t] = list
+[h | t] = list
 t
 #+end_src
 
@@ -3263,9 +3517,9 @@ Starting the last of the homework problems from Chapter 1. Let's see if this is 
 
 #+RESULTS: binary-test
 : ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-hlJJwp/elixir-OVaJuz:1:17: syntax error before: "4"
-:     "|"
-:   1 "|" bin_data = << 3 4 55 >>
-:     "|"                 ^
+:     |
+:   1 | bin_data = << 3 4 55 >>
+:     |                 ^
 :     (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
 :     iex:3: (file)
 
@@ -3375,7 +3629,7 @@ Hmn... looks like a tuple works. ...but can a tuple have 1,000,000 elements?
 #+begin_src elixir :results output
 
 defmodule BinarySearch do
-  @spec search(tuple, integer) :: {:ok, integer} "|" :not_found
+  @spec search(tuple, integer) :: {:ok, integer} | :not_found
   def search({}, _), do: :not_found
   def search(numbers, key) do
     do_search(numbers, key, 0, tuple_size(numbers) - 1)
@@ -5457,34 +5711,11 @@ end
 
 require Dc
 my_sim = Dc.sim()
-"|"> Dc.add_5_dogs()
-"|"> Dc.remove_2_cats()
+|> Dc.add_5_dogs()
+|> Dc.remove_2_cats()
 #+end_src
 
 #+RESULTS: DC_rec
-#+begin_example
-,** (CompileError) iex:24: module Dc is not loaded but was defined. This happens when you depend on a module in the same context in which it is defined. For example:
-
-    defmodule MyApp do
-      defmodule Mod do
-      end
-
-      use Mod
-    end
-
-Try defining the module outside the context that uses it:
-
-    defmodule MyApp.Mod do 
-    end
-
-    defmodule MyApp do
-      use MyApp.Mod
-    end
-
-If the module is defined at the top-level and you are trying to use it at the top-level, this is not supported by Elixir
-    (iex 1.13.2) expanding macro: IEx.Helpers.import_file/1
-    iex:7: (file)
-#+end_example
 
 Okay that seems pretty good. I can make a record with fields, and then to use it, I can just instantiate a instance, and update it's fields with functions. 
 
@@ -5846,13 +6077,13 @@ hmn... is that really all I need to make the predicate filter for a valid simula
 
 okay so next is moving animals right? What are the posobileties?
 
-"|" opetion Num "|" dogs moving "|" cats moving "|"
-"|"-------------+-------------+-------------"|"
-"|"           1 "|"           1 "|"           0 "|"
-"|"           2 "|"           2 "|"           0 "|"
-"|"           3 "|"           0 "|"           1 "|"
-"|"           4 "|"           0 "|"           2 "|"
-"|"           5 "|"           1 "|"           1 "|"
+| opetion Num | dogs moving | cats moving |
+|-------------+-------------+-------------|
+|           1 |           1 |           0 |
+|           2 |           2 |           0 |
+|           3 |           0 |           1 |
+|           4 |           0 |           2 |
+|           5 |           1 |           1 |
 
 Yup, just 4.
 
@@ -6932,7 +7163,7 @@ I need 3?! functions
 #+end_src
 
 #+RESULTS: testing-first-class
-"|" 3 "|" 4 "|"
+| 3 | 4 |
 
 
 Well look at that. I can just pass the name of a function and then call that in the body of another function just like that.
@@ -7064,18 +7295,18 @@ hmn... still stuck. Let's make this problem smaller.
 #+end_src
 
 #+RESULTS: smaller
-"|" rule-1 "|" 2 "|"
-"|" rule-1 "|" 1 "|"
-"|" rule-1 "|" 2 "|"
-"|" rule-1 "|" 3 "|"
-"|" rule-2 "|" 2 "|"
-"|" rule-2 "|" 1 "|"
-"|" rule-2 "|" 2 "|"
-"|" rule-2 "|" 3 "|"
-"|" rule-3 "|" 2 "|"
-"|" rule-3 "|" 1 "|"
-"|" rule-3 "|" 2 "|"
-"|" rule-3 "|" 3 "|"
+| rule-1 | 2 |
+| rule-1 | 1 |
+| rule-1 | 2 |
+| rule-1 | 3 |
+| rule-2 | 2 |
+| rule-2 | 1 |
+| rule-2 | 2 |
+| rule-2 | 3 |
+| rule-3 | 2 |
+| rule-3 | 1 |
+| rule-3 | 2 |
+| rule-3 | 3 |
 
 Shucks, that is harder than I thought it would be
 
@@ -8070,7 +8301,71 @@ print(the_list)
 
 Hmn, okay the pred is not done, but it's showing progress
 **** Let's fix that
+
+
 [2022-06-29 Wed]
 I got really close to getting the pred I started making last night done. But it was spitting out weird results. Let's see if some time away from the problem has helped.
 
 Nice. I DID get it working. Took some doing but it's working. Now I need a new goal pred
+**** And now the goal pred
+[2022-06-30 Thu]
+I think I will need some time to debug the final solution, but I think I am less then a week away from finishing this. And from here on out, Only Elixir and LFE.
+
+...woa I'm done.
+
+216 lines of code. There is a bit more than needs to be there, but most of that is live Code.
+
+** 4.7 Exercises
+Started on [2022-07-04 Mon]
+
+1. Add support to the graph framework for removing edges and vertices
+2. Add support to the graph framework for directed graphs (digraphs).
+3. Use this chapter's graph framework to prove or disprove the classic Bridges of Konnigsberb problem.
+
+   the first two are about getting into the inner working so the classes they build up in the chapter, and I have no intention making any such classes. So onto problem 3 it is.
+
+   https://en.wikipedia.org/wiki/Seven_Bridges_of_K%C3%B6nigsberg
+
+   Cool. So it's impossible. I need to build a graph that proves it.
+
+   To make it sort of useful, I am guessing it would need to be a graph you could plug other stuff into and use it to do things like calculate the minimum spanning tree of the Hyper loop problem discussed in the chapter. 
+
+   Okay, let's break this down a little more. It looks like the whole thing uses a BFS, was it BFS? Yeah BFS. Hmn.
+
+   Okay so I need a general purpose BFS in Elixir. The things I pass in are going to need to be some kind of data structure that can hold nodes from a graph, and it would be very nice if they ca hold something like weights. 
+
+
+#+name:graph-start
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Dc do
+  @moduledoc """
+  graph problem framwork
+  """
+  require Record
+
+  Record.defrecord(:node,
+    vertex1: 1,
+    vertex2: 10,
+    weight1: 5,
+    weight2: 5)
+
+  @doc """
+  Predicate function for the valid state filter
+  """
+  def my_fun do
+    
+  end
+end
+
+1 + 1
+
+#+end_src
+
+#+RESULTS: graoh-start
+: 2
+
+This is a pretty nice place to start all this. I have a record example I know works, I have started out the 
+
+But man, I feel like I have so much syntax to learn with Elixir. I think I need to start smaller and just get more Elixir under my fingers.
