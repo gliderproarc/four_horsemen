@@ -1,5 +1,5 @@
 #+TITLE: Four Horsemen
-#+DATE: [2022-01-12 Wed]  
+#+DATE: [2022-01-12 Wed]
 * Old stuff
 ** The languages are all gathered
   Started on [2021-04-04 Sun]
@@ -1000,7 +1000,8 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: 543
+: lfe> '(4)
+: (4)
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -2312,7 +2313,194 @@ Stream.unfold(1, fn
 Whoo hoo!
 
 So what I was going to do was zip that with the original list, and map over the thing. But the Integer module made it way too simple.
-** LFE?
+
+*** Majority element from leet code
+[2022-07-18 Mon]
+I want a small problem to just play with as I start another chapter of my textbook, so let's find something not too crazy.
+
+Let's do this guy: Majority Element
+https://leetcode.com/problems/majority-element/
+#+begin_quote
+Given an array nums of size n, return the majority element.
+
+The majority element is the element that appears more than ⌊n / 2⌋ times. You may assume that the majority element always exists in the array.
+#+end_quote
+
+I think I get what it's trying to make me do, and low and behold, Leet code has nice starters in Elixir.
+
+So I think I want to do a reduce. I take a set of the numbers, and return tuples with the num and it's count, sort be the second item in the tuple, and return the head. 
+
+or let's see if Elixir has any cool functions that make this easy.
+#+name:majority_element
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Mj do
+  @spec majority_element(nums :: [integer]) :: integer
+  def majority_element(nums) do
+    Enum.frequencies(nums)
+    |> Map.to_list()
+    |> Enum.sort_by(fn x -> elem(x,1) end, :desc)
+    |> hd()
+    |> elem(0)
+  end
+end
+
+Mj.majority_element([1,2,2,2,1,3,2,2,2,2,5,5])
+# should return 2
+
+#+end_src
+
+#+RESULTS: majority_element
+: 2
+
+Done. Well that was made SUPER easy by the Enum.frequencies function, but surprisingly the syntax of the rest of this took more time that anything else. I was going to do one of those pipe argument mover things, but then I realized my problem was with trying to do all this on a map instead of a list. This was made much simpler after making the map keys a list. And while this does no calculation about if this is the majority, there is no way an element of the list can have the highest count and not also be the majority.
+
+Is there a more cleaver way of finding what is the most common element?
+
+Turns out there is! It's called the Boyer-Moore Voting Algorithm
+
+Which I sort of got how worked, but don't quite know how I would make in Elixir. What I can say is the way I do this above it pretty simple and straight forward, and If I had to come back to this in a year adn know what's going on, it's pretty obvious.
+
+*** More Leet code
+[2022-07-19 Tue]
+I have a raspberry Pi Zero 2 coming in the mail tomorrow. And I think I should get it all set up and ready to host an Elixir app (hopefully throw in some LFE in there too), and I can let that take precedence over getting a genetic algo going for that Python book homework. In fact, it would be kind of fun to make my code run remote from my computer with me on a pi in the office way over somewhere.
+
+So today while I am still waiting for it to come in the mail, I am going to just get more Elixir under my fingers... wait should I write this in LFE? I haven't touched that in a long while. Maybe I should write a little just to keep it fresh in my memory.
+
+*** Let's see if the has table problems are really hard or not
+[2022-07-24 Sun]
+I am getting really close to being able to delploy something on my Pi, but I want to get better at Elixir too, so I would love to find some easy problems to help keep the syntax fresh in my mind
+
+Not sure if I can make this an O(n) solution, but I think I know a few ways I could do this.
+
+https://leetcode.com/problems/longest-consecutive-sequence/
+
+**** details
+#+begin_quote
+Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence.
+
+You must write an algorithm that runs in O(n) time.
+#+end_quote
+
+So the order the numbers appear in does not matter. The example makes it really clear
+
+#+begin_quote
+Example 1:
+
+Input: nums = [100,4,200,1,3,2]
+Output: 4
+Explanation: The longest consecutive elements sequence is [1, 2, 3, 4]. Therefore its length is 4.
+Example 2:
+
+Input: nums = [0,3,7,2,5,8,4,6,0,1]
+Output: 9
+#+end_quote
+
+So... in one pass I need to know if the how many numbers are just one away from each other.
+
+**** musing
+well, how on earth do you do that in one pass? Let's try this example set with no code:
+
+[1,2,3,5,6,7,8]
+
+so the answer is 4, but how do I know it's four? Why I didn't start by doing the whole 1,2,3 thing... unless I do them in parallel. But isn't that also going to make for really big process heavy steps?
+
+If I start the pass by making a list of lists, one is the current winner, and the rest are candidates. Each step through the list of ints will take the number and add it before or after any active lists. If there is a new winner, drop the winner. At the end, return the winner.
+
+It's kind like that voting algorithm. That might work. But then why is this a hash map problem?
+
+**** solution
+Hmn.. this is harder than I thought it was. I was thinking to drop numbers if they are not one more then a current candidate, but it turns out I need to keep them around in case they are completed later. So I guess I need to sacrifice space for time. I could do permutations, but that can't be o(n). that must be huge. It's a list per element that I then need to check.
+
+I feel like the naive solution is to make it a set, sort, then split by gaps in the numbers, then take the longest. But that is way too many steps.
+
+I could also imagine taking the permutations of the list and taking the longest one that is also of the form x = all of x's part going up by 1 at a time for x times. But that isn't O(n) either.
+
+Here is another naive implementation. For each element in the list, run a check that looks like this: does 1 plus me exist in the list? increment me by one, carry along my length and try again, stop and report my length at the end. And take the longest. That will run something less than the length of the list for each element in the list, and i guess if I always but the biggest element at the head of a result list, I take the head at the end and done.
+
+You know what, that's the best I can imagine. I just don't like the fact I feel like I will end up making a custom map function. 
+
+#+name:Long_cons
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Longest_consecutive_nums do
+  @moduledoc """
+  Leet code practice. Take a list of ints and return the length of the
+  longest consecutive run of them.
+  """
+  
+  @doc "Return the number of numbers in order above this number"
+  def lc_for_num(num, problem_list) do
+    cond do
+      Enum.member?(problem_list, num - 1) -> 0
+      not Enum.member?(problem_list, num + 1) -> 1
+      true -> lc_for_num_r(num + 1, problem_list, 1)
+    end
+  end
+
+  def lc_for_num_r(num, problem_list, acc) do
+    if not Enum.member?(problem_list, num + 1) do
+      acc + 1
+    else
+      lc_for_num_r(num + 1, problem_list, acc + 1)
+    end
+  end
+
+  @doc "Find the longest consecutive run of numbers"
+  def lc(running_list) do
+    m_set = MapSet.new(running_list)
+    Enum.reduce(m_set, 0, fn x, acc -> max(acc, lc_for_num(x, m_set)) end)
+  end
+end
+
+Longest_consecutive_nums.lc([1,2,5,6,7,8,10,11,12])
+#+end_src
+
+#+RESULTS: Long_cons
+: 4
+
+Done. Not bad.
+Now let's go look at some solutions.
+
+hmn... I wish I had thought of that, by telling the inner loop thing not to run if 1 - num exists, you save it from being just brute force.
+
+Aw man, after adding the optimization, it's so close to what I had before. It's just literally that... and making it a MapSet. Man I need to learn the collections in Elixir better.
+
+I saw someone trying to say you could think of this as a graph problem. And how the numbers being next to each other could be like connections in the nodes. And then that means you can just BFS and get the same thing. So in a way, this is so sort of acting like a BFS. The reduce is how I am managing the walk from each node. And my calling max on the what comes out, I am defining how I want to handle my stack, which in this case is to discard anything small and don't even track how you get there.
+
+But now that I think about it, BFS, was always kind of showing up in other problems. And the little bit added up top saying you don't need to search nums where the num below it exists, seems like it's a sort of back tracking. But not relying on a stack and looking through the stack to see what has been traversed.
+
+
+*** Digraphs in Erlang
+https://www.erlang.org/doc/man/digraph_utils.html#topsort-1
+And because this is an Erlang library, I have all this in LFE too. Nice. 
+
+So rather than try to make my own data structure to hold the cue or stack for a BFS or DFS, this appears to do it for me. I just need to get used to thinking of problems in terms of digraphs.
+
+
+*** Woa, Erlang has Queues too.
+https://www.erlang.org/doc/man/queue.html
+Which means I get these in Elixir and LFE too. Man I really DO need to learn the Erlang libraries better.
+
+#+name:queue_test
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+
+ my_q = :queue.new()
+ next_q = :queue.in(5, my_q)
+ next_q2 = :queue.in(6, next_q)
+ :queue.out(next_q2)
+#+end_src
+
+#+RESULTS: queue_test
+| :value |   5 |
+| nil    | (6) |
+
+That's excatly what I want. With a regular list, I can add things to the head and it's all good. But if need something for BFS, where the first thing in also comes out when I call out. This lets me stick in 5 first, then 6, and when I call out, I can efficiently get the 5 before the 6. 
+** LFE
 
 #+name:test4
 #+begin_src lfe :results output
@@ -2350,8 +2538,7 @@ Should I add this too?
 
 yeah, looks like LFE needs work before it can use variables from Org mode. But that would be a nice ELISP project. I can't imagine it's that much work. Would not be easy to be sure but at the same time I could probably get most things done with just Elixir and python and not worry about using a Lisp.
 
-I will keep it in stalled, but don't think I will really end up using it for much. 
-
+I will keep it in stalled, but don't think I will really end up using it for much.
 *** LFE is broken
 [2022-05-17 Tue]
 Just installed Emcas 28 and now LFE code blocks in Org mode are not running. Oh boy
@@ -2360,7 +2547,6 @@ Just installed Emcas 28 and now LFE code blocks in Org mode are not running. Oh 
 https://github.com/M-I/ob-lfe
 
 If this is not the ob-lfe in use, switching to this will fix that
-
 
 *** Docs for LFE
 https://cnbbooks.github.io/lfe-manual/current/part1/repl/help.html
@@ -2424,7 +2610,304 @@ Why couldn't Racket have done this for me? I mean how nice is that? no need to g
 [2022-05-29 Sun]
 I think I just realized why I was having problems with LFE and modules before. I was trying to use org babel blocks, which evaluate in the REPL, and modules can only be defined in files.
 
-Even better. That should mean I have very little to worry about in terms of finding 
+Even better. That should mean I have very little to worry about in terms of finding the functions I am defining. Also cool, I can define functions in the repl. So I can just save modules for files I intend to compile
+...slightly bother some is that that that means if I make and LFE babel blocks, I will have ALL those name spaces colliding. But if I have that money there is also a good chance I won't run the block directly, I would instead compile a lfe file then call that from babel.
+
+*** Let's practice a bit
+[2022-07-19 Tue]
+Waiting for my first pi, and practicing some LFE
+
+#+name:lfe-is-cool
+#+begin_src lfe :results output
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defmodule M
+(export all))
+
+(defun my-func ()
+  "return a string saying it's a trap"
+  "It's a trap!")
+
+(my-func)
+#+end_src
+
+#+RESULTS: lfe-is-cool
+: lfe>   "It's a trap!")
+: my-func
+: lfe> 
+: lfe> (my-func)
+: "It's a trap!"
+
+Okay, so if I want to write a module I can do it. I just need to call the function in it's own block if I really want to do it that way. 
+
+...man and I really do want to get LFE up to par with what I can do with Elixir babel blocks one day. Okay, I need a code problem.
+
+Let's try this one:
+https://leetcode.com/problems/valid-parentheses/
+
+I have  a pretty good idea of how I am going to do it to:
+
+#+name:valid-brackets
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defmodule Valid-parens
+  (export all))
+
+(defun valid-bracket (string)
+  "take a char and replace all of that char-pair with nums and make suer it doesn't dip below zero"
+  (as-> string x
+        (string:replace x "t" "1" 'all)
+        (cdr x)
+        (lists:map (lambda (y)
+                     (if (=:= "1" y) 1
+                         0)) x)
+        (
+        ))
+
+(valid-bracket "thit")
+
+#+end_src
+
+#+RESULTS: valid-brackets
+: valid-bracket
+: lfe> 
+: lfe> (valid-bracket "thit")
+: (1 0 1 0)
+
+Well this is taking longer than I thought it would. But it's getting done.
+
+And yeah, Lisp is fun. And it's nice to have a lisp on the beam.
+
+*** Playing with Erlang queues
+[2022-07-31 Sun]
+
+I am sort of on a short intermission on my Python book and coding for the Pi while I get Elixir and LFE more under my fingers. And one of the libraries I am particularly interested in learning is the Queue. Lists works just fine for stacks, and I will use lists for most things, but I need Queues for things like BFS. So let's practice using them a bit.
+
+#+name:queue-testing
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set my-q (as-> (queue:new) q
+                (queue:in 5 q)
+                (queue:in 6 q)))
+(queue:in 7 my-q)
+(queue:in 8 my-q)
+#+end_src
+
+#+RESULTS: queue-testing
+: lfe> (queue:in 7 my-q)
+: #((7 6) (5))
+: lfe> (queue:in 8 my-q)
+: #((8 6) (5))
+
+Okay well this a good start. This is an example of how the Queue functions are not mutating. Setting this name and then calling in with a few differernt things doesn't make a lasting change unless I bind it to a new name. Very nice. 
+
+#+name:queue-testing2
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set my-q (as-> (queue:new) q
+                (queue:in 4 q)
+                (queue:in 5 q)
+                (queue:in 6 q)
+                (car q)))
+#+end_src
+
+#+RESULTS: queue-testing2
+: lfe>                 (car q)))
+: ** exception error: bad argument
+:   in (erlang : hd #((6 5) (4)))
+: 
+
+Is it just me, or does that look like lists? It's like it's a list which is the rest and the head reversed.
+
+NO, it is not a list. I can't call head on it. Wait is that a map? Or is that a tuple? Yes, it's a tuple.
+
+
+#+name:queue-testing3
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set my-q (as-> (queue:new) q
+                (queue:in 4 q)
+                (queue:in 5 q)
+                (queue:in 6 q)
+                (element 1 q)))
+#+end_src
+
+#+RESULTS: queue-testing3
+: lfe>                 (element 1 q)))
+: (6 5)
+
+Oh my gosh, it is that simple?
+
+
+#+name:queue-testing4
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set my-q (as-> (queue:new) q
+                (queue:in 4 q)
+                (queue:in 5 q)
+                (queue:in 6 q)
+                (element 1 q)
+                (car q)))
+#+end_src
+
+#+RESULTS: queue-testing4
+: lfe>                 (car q)))
+: 6
+
+That is why this thing must be to fast and efficient. The whole cure structure is set to be a a tuple of two lists. I am kind of surprised that internally the list with the tail of the cue isn't backwards, but I guess they got a way around that. The internal details of how the Queue works are hidden, but that's okay. I just need to know that if I want to reach into it, I could break it apart. But it's of course more useful as a queue.
+
+Man, that as-> syntax is so nice. I wish it was in Elixir. I can literally just walk down this list of things to throw on the cue one at a time. 
+
+
+#+name:queue-testing5
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(as-> (queue:new) q
+                (queue:in 4 q)
+                (queue:in 5 q)
+                (queue:in 6 q)
+                ;; should be :queue:out q
+                ;; (tref q 2)
+                (queue:out q))
+#+end_src
+
+#+RESULTS: queue-testing5
+: lfe>                 (queue:out q))
+: #(#(value 4) #((6) (5)))
+
+I think the tref is the better function to remember, event though it appears to call element under the hood.
+
+Also cool to see, but calling out, I get a bunch of tuples.
+
+*** List concatenation
+[2022-07-31 Sun]
+
+I have been doing some Elixir and noticed I was getting crazy amounts of list nesting when I really wanted them flat.
+
+
+#+name:consing
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(cons '(4 5) '(6 7))
+#+end_src
+
+#+RESULTS: catting
+: lfe> (cons '(4 5) '(6 7))
+: ((4 5) 6 7)
+
+Yeah, see that? I don't have one list. I have a nested list. What if I wanted the list '(4 5 6 7) as he output?
+
+
+#+name:consing2
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(++ '(4 5) '(6 7))
+#+end_src
+
+#+RESULTS: consing2
+: lfe> (++ '(4 5) '(6 7))
+: (4 5 6 7)
+
+There it is.
+
+hmn... I know this is not what tuples are for, but can you stick tuples on the ends of eachother?
+
+
+#+name:consing3
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(++ #(4 5) #(6 7))
+#+end_src
+
+#+RESULTS: consing3
+: lfe> (++ #(4 5) #(6 7))
+: ** exception error: bad argument
+:   in (erlang : ++ #(4 5) #(6 7))
+: 
+
+thought so.
+
+*** Pattern matching
+[2022-07-31 Sun]
+Erlang lives and breaths pattern matching. So does Elxiir. And yet I don't really know how it works in LFE. Let's fix that.
+
+#+name:match-test
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set 5 5)
+#+end_src
+
+#+RESULTS: match-test
+: lfe> (set 5 5)
+: 5
+
+oh, yeah I guess set is the right place to put there. Because I haven't bound 5 to anything. 
+
+#+name:match-test2
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set 5 4)
+#+end_src
+
+#+RESULTS: match-test2
+: lfe> (set 5 4)
+: ** exception error: no match of value 4
+: 
+
+And that is a match error.
+
+#+name:match-test3
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set #(x y) #('ok 5))
+#+end_src
+
+#+RESULTS: match-test
+: lfe> (set #(x y) #('ok 5))
+: ** exception error: no match of value #('ok 5)
+: 
+
+#+name:blahblah
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+{x,y} = {:ok, 5}
+x
+#+end_src
+
+#+RESULTS: name
+: :ok
+
+weird. So that works that way in Elixir, but I need to figure how that works in LFE
+
+
+#+name:match-test4
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set (list 3 x 5) (list 3 4 5))
+x
+#+end_src
+
+#+RESULTS: match-test2
+: (3 4 5)
+: lfe> x
+: 4
+
+Okay interesting. It works for lists, but not in tuples? Well that can't be right. There HAS to be way to get the value from a tuple that starts with ok. That is fundamental to how lots of Erlang works.
+
+
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
 
@@ -2784,6 +3267,27 @@ Clojure is great, and I still intend to learn and use it. But I am starting to t
 I was watching a talk that was going over energy efficiency. And Erlang is great, but Erlang eats power to do what it does. So does Python, and of course that measn Hy does too. The JVM does a good job, so Clojure is fine too. But Apparently, Common-Lisp is pretty good too.
 
 Don't forget to run M-x slime before running the block.
+
+** What should the first project be?
+[2022-07-27 Wed]
+I am starting to think I am hitting the limits of the usefulness of my Python book. I am going to do my best to finish it up, but really there are things I won't need or want to do in Elixir that I am being walked through how to do in Python, and I don't know if it's necessarily going to help me to finish all of it if its just to be "compleationist".
+
+The next thing I should probably be thinking of is making something. If I am going to apply for a job, they are going to want to know what I can do. And having a "portfolio" of things I have made to show off what I can do is a very good idea. It's maybe even a deal breaker when it comes to getting a job.
+
+Now I will probably need to make a few easy things first, but to be honest I have kind of already done the easy stuff. I can blast through a coding interview question all be it slowly. I made a hello world that I wrote on my computer, verified it runs, then ran the same thing on my Pi.
+
+I think the final architecture I want is an app that can run a node on the Pi, a node in the cloud, connect to it from my computer and distribute the computing. And show what kinds of failure mechanisms I know how to use.
+
+*** potential ideas
+One thing I thought of was a database like thing that lets nodes disconnect and reconnect without corrupting the data. It would probably need those CRDT things, that voting thing where one node tells the nodes what it true, and if anyone  gets isolated, during the segmentation it gets told how to handle not having a "leader". It's fairly new stuff, and it's a cool way of showing a use case of what Elixir is uniquely situated to do.
+
+But even that doesn't do anything. Its still just a tool. It needs to be a tool that does something.
+
+Discord is built on Elixir to some degree. I wonder if it's some kind of routing layer?
+
+Oh, there is an idea too. I could make a Phoenix web app. I will probably need a front end at some point. Might as well make one in Phoenix
+
+I could contribute to the Sonic Pi project. It looks like Jose Valim is stepping in to fill the void left by Joe now that he is no longer around to maintain the Erlang server.
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
@@ -3276,6 +3780,8 @@ That was a lot harder than I think it needed to be. And this doesn't even get to
 
 #+name:Hanoi_v2
 #+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
 require Integer
 defmodule H do
   
@@ -3348,26 +3854,12 @@ defmodule H do
   end
 end
 
-H.hanoi(4)
+H.hanoi(10)
 
 #+end_src
 
 #+RESULTS: Hanoi_v2
-|  1 | 1 | b |
-|  2 | 2 | c |
-|  3 | 1 | c |
-|  4 | 3 | b |
-|  5 | 1 | a |
-|  6 | 2 | b |
-|  7 | 1 | b |
-|  8 | 4 | c |
-|  9 | 1 | c |
-| 10 | 2 | a |
-| 11 | 1 | a |
-| 12 | 3 | c |
-| 13 | 1 | b |
-| 14 | 2 | c |
-| 15 | 1 | c |
+| (1 1 b) | (2 2 c) | (3 1 c) | (4 3 b) | (5 1 a) | (6 2 b) | (7 1 b) | (8 4 c) | (9 1 c) | (10 2 a) | (11 1 a) | (12 3 c) | (13 1 b) | (14 2 c) | (15 1 c) | (16 5 b) | (17 1 a) | (18 2 b) | (19 1 b) | (20 3 a) | (21 1 c) | (22 2 a) | (23 1 a) | (24 4 b) | (25 1 b) | (26 2 c) | (27 1 c) | (28 3 b) | (29 1 a) | (30 2 b) | (31 1 b) | (32 6 c) | (33 1 c) | (34 2 a) | (35 1 a) | (36 3 c) | (37 1 b) | (38 2 c) | (39 1 c) | (40 4 a) | (41 1 a) | (42 2 b) | (43 1 b) | (44 3 a) | (45 1 c) | (46 2 a) | (47 1 a) | (48 5 ...) | (49 ...) | (...) | ... |
 
 
 
@@ -5465,9 +5957,9 @@ ok
   (let* (
          (new-maze (lists:keyreplace (tref move-here 1) 1 maze-set (tuple (tref move-here 1) 6)))
          (new-pos-moves (sets:to_list (sets:from_list
-(lists:flatten (list pos-moves (valid-move-from-spacelist 
-                                                        (list-open-spaces  (car (list-from-maze-space move-here))
-                                                                           (lists:nth 2 (list-from-maze-space move-here))) new-maze))))))
+                                       (lists:flatten (list pos-moves (valid-move-from-spacelist 
+                                                                       (list-open-spaces  (car (list-from-maze-space move-here))
+                                                                                          (lists:nth 2 (list-from-maze-space move-here))) new-maze))))))
          (new-fin-moves (lists:flatten (list fin-moves move-here))))
     (list new-maze goal new-pos-moves new-fin-moves)))
 
@@ -5510,105 +6002,105 @@ lfe>      ((=:= (length (lists:filter (lambda (x) (=:= x goal)) fin-moves)) 1)
 lfe>       (list "goal" maze fin-moves))
 lfe>      ((=:= (length pos-moves) 0)
 lfe>       (list "no more posobileties" maze fin-moves))
-lfe>      ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves ) fin-moves (car pos-moves)))))))
+lfe>      ('true (maze-recur (return-new-simulation-set maze goal (cdr pos-moves) fin-moves (car pos-moves)))))))
 maze-recur
 lfe> 
 lfe> (set result (maze-search))
-0100060010
-0001101000
-0001000100
-0001010101
-0000100100
-1110000011
-1001010111
-1100001001 
-0000110100
-0100700000
+0000001106
+0010110000
+0010000011
+0101010101
+0001000000
+0000110000
+0010000001
+1001001001
+0000001000
+7000000100
 ("goal"
- (#(#(1 1) 6)
-  #(#(2 1) 1)
-  #(#(3 1) 6)
+ (#(#(1 1) 0)
+  #(#(2 1) 0)
+  #(#(3 1) 0)
   #(#(4 1) 6)
   #(#(5 1) 6)
-  #(#(6 1) 6)
-  #(#(7 1) 6)
-  #(#(8 1) 6)
-  #(#(9 1) 1)
-  #(#(10 1) 0)
-  #(#(1 2) 6)
-  #(#(2 2) 6)
-  #(#(3 2) 6)
-  #(#(4 2) 1)
+  #(#(6 1) 0)
+  #(#(7 1) 1)
+  #(#(8 1) 1)
+  #(#(9 1) 6)
+  #(#(10 1) 6)
+  #(#(1 2) 0)
+  #(#(2 2) 0)
+  #(#(3 2) 1)
+  #(#(4 2) 6)
   #(#(5 2) 1)
-  #(#(6 2) 6)
-  #(#(7 2) 1)
-  #(#(8 2) 0)
-  #(#(9 2) 0)
-  #(#(10 2) 0)
-  #(#(1 3) 6)
-  #(#(2 3) 6)
-  #(#(3 3) 6)
-  #(#(4 3) 1)
+  #(#(6 2) 1)
+  #(#(7 2) 6)
+  #(#(8 2) 6)
+  #(#(9 2) 6)
+  #(#(10 2) 6)
+  #(#(1 3) 0)
+  #(#(2 3) 0)
+  #(#(3 3) 1)
+  #(#(4 3) 6)
   #(#(5 3) 6)
   #(#(6 3) 6)
   #(#(7 ...) 6)
   #(#(...) ...)
   #(...) ...)
- (#(#(6 1) 6)
-  #(#(6 2) 0)
-  #(#(6 3) 0)
-  #(#(5 1) 0)
-  #(#(5 3) 0)
-  #(#(4 1) 0)
-  #(#(7 1) 0)
-  #(#(8 1) 0)
+ (#(#(10 1) 6)
+  #(#(10 2) 0)
+  #(#(9 1) 0)
+  #(#(9 2) 0)
+  #(#(8 2) 0)
+  #(#(7 2) 0)
+  #(#(8 3) 0)
   #(#(7 3) 0)
+  #(#(6 3) 0)
   #(#(7 4) 0)
-  #(#(3 1) 0)
-  #(#(3 2) 0)
-  #(#(3 3) 0)
-  #(#(2 3) 0)
-  #(#(3 4) 0)
-  #(#(3 5) 0)
-  #(#(2 5) 0)
-  #(#(1 3) 0)
-  #(#(1 2) 0)
-  #(#(1 4) 0)
-  #(#(1 1) 0)
-  #(#(2 2) 0)
-  #(#(1 5) 0)
-  #(#(4 5) 0)
-  #(#(4 6) 0)
+  #(#(5 3) 0)
+  #(#(4 3) 0)
+  #(#(4 2) 0)
+  #(#(4 1) 0)
+  #(#(5 1) 0)
+  #(#(7 5) 0)
+  #(#(6 5) 0)
+  #(#(7 6) 0)
+  #(#(7 7) 0)
+  #(#(8 6) 0)
+  #(#(6 7) 0)
+  #(#(5 5) 0)
+  #(#(8 5) 0)
+  #(#(9 5) 0)
+  #(#(5 7) 0)
   #(#(5 ...) 0)
   #(#(...) ...)
   #(...) ...))
 lfe> (set result-maze (format-maze (cadr result)))
-((((((((((() "6166666610" "\n") "6661161000" "\n") "6661666100" "\n")
-       "6061016101"
+((((((((((() "0006601166" "\n") "0016116666" "\n") "0016666611" "\n")
+       "0101016161"
        "\n")
-      "6666100100"
+      "0001666660"
       "\n")
-     "1116600011"
+     "0000116600"
      "\n")
-    "1001610111"
+    "0010666661"
     "\n")
-   "1106601001"
+   "1601601601"
    "\n")
-  "0066110100"
+  "6666661000"
   "\n")
- "0106600000"
+ "6606666100"
  "\n")
 lfe> (lfe_io:format result-maze ())
-6166666610
-6661161000
-6661666100
-6061016101
-6666100100
-1116600011
-1001610111
-1106601001 
-0066110100
-0106600000
+0006601166
+0016116666
+0016666611
+0101016161
+0001666660
+0000116600
+0010666661
+1601601601
+6666661000
+6606666100
 ok
 #+end_example
 
@@ -8029,13 +8521,11 @@ I am getting there, but this weird list parse thing is throwing me for a loop
 
 ...man this does not need to be this hard. Maybe I will switch it back to Racket?
 
-
 **** Let's give it another shot
 [2022-06-14 Tue]
 Python really doesn't support this list passing style I am used to from Lisp, but maybe I can still salvage this.
 
 ...woa. I was really close to being done. And I think I am about ready to try on of the solvers this generic thing is supposed to be.
-
 
 **** Now that it works, I need to make it a word search solver
 [2022-06-15 Wed]
@@ -8075,7 +8565,6 @@ Yeah, I mean I could add the domain to set each word to be part of the search, b
 Yeah, Each pass where I assign a name all the domains, I do a filter on the master pred. I could cull the bad assignments there. And I guess that it not the worst thing in the world.
 
 I could make a predicate that check the number of coordinate pairs in a names's assigned domain and make sure they are the same length. That is one way. 
-
 
 **** Oh man, this is hard
 [2022-06-16 Thu]
@@ -8246,7 +8735,6 @@ alpha = Simulation_state(names = m(hi = [], mountain=[], fire = []),
 
 ...so wait. Am I going to measure the length of the name of the var? That sounds weird. I should have the word's length stored somewhere so I can do a predicate match on it. Where does that go?
 
-
 **** And more preds
 
 [2022-06-27 Mon]
@@ -8369,3 +8857,740 @@ end
 This is a pretty nice place to start all this. I have a record example I know works, I have started out the 
 
 But man, I feel like I have so much syntax to learn with Elixir. I think I need to start smaller and just get more Elixir under my fingers.
+
+*** So how do I start?
+[2022-07-06 Wed]
+I know in theory what I need to do. I need a struct that will represent a node. I also need to be able to do a BFS on a tree of all the.. possible routes?
+
+The problem is to prove or disprove the bridges problem. I am going to construct nodes, and show that there is no path that crosses all bridges only once.
+
+So I am thinking each node is a bridge. The vertexes are going to be... a list of how each node is connected?
+
+Right, I should make this extensible. I might use it again the next chapter. I could be using a DFS search, except that every time I write these they end up being really specific. If I can avoid needing to do this work again, that will help me move through the book faster. 
+
+So what is the generic thing I am making? Well I know I need nodes. But I don't see how to make edges.  
+
+hmn... the edges as they were in the back tracking search I did before was sort of defined in the predicates. I used the predicates to define what at permissible and what wasn't.
+
+Okay, so if I do this right, I want a module I can call. I want a funtion that takes in a tree (a list of nodes and their edges) and I want a function I can call on that called spanning tree or something like that and get back a path through the nodes.
+
+The nodes need to be addable, removable... well duh if they are in a list that is no problem. I also need them to be able to store a weight. 
+
+If I store a nodes's edges in it's state, I need to do nasty stuff like adjust the other nodes and their state when I want to make changes. I think it would be better if I could store them separately. I think the list of edges is also going to need to be a list of records.  
+
+So if one of the helper functions is looking for the nodes that are reach able from some node, it should be able ask for the list of edges and get back all the edges that connect to where it is and where it can go.
+
+hmn... I am imagining something like:
+
+1. Node list (of node records)
+2. Edges list (of edge records showing which node is connected to what)
+3. A traveler (who runs the simulation and stores where it is, and where it has been.
+
+   I want a place to store my cue. I guess it makes sense to stick that in the traveler, but I don't actually think that works because I want to keep the movement for a traveler only on paths that make sense.
+
+   So I need a list of travelers.
+
+4. Nodes
+5. Edges
+6. Travelers
+
+   The nodes store their name, and their weights
+   The edges store who is connected to what (sort of like the predicates that defined vaild states and what possible "next steps" there are
+   The Travelers that will traverse the tree and be stored in a cue. Each traveler will hold it's location and where it has been. It will advance through the tree either as a DFS, or as a BFS, or whatever it should be. And I can make different functions in the module that take those three things and apply some kind of logic to how it calculates. Doing a minimum spanning tree etc.
+
+   Making the nodes should be really simple.
+   Making the edges seems harder. How do I refer to the nodes? By atom?
+   The travelers is going to be the fun bit. I think I start with a list of all the vaild initial positions. Then I pass that list of a function. That function will select from the cue as it needs to, and put things on the cue as it sees fit.
+
+   So how do I make a "brain" for this that shows there is no way to use all the bridges once and only once? I feel like I need predicate functions. Let's see if the Python solution has predicated built into it.
+
+   https://stackoverflow.com/questions/14012603/how-to-implement-dijkstra-algorithm-in-haskell
+
+   Okay, I was just looking for an example of how you would do this in a functional language like Haskel, and it looks like it can be REALLY terse. It makes the Python code look long and complicated.
+   I want to be able to write it like that but in Elixir.
+
+   http://www.loganlinn.com/blog/2013/04/22/dijkstras-algorithm-in-clojure/
+
+   I think I am going to read this, and try to see how it works. Then see how to make it in Elixir
+
+*** I think I need some planning
+[2022-07-07 Thu]
+
+So I looked at an implementation of Dijkstra's algorithm in Clojure, and it wasn't generic enough. It was very nice and terse, but it didn't let me swap out the bits I wanted to.  
+
+So I think I need to zoom out a bit and look at that this needs to do, before I figure out how i am going to build it.
+
+Here is an example. I need to be able to take a list of nodes that are the bridges, and return a failed search to show that there is no route that uses all the bridges just once.
+
+Yeah, the more I hear "just once" the more I think it has to be some kind of predicate in the search. I wonder if Dijkstra can be implemented more like a CSP search?
+
+But then again I think I am missing part of the goal of learning how graphs work. 
+
+Let's look at how I made my DFS.
+
+I just got back from looking at what I made in LFE. That was pretty good work. Not super elegant, but very easy to follow.
+
+I just can't see any part of that that I could call a BFS, and factor it out into it's own module.
+
+At the end I kind of see the way it all comes together. And it's kind of like I made all those functions just to I could make the following:
+1. Initilize a maze
+2. take the first state
+3. return the possible next states
+4. using the possible moves in the list, keep going till you find the goal.
+
+   I mean... I can imagine a similar way of solving the bridge problem, but I am bassically making a CSP problem out of it.
+
+   I take the bridges as variables
+   The domains are the order they are crossed in
+   the predicates would encode that all corssings can only be done from a certain side of the river
+   The goal would be when all have been given an ordering step
+   The result would be exhausting all the options for each starting position. 
+
+   But is that still a graph problem?
+
+   Okay, I re-read part of the chapter, and it looks like I can make this a CSP problem. But I want to have the vertices and edges.
+
+   If the missionaries and canibals problem, the "edges" were the kins of moves that could be made form any given state of the simulation. Now I want to pass in the names of the bridges. And the edges will be which bridges are connected to what.
+
+   From a given state, I just take the node I am at, list out it's edges, and I know all the next valid moves. 
+
+   Where do I put the edges? Can I think of those as domains? No. The edges are what tell me when the next vail move can be. But they are not "assigned" to nodes. 
+
+   Okay, so If i am thinkong of this right I bassically had it right
+
+   - Make a list of nodes
+
+   - Make a list of edges
+
+   - make a list of predicates (esspecially the goal state of having crossed all bridges once)
+
+   - A "traveler" who will track the path they take, and retire when they have no more "valid" moves
+
+   - The travlers will get passed to the "engine" that will move them forward till they either hit the goal, or have no more vaild moves.
+
+   - Each time a traveler moves, we don't change them, we leave them and make a copy that has moved, infact copies to all the valid moves. But we do mark him retired and move on to to next vaild moves.
+
+   Well cool I think I can make that. It seems pretty similar to what I made for the word search puzzle.
+
+*** Let's try a really rough draft
+[2022-07-09 Sat]
+
+I don't know exactly how this is going to work yet, but I can imagine I'm not going to make much of any progress without just trying something. And since I have no risk attached to getting it wrong, probably better to just make something and see how it's wrong than sit here wondering how to get started.
+
+#+name:bridgesDraft1
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  Draft of solving the Bridges of that K place 
+  """
+  require Record
+
+  Record.defrecord(:node,
+    vertex1: 1,
+    vertex2: 10,
+    weight1: 5,
+    weight2: 5)
+
+  @doc """
+  An exmple function
+  """
+
+  @spec my_fun(number) :: number
+
+  def my_fun(num) do
+    num + 1
+  end
+end
+
+Bridges.my_fun(20)
+#+end_src
+
+#+RESULTS: bridgesDraft1
+: 21
+
+Okay. So this is the bare minimum I am going to put into this module. Now I need a Record for the nodes...?
+
+Why not make nodes atoms? They are only ever going to refer to that node. And they don't need a value. They simply are themselves. Edges will refer to nodes, and hold an optional weight, and a list of who they are connected to.
+
+Man, and I need to pass in the list of nodes and edges, they can't be held in the module
+
+
+#+name:bridgesDraft2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  Draft of solving the Bridges of that K place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+
+  @type edges :: record(:edges, connected_nodes: map)
+
+  @doc "Check if a two nodes are connected"
+  @spec node_connected?(atom, atom, edges) :: true | false
+  def node_connected?(node1, node2, edges) do
+    node2 in edges[node1]
+    # edges[node1]
+    # |> then(&(node2 in &1))
+  end
+
+  
+end
+
+e_list = Map.new([{:a, [:b]}, {:b, [:a, :c]}, {:c, [:b]}])
+Bridges.node_connected?(:a, :b, e_list)
+#+end_src
+
+#+RESULTS: bridgesDraft2
+: true
+
+Okay. That is Elixir code. I really am going to need to work with the syntax more. Specs, records, maps, tuples, they are all kind of awkward to work with for now. I need to get them under my fingers.
+
+*** And add a record for travelers
+[2022-07-10 Sun]
+So I think I have a pretty good idea of what I am going to pass into the function that handles the BFS search I am going... wait I could do this with a DFS couldn't I?
+
+Anyway, the part of this that does the graph traversal is going to take stuff, and I think I know how I want to store that stuff.
+
+
+#+name:bridgesDraft3
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  Draft of solving the Bridges of that K place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+  Record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+
+  @doc "Check if a two nodes are connected"
+  @spec node_connected?(atom, atom, edges) :: true | false
+  def node_connected?(node1, node2, edges) do
+    node2 in edges[node1]
+    # edges[node1]
+    # |> then(&(node2 in &1))
+  end
+
+  @doc "This is useless and should be deleted later"
+  @spec traveler_retired?(traveler) :: true | false
+  def traveler_retired?(t) do
+    traveler(t, :retired)
+    end
+  
+end
+
+# e_list = Map.new([{:a, [:b]}, {:b, [:a, :c]}, {:c, [:b]}])
+# Bridges.node_connected?(:a, :b, e_list)
+require Bridges
+man = Bridges.traveler(retired: true)
+Bridges.traveler_retired?(man)
+#+end_src
+
+#+RESULTS: bridgesDraft3
+: true
+
+Cool.
+
+So I think this means I have the syntax to have a map of edges, and travelers which I can store in a cue and then just recuse till I find what I want.
+
+*** How about the goal predicate?
+[2022-07-11 Mon]
+
+
+#+name:bridgesDraft4
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  Draft of solving the Bridges of that K place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+  Record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+
+  @doc "Check if a two nodes are connected"
+  @spec node_connected?(atom, atom, edges) :: true | false
+  def node_connected?(node1, node2, edges) do
+    node2 in edges[node1]
+    # edges[node1]
+    # |> then(&(node2 in &1))
+  end
+
+  @doc "This is useless and should be deleted later"
+  @spec traveler_retired?(traveler) :: true | false
+  def traveler_retired?(t) do
+    traveler(t, :retired)
+  end
+  
+  @doc "Pass this in per use case, for goal"
+  @spec goal_reached?(traveler, list) :: true | false
+  def goal_reached?(t, nodes) do
+    traveler(t, :visited_nodes)
+    |> Enum.all?(fn x -> x in nodes end)
+  end
+
+  @doc "Pass this in per use case, for next step"
+  @spec valid_next_nodes?(traveler, edges) :: true | false
+  def valid_next_nodes?(t, e) do
+    traveler(t, :visited_nodes)
+    |> then(&(Enum.filter(e[hd(&1)], fn x -> x not in &1 end)))
+  end
+end
+
+require Bridges
+
+e_list = Map.new([{:a, [:b]}, {:b, [:a, :c]}, {:c, [:b]}])
+Bridges.node_connected?(:a, :b, e_list)
+t1 = Bridges.traveler(visited_nodes: [:b, :c])
+Bridges.valid_next_nodes?(t1, e_list)
+
+#+end_src
+
+#+RESULTS: bridgesDraft4
+| :a |
+
+Wow, that Enum.all function is nice. I don't even need to map over the list of visited nodes once first to make them bools. I can get that by adding the check as a lambda in the all call.
+
+hmn... it kind of like I could forgo passing in other predicates because I will know what all the next legal moves are from the edges... oh wait. I need to show that each node can only be visited only once. So I do need a "step predicate"
+
+Okay, so it's like a predicate for a filter. I will take the list of edges, take the node I am currently on, and get all the edges. But before I make a bunch of new travelers to go to those nodes, I am going to filter the nodes I could visit with a predicate
+
+Not bad. I could get used to this. It's not SUPER intuitive, but it's actually not that bad once I get used to it.
+
+If I pass this stuff in per use case, do I need a to pass in the predicates as lambda?
+
+Man this might not feel like it's going quickly, but now that I have done this a few times, I can see that the next step in. Make a cue, stick travelers in at the starting position, then recurse over the cue. I should be in finished this month
+
+*** I think next is the recurse
+[2022-07-12 Tue]
+Already? Man I feel like this is going really faster
+
+
+
+#+name:bridgesDraft5
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  Draft of solving the Bridges of that K place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+  Record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+  
+  @doc "Goal predicate"
+  @spec goal_reached?(traveler, list) :: true | false
+  def goal_reached?(t, nodes) do
+    traveler(t, :visited_nodes)
+    |> Enum.all?(fn x -> x in nodes end)
+  end
+
+  @doc "return all the valid nodes that could be visited given a traveler and the edges"
+  @spec valid_next_nodes(traveler, edges) :: list
+  def valid_next_nodes(t, e) do
+    traveler(t, :visited_nodes)
+    |> then(&(Enum.filter(e[hd(&1)], fn x -> x not in &1 end)))
+  end
+
+ @doc "visit a node given a traveler and a node"
+ @spec visit_node(traveler, atom) :: traveler
+ def visit_node(trav, node) do
+   v_nodes = traveler(trav, :visited_nodes)
+   traveler(trav, visited_nodes: [node] ++ v_nodes)
+ end 
+  
+  @doc "BFS add travelers to cue"
+  @spec bfs_add_travelers(list, edges) :: list
+  def bfs_add_travelers([trav | rest], edges) do
+    valid_next_nodes(trav, edges)
+    |> Enum.map(fn x -> visit_node(trav, x) end)
+    |> then(&(&1 ++ rest))
+  end
+end
+
+require Bridges
+
+e_list = Map.new([{:a, [:b]}, {:b, [:a, :c]}, {:c, [:b]}, {:d, [:b, :c, :a]}])
+t1 = Bridges.traveler(visited_nodes: [:d, :c])
+t2 = Bridges.traveler(visited_nodes: [:b, :a])
+my_cue = [t1, t2]
+Bridges.bfs_add_travelers(my_cue, e_list)
+
+#+end_src
+
+#+RESULTS: bridgesDraft5
+| :traveler | (:b :d :c) | false |
+| :traveler | (:a :d :c) | false |
+| :traveler | (:b :a)    | false |
+
+Wow. That is getting really close. I just need to make multiclause options for the BFS when the cue is smaller than a few options... no I don't it just works!!!
+
+I even tested this when trying to visit when no vaild nodes exist from a position, they just dissapear. wow.
+
+*** Is this almost done?
+[2022-07-13 Wed]
+
+
+#+name:bridgesdraft6
+#+begin_src elixir :results output
+code.compiler_options(ignore_module_conflict: true)
+
+defmodule bridges do
+  @moduledoc """
+  draft of solving the bridges of that k place 
+  """
+  require record
+
+  record.defrecord(:edges, connected_nodes: %{})
+  record.defrecord(:edges_w, nodes_and_weights: %{})
+  record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+  
+  @doc "goal predicate"
+  @spec goal_reached?(traveler, list) :: true | false
+  def goal_reached?(t, nodes) do
+    enum.all?(nodes, fn x -> x in traveler(t, :visited_nodes) end)
+  end
+
+  @doc "return all the valid nodes that could be visited given a traveler and the edges"
+  @spec valid_next_nodes(traveler, edges) :: list
+  def valid_next_nodes(t, e) do
+    traveler(t, :visited_nodes)
+    |> then(&(enum.filter(e[hd(&1)], fn x -> x not in &1 end)))
+  end
+
+  @doc "visit a node given a traveler and a node"
+  @spec visit_node(traveler, atom) :: traveler
+  def visit_node(trav, node) do
+    v_nodes = traveler(trav, :visited_nodes)
+    traveler(trav, visited_nodes: [node] ++ v_nodes)
+  end 
+  
+  @doc "bfs add travelers to cue"
+  @spec bfs_add_travelers(list, edges) :: list
+  def bfs_add_travelers([trav | rest], edges) do
+    valid_next_nodes(trav, edges)
+    |> enum.map(fn x -> visit_node(trav, x) end)
+    |> then(&(&1 ++ rest))
+  end
+
+  @doc "entry point for search"
+  def walk_tree(cue, _edges, _nodes) when cue == [] do
+    {:error, "cue was empty"}
+  end 
+  def walk_tree(_cue, edges, _nodes) when edges == %{} do
+    {:error, "no edges given"}
+  end 
+  def walk_tree(cue, edges, nodes) do
+    walk_tree_r(cue, edges, nodes)
+  end 
+  
+  @doc "walk the tree recursively"
+  def walk_tree_r(cue, _edges, _nodes) when cue == [] do
+    "exhausted all travelers"
+  end
+  def walk_tree_r(cue, edges, nodes) do
+    if goal_reached?(hd(cue), nodes) do
+      {:goal, hd(cue)}
+    else
+      bfs_add_travelers(cue, edges)
+      |> walk_tree_r(edges,nodes)
+    end
+  end
+end
+
+require bridges
+
+e_list = map.new([{:ta, [:tb, :bc, :td, :tf]},
+                  {:ba, [:tc, :te]},
+                  {:tb, [:bd, :bg]},
+                  {:bb, [:ba, :bc, :td, :tf]},
+                  {:tc, [:ba, :tb, :td, :tf]},
+                  {:bc, [:ta, :te]},
+                  {:td, [:bb, :bg]},
+                  {:bd, [:ba, :tb, :bc, :tf]},
+                  {:te, [:bf, :tg]},
+                  {:be, [:ta, :tc]},
+                  {:tf, [:be, :tg]},
+                  {:bf, [:ba, :tb, :bc, :td]},
+                  {:tg, [:bb, :bd]},
+                  {:bg, [:be, :bf]}])
+t1 = bridges.traveler(visited_nodes: [:ta])
+my_cue = [t1]
+node_list = [:ta, :ba, :tb, :bb, :tc, :bc, :td, :bd, :te, :be, :tf, :bf, :tg, :bg]
+bridges.walk_tree(my_cue, e_list, node_list)
+#+end_src
+
+#+RESULTS: bridgesDraft6
+| :goal | (:traveler (:be :tf :bb :tg :te :bc :bf :bg :td :tc :ba :bd :tb :ta) false) |
+
+Well that is weird. It works, but I can't get the naming of the nodes and edges right to show the problem
+
+*** Just need the right nodes
+[2022-07-14 Thu]
+I think I can finish this today
+
+#+name:bridges_solution
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  draft of solving the bridges of that k place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+  Record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+  
+  @doc "goal predicate"
+  @spec goal_reached?(traveler, list) :: true | false
+  def goal_reached?(t, nodes) do
+    Enum.all?(nodes, fn x -> x in traveler(t, :visited_nodes) end)
+  end
+
+  @doc "return all the valid nodes that could be visited given a traveler and the edges"
+  @spec valid_next_nodes(traveler, edges) :: list
+  def valid_next_nodes(t, e) when length(traveler(t, :visited_nodes)) > 1 do
+    visited = traveler(t, :visited_nodes)
+    no_islands = Enum.filter(visited, fn x -> x not in [:island1, :island2, :island3, :island4] end)
+    gaurd_islands = no_islands ++ [hd(tl(visited))]
+    Enum.filter(e[hd(visited)], fn x -> x not in gaurd_islands end)
+  end
+  
+  def valid_next_nodes(t, e) do
+    visited = traveler(t, :visited_nodes)
+    no_islands = Enum.filter(visited, fn x -> x not in [:island1, :island2, :island3, :island4] end)
+    Enum.filter(e[hd(visited)], fn x -> x not in no_islands end)
+  end
+  
+
+  @doc "visit a node given a traveler and a node"
+  @spec visit_node(traveler, atom) :: traveler
+  def visit_node(trav, node) do
+    v_nodes = traveler(trav, :visited_nodes)
+    traveler(trav, visited_nodes: [node] ++ v_nodes)
+  end 
+  
+  @doc "bfs add travelers to cue"
+  @spec bfs_add_travelers(list, edges) :: list
+  def bfs_add_travelers([trav | rest], edges) do
+    valid_next_nodes(trav, edges)
+    |> Enum.map(fn x -> visit_node(trav, x) end)
+    |> then(&(&1 ++ rest))
+  end
+
+  @doc "entry point for search"
+  def walk_tree(cue, _edges, _nodes) when cue == [] do
+    {:error, "cue was empty"}
+  end 
+  def walk_tree(_cue, edges, _nodes) when edges == %{} do
+    {:error, "no edges given"}
+  end 
+  def walk_tree(cue, edges, nodes) do
+    walk_tree_r(cue, edges, nodes)
+  end 
+  
+  @doc "walk the tree recursively"
+  def walk_tree_r(cue, _edges, _nodes) when cue == [] do
+    "exhausted all travelers"
+  end
+  def walk_tree_r(cue, edges, nodes) do
+    if goal_reached?(hd(cue), nodes) do
+      {:goal, hd(cue)}
+    else
+      bfs_add_travelers(cue, edges)
+      |> walk_tree_r(edges,nodes)
+    end
+  end
+end
+
+require Bridges
+
+e_list = Map.new([{:island1, [:a, :c, :e]}, 
+                  {:island2, [:a, :c, :f, :b, :d]}, 
+                  {:island3, [:b, :d, :g]}, 
+                  {:island4, [:e, :f, :g]}, 
+                  {:a, [:island1, :island2]}, 
+                  {:b, [:island3, :island2]}, 
+                  {:c, [:island1, :island2]}, 
+                  {:d, [:island3, :island2]}, 
+                  {:e, [:island1, :island4]}, 
+                  {:f, [:island2, :island4]}, 
+                  {:g, [:island3, :island4]}])
+t1 = Bridges.traveler(visited_nodes: [:island1])
+t2 = Bridges.traveler(visited_nodes: [:island2])
+t3 = Bridges.traveler(visited_nodes: [:island3])
+t4 = Bridges.traveler(visited_nodes: [:island4])
+my_cue = [t1, t2, t3, t4]
+node_list = [:a, :b, :c, :d, :e, :f, :g]
+Bridges.walk_tree(my_cue, e_list, node_list)
+#+end_src
+
+#+RESULTS: bridges_solution
+: exhausted all travelers
+
+Done
+
+#+name:bridges_test
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Bridges do
+  @moduledoc """
+  draft of solving the bridges of that k place 
+  """
+  require Record
+
+  Record.defrecord(:edges, connected_nodes: %{})
+  Record.defrecord(:edges_w, nodes_and_weights: %{})
+  Record.defrecord(:traveler, visited_nodes: [], retired: false)
+
+  @type edges :: record(:edges, connected_nodes: map)
+  @type traveler :: record(:traveler, visited_nodes: list, retired: atom)
+  
+  @doc "goal predicate"
+  @spec goal_reached?(traveler, list) :: true | false
+  def goal_reached?(t, nodes) do
+    Enum.all?(nodes, fn x -> x in traveler(t, :visited_nodes) end)
+  end
+
+  @doc "return all the valid nodes that could be visited given a traveler and the edges"
+  @spec valid_next_nodes(traveler, edges) :: list
+  def valid_next_nodes(t, e) when length(traveler(t, :visited_nodes)) > 1 do
+    visited = traveler(t, :visited_nodes)
+    no_islands = Enum.filter(visited, fn x -> x not in [:island1, :island2, :island3, :island4] end)
+    gaurd_islands = no_islands ++ [hd(tl(visited))]
+    Enum.filter(e[hd(visited)], fn x -> x not in gaurd_islands end)
+  end
+  
+  def valid_next_nodes(t, e) do
+    visited = traveler(t, :visited_nodes)
+    no_islands = Enum.filter(visited, fn x -> x not in [:island1, :island2, :island3, :island4] end)
+    Enum.filter(e[hd(visited)], fn x -> x not in no_islands end)
+  end
+  
+
+  @doc "visit a node given a traveler and a node"
+  @spec visit_node(traveler, atom) :: traveler
+  def visit_node(trav, node) do
+    v_nodes = traveler(trav, :visited_nodes)
+    traveler(trav, visited_nodes: [node] ++ v_nodes)
+  end 
+  
+  @doc "bfs add travelers to cue"
+  @spec bfs_add_travelers(list, edges) :: list
+  def bfs_add_travelers([trav | rest], edges) do
+    valid_next_nodes(trav, edges)
+    |> Enum.map(fn x -> visit_node(trav, x) end)
+    |> then(&(&1 ++ rest))
+  end
+
+  @doc "entry point for search"
+  def walk_tree(cue, _edges, _nodes) when cue == [] do
+    {:error, "cue was empty"}
+  end 
+  def walk_tree(_cue, edges, _nodes) when edges == %{} do
+    {:error, "no edges given"}
+  end 
+  def walk_tree(cue, edges, nodes) do
+    walk_tree_r(cue, edges, nodes)
+  end 
+  
+  @doc "walk the tree recursively"
+  def walk_tree_r(cue, _edges, _nodes) when cue == [] do
+    "exhausted all travelers"
+  end
+  def walk_tree_r(cue, edges, nodes) do
+    if goal_reached?(hd(cue), nodes) do
+      {:goal, hd(cue)}
+    else
+      bfs_add_travelers(cue, edges)
+      |> walk_tree_r(edges,nodes)
+    end
+  end
+end
+
+require Bridges
+e_list = Map.new([{:island1, [:a, :c, :e]}, 
+                  {:island2, [:a, :c, :f, :b, :d]}, 
+                  {:island3, [:b, :d, :g]}, 
+                  {:island4, [:e, :f, :g]}, 
+                  {:a, [:island1, :island2, :island3, :island4]}, 
+                  {:b, [:island3, :island2]}, 
+                  {:c, [:island1, :island2]}, 
+                  {:d, [:island3, :island2]}, 
+                  {:e, [:island1, :island4]}, 
+                  {:f, [:island2, :island4]}, 
+                  {:g, [:island3, :island4]}])
+t1 = Bridges.traveler(visited_nodes: [:island1])
+t2 = Bridges.traveler(visited_nodes: [:island2])
+t3 = Bridges.traveler(visited_nodes: [:island3])
+t4 = Bridges.traveler(visited_nodes: [:island4])
+my_cue = [t1, t2, t3, t4]
+node_list = [:a, :b, :c, :d, :e, :f, :g]
+Bridges.walk_tree(my_cue, e_list, node_list)
+#+end_src
+
+#+RESULTS: bridges_test
+| :goal | (:traveler (:g :island3 :d :island2 :f :island4 :e :island1 :c :island2 :b :island3 :a :island1) false) |
+
+proof it's still working. Solved.
+
+It's unfortunate that I need to be able to pass in a lamda that can define those parameters like validating the next nodes, but it works.
+
+** 5.8 Excercises
+Started [2022-07-18 Mon]
+
+Last Chapter went really quickly. I think this one is going to take a little longer mostly because this is going to be more problems and I am going to have even less of the tools the Python solution in this book leans on. 
+
+1. Add support to GeneticAlgorithm for an advanced form of tournament selection that may
+sometimes choose the second- or third-best chromosome, based on a diminishing probability.
+2. Add a new function to the constraint-satisfaction framework from chapter 3 that solves any
+arbitrary CP using a genetic algorithm. A possible measure of fitness is the number of
+constraints that are resolved by a chromosome.
+3. Create a class, BitString, that implements Chromosome. Recall what a bit string is from
+chapter 1. Then use your new class to solve the simple equation problem from section 5.3. How
+can the problem be encoded as a bit string?
+
+hmn. Well first can I say that Apple has made it trivial to copy text from a copy-written book with their text selection thing?
+
+Looking at these, I am thinking I could sort of combine 1 and 2. 3 looks sort of different.
+
+Making generic a genetic solution to a CSP problem... hmn.  I mean I guess I could try to make a generic solution to the bridges problem I just finished?
+
+Advanced form of tournament selection, yeah I was thinking of doing that from the moment I read about how it worked. So if I am thinking of problems 1 and 2 right, I could just add an advanced tournament selection bit to a genetic solution to the bridges problem... wait but that's a graph problem? Anyway, yeah I just tell it to flail around instead of narrowing it down to just the right solution. The key must be that this is supposed to take any old CSP. So given vars, domains, and constraints, do a genetic style of finding the solution. Shouldn't actually be that hard I supposed.
+
+Anyway, but before I jump into unit 5, I want to do a little bit of Elixir just on a small problem. Let's go find a small leet code problem to throw in there.
+
