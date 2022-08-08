@@ -1000,8 +1000,12 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: lfe> '(4)
-: (4)
+: ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-JX7I8b/elixir-7FkWjk:3:22: syntax error before: 'reduce:'
+:     |
+:   3 | |> then(&for x <- &1 reduce: 0 do acc -> x + acc end)
+:     |                      ^
+:     (iex 1.13.4) expanding macro: IEx.Helpers.import_file/1
+:     iex:26: (file)
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1856,7 +1860,7 @@ It's time to get this off to a good start. I have been trying to get Clojure to 
 I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
 
 I wonder if it's worth my time to examine ob-hy and see if I can make vars and sessions work?
-** Starting Elixir
+** Elixir
 After a lot of hemming and hawing about how to move forward, I think Elixir rounds things out while also being fairly easy to work with here in Emacs and Org. There is a lot to get used to so let's try some things I have done in the other languages. How about rock-paper-scissors?
 *** rock paper scissors
 started [2022-01-13 Thu] 
@@ -2025,6 +2029,9 @@ end
 G_habbits.sum_list([1,2,3,4,5,6])
 #+end_src
 
+#+RESULTS: good-habbits2
+: 21
+
 #+RESULTS: good-habbits
 
 Hmn... well that is not so bad. I don't demonstrate the public and private function part of a module, but it does have the docs and the specs where they would need to be.
@@ -2121,7 +2128,6 @@ My_models.the_fun()
 
 There we go.
 
-
 *** Move where the pipe goes
 [2022-07-02 Sat]
 This was less syntax than I thought it was going to be
@@ -2195,6 +2201,64 @@ for x when x > 3 <- [1, 1, 2, 3, 5, 5, 75, 75], uniq: true, do: x * 2
 | 10 | 150 |
 
 woa. 
+
+*** can you do that in a pipe?
+#+name:comp-in-pipe
+#+begin_src elixir :results output
+5
+|> Kernel.-(4)
+|> then(&Enum.reduce(for x <- 1..5 do x end, fn x, acc  -> x + acc + &1 end))
+#+end_src
+
+#+RESULTS: comp-in-pipe
+: 19
+
+Cool. That just fits in there. Who was it in which podcast who was saying you can't use list comprehensions inside a pipe operator chain?
+
+#+name:comp-in-pipe2
+#+begin_src elixir :results output
+5
+|> then(&for x <- 1..5 do x + &1 end)
+#+end_src
+
+#+RESULTS: comp-in-pipe2
+| 6 | 7 | 8 | 9 | 10 |
+
+Yeah that works so well. 
+
+Ooh, let's see if this works
+
+#+name:comp-in-pipe3
+#+begin_src elixir :results output
+[1, 2, 3]
+|> then(&for x <- &1 do x + 1 end)
+#+end_src
+
+#+RESULTS: comp-in-pipe3
+| 2 | 3 | 4 |
+
+woa. I can transform a list... with a list comprehension... in a data transformation pipe.
+So the other way to do that would be call map on the list above with a function that adds 1. But this works about as well. 
+
+https://elixirschool.com/en/lessons/basics/comprehensions/
+
+Nice little post on how these things work.
+
+Woa, it appears this is a little more than just systactic sugar over map filter and reduce. It can be more efficient.
+
+https://hexdocs.pm/elixir/Kernel.SpecialForms.html#for/1
+
+Let's practice the reduce comprehension just because that looks useful
+#+name:comp-reduce
+#+begin_src elixir :results output
+1..5
+|> then(&for x <- &1, reduce: 0 do acc -> x + acc end)
+#+end_src
+
+#+RESULTS: comp-reduce
+: 15
+
+Wow... that is a... cool way to write reduce.
 
 *** Intermission break
 I need a small problem to kind of stretch my fingers a bit with Elixir. Let's go find a random leet code problem
@@ -2472,13 +2536,11 @@ I saw someone trying to say you could think of this as a graph problem. And how 
 
 But now that I think about it, BFS, was always kind of showing up in other problems. And the little bit added up top saying you don't need to search nums where the num below it exists, seems like it's a sort of back tracking. But not relying on a stack and looking through the stack to see what has been traversed.
 
-
 *** Digraphs in Erlang
 https://www.erlang.org/doc/man/digraph_utils.html#topsort-1
 And because this is an Erlang library, I have all this in LFE too. Nice. 
 
 So rather than try to make my own data structure to hold the cue or stack for a BFS or DFS, this appears to do it for me. I just need to get used to thinking of problems in terms of digraphs.
-
 
 *** Woa, Erlang has Queues too.
 https://www.erlang.org/doc/man/queue.html
@@ -2500,6 +2562,355 @@ Code.compiler_options(ignore_module_conflict: true)
 | nil    | (6) |
 
 That's excatly what I want. With a regular list, I can add things to the head and it's all good. But if need something for BFS, where the first thing in also comes out when I call out. This lets me stick in 5 first, then 6, and when I call out, I can efficiently get the 5 before the 6. 
+
+*** Let's try these out
+[2022-08-02 Tue]
+I just really learned what a list comprehension in Elixir looks like and I want to see how I can use it. So let's grab a Leet code problem.
+
+https://leetcode.com/problems/kth-smallest-element-in-a-sorted-matrix/
+
+This sounds like a bad idea... haha
+
+Anyway, I get a matrix. And the rows and columns are sorted in descending order. So the number get bigger as the go out to the corners. and the by the time you hit the next corner you have the biggest number. What I don't know is how I know how the numbers are going to be handled. My first idea is to sort of "walk" the matrix by alternating between going "across" or "down". But then again, if the numbers are also always going to be in order... why not just put them all in the list and take the nth (in this case kth) element? Surely I need to figure out to make this faster than just sorting by size and taking the nth element. 
+
+So there is faster way... and I still think my way of walking acorss and down as I "walk" down would be another way to get to the same elemnt without needing to put the numbers in a single list.
+
+**** checking on some stuff
+Oh cool look at this:
+#+begin_quote
+
+Input: matrix =
+[[01,05,09]
+,[10,11,13]
+,[12,13,15]], k = 8
+#+end_quote
+
+The top right corner is the smallest for that "diagnol".
+So yeah seriously, you just walk the thing by like "walking diagnoly" and going down each slice and count as you go. Count to K then return the element.
+
+
+Let's see if there is a pattern to how the X and Y move
+format: CC RR
+01 01
+02 01
+01 02
+03 01
+02 02
+01 03
+03 02
+02 03
+03 03
+
+yeah... there is a patterns there. If I can generate this, I could just take that number elements from this list, and get the way of finding that element.
+
+I need to see this for 4 x 4
+
+01 01
+02 01
+01 02
+03 01
+02 02
+01 03
+04 01
+03 02
+02 03
+01 04
+
+cool, see that? the Y is always going up, and the Z is always going down.
+
+...but by the time it hits the half way, it need to start going in reverse. the numbers start counting from less then 1, and up to the max
+
+First dignol is 1 long
+The second diagnol is 2 long, with the y going up to 2 from 1, and X going down from 2 to one
+the third is 3 long, Y going up to 3 from 1, and x going down from 3 to 1
+yeah okay I can kind of see the way this will be working. 
+
+Yeah this reminds me of the towers of Hanoe solution I made Elixir.
+
+And if I have these two numbers, I can just take the CC list, and the RR element
+
+So if I can make just the right generator to produce this list numbers, I have a way to solve this. And I kind of want to make two list and zip them together. 
+
+How to I express that? I want to count up from 1 to X where X keeps getting bigger by one till you have 1 to the diagnol length of the matrix. Then it like that except slowly move the number at the bottom up. So 1+ 1 till X. then 1+2 to X. And that is going to sort of go in reverse for the other number.
+
+Or I could "teach" something to walk this.
+
+How many element long is this per matrix?
+
+1 x 1 is 1
+2 x 2 is 4
+3 x 3 is 9
+4 x 4 is 16
+
+it's squared isn't it.
+
+It's kind of like I want a "window" that lets me see numbers that goes up one at a time, then cloeses one at a time. 
+
+
+I thin I can make this with ranges. Let's write those out. For 3 x 3
+
+#+name:Kth-smallest
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+for x <- 1..1 do x end
+for x <- 1..2 do x end
+for x <- 1..3 do x end
+for x <- 2..3 do x end
+for x <- 3..3 do x end
+
+for x <- 1..1 do x end
+for x <- 2..1 do x end
+for x <- 3..1 do x end
+for x <- 3..2 do x end
+for x <- 3..3 do x end
+#+end_src
+
+#+RESULTS: Kth-smallest
+| 1 | 2 |
+
+
+hmn... I can imagine these range things getting set by numbers that are controlled by max and min.
+
+If I need 1 1 1 2 3. I could start at -1 and go up by one each time as ling as I return min 1.  max would be x where x is the X x X number. and the Min would be 1 but starting from 1 - x. 
+
+the lists above, if I stich them on to each other end to end, then zip them, I have the coulmn and row where the kth element is. 
+
+I think the way I get this to work is to either walk up or down. So let's do the easy part first, make a function that knows if I can supposed to count from the top or from the bottom.
+**** Attempt 1
+#+name:Kth-smallest2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Kth_smallest do
+  def find_element(matrix, k) do
+    diagonal = tuple_size(matrix)
+    matrix_half = Integer.floor_div((diagonal ** 2), 2)
+    if k > matrix_half do
+      # from_top(matrix, diagonal ** 2, matrix_half + 1, diagonal, k)
+      {:ok, "pass"}
+      # search from top
+    else
+      from_bottom(matrix, matrix_half, 1, k)
+      # search from bottom
+    end
+  end
+
+
+  def from_bottom(matrix, top, bottom, k) do
+    going_up = bottom..top
+
+    rows = Stream.map(going_up, fn x -> Enum.take(x..1, x) end)
+    cols = Stream.map(going_up, fn x -> Enum.take(1..x, x) end)
+
+    all_rows = Stream.concat(rows)
+    all_cols = Stream.concat(cols)
+
+    answer_list = Stream.zip_with([all_rows, all_cols], fn [x, y] -> {x, y} end)
+
+    {matrix, Enum.at(answer_list, k)}
+  end
+
+end
+
+the_matrix = {{01,05,09},{10,11,13},{12,13,15}}
+k = 2
+
+Kth_smallest.find_element(the_matrix, k)
+#+end_src
+
+#+RESULTS: Kth-smallest2
+| (1 5 9) | (10 11 13) | (12 13 15) |
+|       1 |          2 |            |
+
+
+Okay, I need to come back and work out how to do the tuple access, but I got it working I also need to build out how to make it work from the top, but it DOES work
+
+Hmn... looking at some answers online, I missed that you can have some things duplicated. And the order does not always make those nice diagonals Like I thought it did.
+
+But I DID learn how to make those patterns of numbers I was trying to make. And all lazily.
+
+**** Attempt 2
+Okay, it sounds like I had the part about the order the numbers would appear in wrong. It looks like there is a gaurentee that the rows and columns are sorted, but there it no guarantee about the diagonal being in order.
+
+So... I feel like the next best this I could do is do an "insert sort" and grab the diagonals as I go to avoid needing to do any extra work. And I need to deal with the diagonal as a whole to avoid hitting the kth element before I have seen the whole diagnol. 
+
+...no the diagonals mean almost nothing. So it's almost like I really do need to sort the... whole thing?
+
+no... it's not about sorting. I think I know what I will do. I will make a list of the whole thing, and take while I can take, elements that are equal the current lowest number. the top left corner should be enough. once I have that, I take till I can't take any more. Then I increment the number by 1 and take till I can't any more. 
+
+That sounds like I could end up searching the array more times than I need to. Calling min on the array surely has the same cost.
+
+#+name:Kth-smallest3
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Kth_smallest do
+  def find_element(matrix, k) do
+    :lists.merge(matrix)
+    |> Enum.at(k - 1, :none)
+  end
+end
+
+the_matrix = [[01,05,09],[10,11,13],[12,13,15]]
+k = 5
+
+Kth_smallest.find_element(the_matrix, k)
+#+end_src
+
+#+RESULTS: Kth-smallest3
+: 11
+
+
+Okay it's not great. It should be made so it doesn't have to do the whole list, and do some kind of binary search, but this is really concise. And the merge here makes great use of the sorted nature of each row.
+
+Is it just me, or does Erlang not show the Big O implication of using the merge function because it's not really what you would be using Erlang for in the first place?
+
+*** Sum the deepest leaves
+https://leetcode.com/problems/deepest-leaves-sum/
+[2022-08-07 Sun]
+
+If this is as easy as I am thinking, this should be an easy problem, not a medium one. And if I am getting this wrong, I really need to work on how I read these things.
+
+From what I can tell, you get a binary tree. That is represented as a list where the rows are in order, first to last, with the nodes from left to right. And each node has exactly two leaves. The nodes end when their leaves are null, and they go null all the way down.
+
+So... I just:
+1. Take one off the top.
+2. Check to see if there are more items in the list
+3. if there are, take the last number of items as last time times 2 and recur.
+4. so I will end up taking 1, 2, 4, 8 items till I hit the "deepest" leaves of the tree. I could count the list and get the number of elements at the end, but counting the whole tree seems wasteful. I mean... I do end up looking at all of them at somepoint but I can know how many items to drop at a time per level of the nodes this way.
+
+   Once I hit the last row, take where it's a number, sum. done.
+
+   I can't imagine this is any better done lazily, so I will make it eager, and these are not fixed length, so a list it is.
+
+  #+name:deep-leaves
+#+begin_src elixir :results output
+code.compiler_options(ignore_module_conflict: true)
+defmodule deep_leaves do
+  def sum_deepest([tree_head | tree_tail]) do
+    leaves = deepest_l({[tree_head], tree_tail})
+    leaves
+  end
+  def deepest_l({h, t}) when t == [], do: h
+  def deepest_l({h, t}) do
+    deepest_l(:lists.split(length(h)*2,t))
+  end
+end
+
+deep_leaves.sum_deepest([1,2,3,4,5,:nil,6,7,:nil,:nil,:nil,:nil,8])
+#+end_src 
+
+#+RESULTS:
+: ** (ArgumentError) argument error
+:     (stdlib 4.0.1) lists.erl:1568: :lists.split(8, [7, nil, nil, nil, nil, 8])
+:     iex:9: Deep_leaves.deepest_l/1
+
+Well shucks. Looks like the way a binary tree is written in the problem doesn't do what I thought. I thought all the nodes had two children. That would work.
+
+
+  #+name:deep-leaves-i-wish
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Deep_leaves do
+  
+  def sum_deepest([tree_head | tree_tail]) do
+    deepest_l({[tree_head], tree_tail})
+    |> Enum.filter(fn x -> is_number(x) end)
+    |> Enum.sum()
+  end
+  
+  def deepest_l({h, t}) when t == [], do: h
+  
+  def deepest_l({h, t}) do
+    deepest_l(:lists.split(length(h)*2, t))
+  end
+  
+end
+
+Deep_leaves.sum_deepest([1,2,3,4,5,:nil,6,7,:nil,:nil,:nil,:nil,:nil,:nil,8])
+#+end_src 
+
+#+RESULTS: deep-leaves-i-wish
+: 15
+
+IF a binary tree always had a null for it's children so every node had exactly two children; this works.
+
+I think I can do this with the Elixir gb_trees
+
+#+name:gb_trees
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+tree = :gb_trees.empty()
+|> then(&:gb_trees.insert(1,[2,3],&1))
+|> then(&:gb_trees.insert(2,[4,5],&1))
+|> then(&:gb_trees.insert(3,[6],&1))
+|> then(&:gb_trees.insert(4,[7],&1))
+|> then(&:gb_trees.insert(5,[],&1))
+|> then(&:gb_trees.insert(6,[8],&1))
+|> then(&:gb_trees.insert(7,[],&1))
+|> then(&:gb_trees.insert(8,[],&1))
+#+end_src
+
+#+RESULTS: gb_trees
+| 8 | (4 \a (2 (4 5) (1 (2 3) nil nil) (3 (6) nil nil)) (6 \b (5 nil nil nil) (7 nil nil (8 nil nil nil)))) |
+
+What I do instead of just grabbing the number of nodes I would use if it was ballanced I go
+
+Root -> list of children -> list of thier children till no one in that "generation" has kids. Then sum that generation
+
+**** Attempt 2
+
+#+name:gb_trees2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule Sum_deepest do
+  def make_tree() do
+    :gb_trees.empty()
+    |> then(&:gb_trees.insert(1,[2,3],&1))
+    |> then(&:gb_trees.insert(2,[4,5],&1))
+    |> then(&:gb_trees.insert(3,[6],&1))
+    |> then(&:gb_trees.insert(4,[7],&1))
+    |> then(&:gb_trees.insert(5,[],&1))
+    |> then(&:gb_trees.insert(6,[8],&1))
+    |> then(&:gb_trees.insert(7,[],&1))
+    |> then(&:gb_trees.insert(8,[],&1))
+  end
+  
+  def deepest_leaves_start(root, tree) do
+    :gb_trees.get(root, tree)
+    |> deepest_leaves_recur(tree)
+  end
+  
+  def deepest_leaves_recur(children, tree) do
+    new_children = Enum.reduce(children, [],  fn x, acc -> acc ++ :gb_trees.get(x,tree) end)
+    if new_children == [] do
+      children
+    else
+      deepest_leaves_recur(new_children, tree)
+    end
+  end
+
+  def sum_dl(root, tree) do
+    deepest_leaves_start(root, tree)
+    |> Enum.sum()
+  end
+  
+end
+
+tree = Sum_deepest.make_tree()
+Sum_deepest.sum_dl(1, tree)
+#+end_src
+
+#+RESULTS: gb_trees2
+: 15
+
+Nice. That took me only 30 min.
+
+It's not amazing code, but it works and it's not horrendous. And it's an example of how to use the Erlang gb_trees library to work with trees.
+
 ** LFE
 
 #+name:test4
@@ -2906,7 +3317,6 @@ x
 : 4
 
 Okay interesting. It works for lists, but not in tuples? Well that can't be right. There HAS to be way to get the value from a tuple that starts with ok. That is fundamental to how lots of Erlang works.
-
 
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
