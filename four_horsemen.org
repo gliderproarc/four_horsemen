@@ -1000,12 +1000,6 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: ** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-JX7I8b/elixir-7FkWjk:3:22: syntax error before: 'reduce:'
-:     |
-:   3 | |> then(&for x <- &1 reduce: 0 do acc -> x + acc end)
-:     |                      ^
-:     (iex 1.13.4) expanding macro: IEx.Helpers.import_file/1
-:     iex:26: (file)
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -1849,17 +1843,6 @@ Follow up: Could you solve it without converting the integer to a string?
 
 * Fresh start
 [2022-01-12 Wed]
-
-It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
-
-1. Python/Hy
-2. Racket
-3. Elixir (and a bit of Erlang? LFE?)
-4. Elisp
-
-I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
-
-I wonder if it's worth my time to examine ob-hy and see if I can make vars and sessions work?
 ** Elixir
 After a lot of hemming and hawing about how to move forward, I think Elixir rounds things out while also being fairly easy to work with here in Emacs and Org. There is a lot to get used to so let's try some things I have done in the other languages. How about rock-paper-scissors?
 *** rock paper scissors
@@ -2911,6 +2894,113 @@ Nice. That took me only 30 min.
 
 It's not amazing code, but it works and it's not horrendous. And it's an example of how to use the Erlang gb_trees library to work with trees.
 
+
+*** Max binary tree
+https://leetcode.com/problems/maximum-binary-tree/
+
+I am just going to fly through these as quickly as I can and try to get Elixir syntax under my fingers.
+
+So it look I take a list of nums. I then make a tree that must contain the nums in a tree,
+
+#+name:tree-list
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+tree = :gb_trees.empty()
+tree2 = :gb_trees.enter(0, {1,2}, tree)
+tree3 = :gb_trees.enter(1, {3}, tree2)
+tree4 = :gb_trees.enter(2, {4}, tree3)
+tree5 = :gb_trees.enter(3, {}, tree4)
+tree6 = :gb_trees.enter(4, {}, tree5)
+:gb_trees.to_list(tree6)
+#+end_src
+
+#+RESULTS: tree-list
+| 0 | (1 2) |
+| 1 | (3)   |
+| 2 | (4)   |
+| 3 | nil   |
+| 4 | nil   |
+
+Man, I don't what the big deal with these leet code problems is and this array version of a binary tree. It feels so pointless. There aren't even standard libraries for dealing with these structures. What's the point?
+
+But I could just think of it like a list manipulation problem. That is just as well. I don't see how putting these in Erlang's gb_trees makes any sense.
+
+**** Attempt1
+So the process is:
+1. Take list nums
+2. Split into two lists on the max num
+3. the left node of the root will get recursively made into it's own tree using the nums before the max in the origional
+4. The nums that came after max get the same treatment.
+
+Well Erlang should be able to handle recursion like that just fine.
+
+And I guess, if I am going to be building this recursively, it would be kind of nice to make calls to gb_trees and not worry about what to do with the structure as it's getting built up. I can just make these recursive calls with the parts of the list as them come up, and just pass around some kind of accumulator. 
+
+So I guess the recursive call is:
+take a list.
+find max
+split the list on the max
+call self on the list before max
+call self on the list after max
+return the resulting tree
+
+So I guess all these need to return the tree. And the pass that tree to the rest of the calls.
+
+And the calls on the "left" and "right" need to make the node above them set to be their children.
+
+Okay, how about like this:
+1. Initilze a tree out side the handling of the list
+2. take a list
+3. inset a node to the list 
+4. The node will be the max num form the list
+5. it's value will be a tuple.
+6. The two values of that tuple will be the result of calling this whole thing on the list before Max. the other child will be the calling this on the list after max.
+
+   
+
+
+*** All paths
+https://leetcode.com/problems/all-paths-from-source-to-target/
+[2022-08-11 Thu]
+
+This is a nice chance to try out the digraph library from Erlang.
+
+I want to return all the paths from A -> B where A is the 0th vertex in a ascylic digraph and B is the ...last node? Anyway, I can imagine the way I solved that one problem from the Python working here. I make a cue. I add the first vertex to the cue, and resurviely call the top of the cue. If the item can move, track where you came from and head back to the bottom of the cue. If you can go no further, see if you contain the start and ending nodes. If you do, you are a goal, so put into a goal list. If you don't have the goal vertexs, you get dropped. 
+
+Hmn... this one sounds like it will take some time.
+
+**** Attempt 1
+#+name:all-paths
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule All_paths do
+  @moduledoc "Leet code exercise"
+
+  @doc "Take a digraph and return all paths from A to B"
+  @spec find_paths(list, integer, integer) :: list
+
+  def find_paths(graph, root, terminal) do
+    [graph, root, terminal, :digraph.vertex(graph, 1)]
+  end
+
+end
+
+start_digraph = :digraph.new()
+problem_digraph = for x <- [1, 2, 3], do: :digraph.add_vertex(start_digraph, x, "A vertex")
+# with_edges = for x <- [1, 2, 3], do: :digraph.add_vertex(start_digraph, x)
+:digraph.vertex(problem_digraph, 1)
+
+# All_paths.find_paths(problem_digraph, 0, 1)
+#+end_src
+
+#+RESULTS: all-paths
+: ** (ErlangError) Erlang error: {:badrecord, [1, 2, 3]}
+:     (stdlib 4.0.1) digraph.erl:182: :digraph.vertex/2
+
+Hmn... Need to learn how this library works
+
 ** LFE
 
 #+name:test4
@@ -3604,6 +3694,20 @@ It's sure bound to be nicer than learning C.
 #+RESULTS: does-it-still-work?
 : yes it does
 
+*** Planck
+I think I figured out how to get Planck to evaluate Clojurescript code.
+
+There is a Emacs package called ob-clojurescript. By chaning the name of the Clojurescirpt eval command to use planck, and then going back into my Spacemacs config and turning off the org babel backend, I can now execute Clojure code in snippets in Emacs from Plank and not the JVM.
+
+The JVM clojure if of course nicer to write in, but it takes time to boot. The planck repl doesn't seem to have the JS name-space available by default, so it might take some figuring out to get that working.
+
+So if this suddenly stops working in the future, here is what to check
+1. Do you have the ob-clojurescript package installed?
+2. Did you edit it to have planck as the command line program to run the code?
+3. Did you add clojurescript as a name of executable org-babel functions?
+4. Did you turn off Cider as the orb-babel backend?
+
+   ...but oddly enough, I think I will mostly be running if from the Java side. Since mostly I am using Clojure for the JVM at this point.
 ** Elisp
 While not exactly the language I intend to use for most things, it IS the language of Emacs, and I do intend to be using that a lot, so keeping some Elisp under my fingers is a good idea.
 
@@ -3698,6 +3802,55 @@ Discord is built on Elixir to some degree. I wonder if it's some kind of routing
 Oh, there is an idea too. I could make a Phoenix web app. I will probably need a front end at some point. Might as well make one in Phoenix
 
 I could contribute to the Sonic Pi project. It looks like Jose Valim is stepping in to fill the void left by Joe now that he is no longer around to maintain the Erlang server.
+
+* Languages I am working on
+[2022-08-12 Fri]
+
+Rather than re-writting this all over the place, I want to put this where I can see how it changes overtime.
+
+** Start of 2022
+It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
+
+1. Python/Hy
+2. Racket
+3. Elixir (and a bit of Erlang? LFE?)
+4. Elisp
+
+I would say these are enough for me to be busy about learning code for a very long time. Two Lisps, 3ish C family languages. Python for glue, C for getting close to the metal, Elisp for Emacs, and Elixir for concurrent stuff and back to Python for everything else.
+
+I wonder if it's worth my time to examine ob-hy and see if I can make vars and sessions work?
+
+** Mid 2022
+So I just realized that LFE and Elixir cover a lot of the same ground. So rather than try to force LFE into stuff, I'll mostly be using Elixir. And if I am not writting Elixir, what do I want to write?
+
+1. Elixir
+2. Clojure
+3. Python
+4. Gleam/LFE
+
+   Gleam isn't something I am going to start writing right away, but I could see myself picking it up easily if I wanted static types and JS export. 
+
+   Elixir/Gleam and Clojure both sort of have that extra JS export side to them which is kind of a cool parallel. Clojure seems to be useful when Elixir is not going to be fast enough, or where there is lot of number crunching to do. Elixir has the benefit of not just being more light weight, it's actors are so light weight you can just spin up hundreds of them no sweat. Can't do that on the JVM without an actor library.
+   https://www.erlang-solutions.com/blog/optimising-for-concurrency-comparing-and-contrasting-the-beam-and-jvm-virtual-machines/
+
+   That article gives a nice comparison between the JVM and the Beam. The beam makes sense when concurrency is okay in-place of parallelism. And if you need hard real-time guarantees, you probably can't afford any GC, and need to manage your own memory. So I suppose one day I could replace Python with Rust, but I would just as soon not write anything needed for hard real-time because I know that world is not easy.
+
+   Okay looking at them from afar, I see... haha 4 dynamic languages. Elixir and Clojure are compiled... hmn. Python is interpreted. Gleam is statically typed at the complication step, and two are Lisps. And there are 3 run-times. The beam, JVM, and the python run-time ...you could say Clojure and Gleam can also target Node.
+
+   Python kind of sticks out, but I could see it being useful one day. It's extremely popular at the moment and it has lots of libraries. Keeping up with Python at least at a basic level is bound to be useful one day.
+   
+** Languages I have tried
+| Language    | notes                            |
+|-------------+----------------------------------|
+| C           | Managing memory is hard          |
+| C++         | Managing memory is hard          |
+| Racket      | Nice, but A bit too experimental |
+| Hy          | Nice, but way too experimental   |
+| Javascript  | Just no                          |
+| Common Lisp | A bit crusty, but nice           |
+| Ruby        | indifferent                      |
+| Go          | indifferent                      |
+
 * Classic programming problems
 [2022-01-17 Mon]
 I bought a book: "Classic computer science problems in Python". It's taking me through a bunch of classic problems you would get with a CS degree. I want to take them and try them in these languages
