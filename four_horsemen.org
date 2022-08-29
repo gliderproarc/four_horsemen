@@ -315,14 +315,14 @@ I think I know what I want to make this do in Clojure, but to save time I really
   "Do the recursion once per item in list"
   (nth (iterate bubble-recur unsorted-list) (count unsorted-list)))
 
-(bubble-sort '(1 6 3 2 5 4))
+(bubble-sort '(1 6 3 2 5 4)) 
 #+end_src
 
 #+RESULTS: Bubblesort-clojure
-| #'shadow.user/swap-two     |
-| #'shadow.user/bubble-recur |
-| #'shadow.user/bubble-sort  |
-| (1 2 3 4 5 6)              |
+| #'user/swap-two     |
+| #'user/bubble-recur |
+| #'user/bubble-sort  |
+| (1 2 3 4 5 6)       |
 
 So weird. That is a way to apply a function x times
 https://stackoverflow.com/questions/46655508/apply-a-function-n-times-on-a-starting-value
@@ -2894,7 +2894,6 @@ Nice. That took me only 30 min.
 
 It's not amazing code, but it works and it's not horrendous. And it's an example of how to use the Erlang gb_trees library to work with trees.
 
-
 *** Max binary tree
 https://leetcode.com/problems/maximum-binary-tree/
 
@@ -2957,9 +2956,142 @@ Okay, how about like this:
 5. it's value will be a tuple.
 6. The two values of that tuple will be the result of calling this whole thing on the list before Max. the other child will be the calling this on the list after max.
 
-   
+#+name:Max-bin-tree
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
 
+defmodule Mbt do
+  @moduledoc "Leet code practice to find the max binary tree"
 
+  @doc "entry function"
+  @spec solve(list) :: list
+  def solve(nums) do
+    split_on_max(nums)
+  end 
+
+ # @doc "Recursively build the tree"
+ # @spec build_tree_recur(list,list) :: list
+ # def build_tree_recur(args) do
+ #   args
+ # end 
+
+  @doc "Split a list of nums on the biggest num"
+  @spec split_on_max(list) :: list
+  def split_on_max(nums) do
+    Enum.chunk_by(nums, fn x -> x == Enum.max(nums) end)
+  end 
+end
+
+problem_nums = [1, 2, 6, 4, 5]
+Mbt.solve(problem_nums) 
+#+end_src
+
+#+RESULTS: Max-bin-tree
+| 1 | 2 |
+| 6 |   |
+
+so it looks like I need to be a little more careful with how I add nodes to the tree. I can't just recur and think it's all going to end up in the right place. The chunk_by function is nice, but it can produce 1, 2, or 3 lists. But there is a silver lining.
+
+After calling the chunk_by function, I can add the element of the resulting list as a child node to... here I get stuck. How do I handle the definition of the parent nodes?
+
+...I think I could have done this with map. In both Python and Elixir.
+
+If I call map on the list of nums, and apply labels, I get back what can become a map (dict)
+If the number is less than max, add the label left. If the num IS max, add the lable max, if the num is greater than max, add the lable right.
+
+... and it's reduce not map. Reduce because I can to take a list of arbitrary length, and get a list of most length 3.
+
+interesting. I think I could have made this include less ifs with reduce. For both. 
+#+name:Max-bin-tree2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Mbt do
+  @moduledoc "Leet code practice to find the max binary tree"
+
+  @doc "entry function"
+  @spec solve(list) :: list
+  def solve(nums) do
+    tree = :gb_trees.empty()
+    build_tree_recur(tree, nums)
+  end 
+
+ @doc "Recursively build the tree"
+ def build_tree_recur(tree, nums) when length(nums) == 0 do: tree
+ def build_tree_recur(tree, nums) do
+   kids = split_on_max(nums)
+   next_node = 
+ end 
+
+  @doc "Split a list of nums on the biggest num"
+  @spec split_on_max(list) :: list
+  def split_on_max(nums) do
+    # Enum.chunk_by(nums, fn x -> x == Enum.max(nums) end)
+   {leading, b} = Enum.split(nums,Enum.find_index(nums, fn x -> x == Enum.max(nums) end))
+   [node | trailing] = b
+   Enum.filter([node, leading, trailing], fn x -> x == [] end)
+  end 
+
+ @doc "add a node to the tree"
+ def add_node(parrent, child, tree) when length(child) == 0 do
+   :gb_trees.enter(parrent,{},tree)
+ end 
+ def add_node(tree,child,parrent) when length(child) == 1 do
+   :gb_trees.enter(child,{parrent},tree)
+ end 
+ 
+end
+
+problem_nums = [3, 2, 1, 6, 5, 4]
+Mbt.solve(problem_nums)
+#+end_src
+
+**** Reduce version
+
+#+name:Max-bin-reduce
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Mbt do
+  @moduledoc "Leet code practice to find the max binary tree"
+
+  @doc "entry function"
+  @spec solve(list) :: list
+  def solve(nums) do
+    split_on_max(nums)
+  end 
+
+ # @doc "Recursively build the tree"
+ # @spec build_tree_recur(list,list) :: list
+ # def build_tree_recur(args) do
+ #   args
+ # end 
+
+  @doc "Split a list of nums on the biggest num"
+  @spec split_on_max(list) :: map
+  def split_on_max(nums) do
+    Enum.reduce(nums, %{}, fn x, acc ->
+      cond do
+        x < Enum.max(nums) ->
+          Map.update(acc, :left, [], fn y -> y ++ [x] end)
+        x == Enum.max(nums) ->
+          Map.update(acc, :max, [], fn y -> y ++ [x] end)
+        x > Enum.max(nums) ->
+          Map.update(acc, :right, [], fn y -> y ++ [x] end)
+      end
+      end)
+    end
+  
+end
+
+problem_nums = [1, 2, 6, 4, 5]
+Mbt.split_on_max(problem_nums)
+#+end_src
+
+#+RESULTS: Max-bin-reduce
+: %{left: [2, 4, 5], max: []}
+
+never mind. That ended up trying to compare the value against the max in the list, but I needed to compare on the index of the element, then it's value against the max. Also a big mess.
 *** All paths
 https://leetcode.com/problems/all-paths-from-source-to-target/
 [2022-08-11 Thu]
@@ -3408,6 +3540,12 @@ x
 
 Okay interesting. It works for lists, but not in tuples? Well that can't be right. There HAS to be way to get the value from a tuple that starts with ok. That is fundamental to how lots of Erlang works.
 
+*** I can call Elixir from LFE?!?
+[2022-08-27 Sat]
+https://github.com/lfex/nx
+
+So I don't think I can make it work in Org babel blocks, but it appears you can make an LFE app that just straight up calls out to Elixir. 
+
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
 
@@ -3782,6 +3920,340 @@ I was watching a talk that was going over energy efficiency. And Erlang is great
 
 Don't forget to run M-x slime before running the block.
 
+** Hy
+[2022-08-14 Sun]
+I was talking to Paul today at church, and I have been writing a lot of Elixir. And while I do want an Elixir job one day, I don't think I will get my first job writing Elixir. So if I really have to write Python, Let's make it Hy.
+
+
+#+name:Hy-0.24
+#+begin_src hy :results output
+(require hyrule *)
+
+(print (-> 5
+           (+ 5)
+           (- 2)))
+#+end_src
+
+#+RESULTS: Hy-0.24
+: 8
+
+That is working again. But it looks like a lot stuff got moved
+
+#+name:first-things-first
+#+begin_src hy :results output
+(import toolz *)
+
+(print (first [1 2 3]))
+#+end_src
+
+#+RESULTS: first-things-first
+: 1
+
+*** Let's do that max binary tree problem
+https://leetcode.com/problems/maximum-binary-tree/
+
+So I kind of got this started in Elixir, but I didn't really get to the end. I can at least use this as a nice shake-down cruise for Hy 0.24
+
+#+name:max-binary-tree
+#+begin_src hy :results output
+(import toolz *)
+(require hyrule *)
+(import dataclasses [dataclass])
+
+(defclass [dataclass] Node []
+  #^int val
+  #^int left
+  #^int right)
+
+(setv problem-list [3 2 1 6 0 5])
+
+(setv my-node (Node 2 3 4))
+(print my-node)
+
+#+end_src
+
+#+RESULTS: max-binary-tree
+: Node(val=2, left=3, right=4)
+
+So that is how you make classes, and instantiate objects. It's not as bad as it could be. hmn... I wonder how to make a data class in Hy?
+
+Much better.
+
+**** Attempt 1
+
+#+name:max-binary-tree1
+#+begin_src hy :results output
+(import toolz *)
+(require hyrule *)
+(import dataclasses [dataclass])
+(import itertools [groupby])
+
+(defclass [dataclass] Node []
+  #^int val
+  #^int left
+  #^int right)
+
+(setv problem-list [3 2 1 6 0 5])
+
+(defn group-by-max [l]
+  "Take a list a group it on the max element"
+  (groupby l (max l)))
+
+;; (print (list (group-by-max problem-list))
+(for [x [(groupby problem-list 6)]] (for [y [x]] print(y)))
+  
+#+end_src
+
+#+RESULTS: max-binary-tree1
+
+** Python
+*** Max Binary tree
+[2022-08-16 Tue]
+
+Lisp is great, but Hy is kind of driving me nuts. I can't figure out how to do stuff that should be really basic in Python, and I end up taking twice as long to write what should be quite simple.
+
+#+name:max_binary_treep
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from itertools import groupby
+
+problem_list = [3, 2, 1, 6, 0, 5]
+grouped = groupby(problem_list, lambda x: x == max(problem_list))
+for item in grouped:
+    (head, tail) = item
+    print(head)
+    print(list(tail))
+#+end_src
+
+#+RESULTS: max_binary_treep
+: False
+: [3, 2, 1]
+: True
+: [6]
+: False
+: [0, 5]
+**** Let's get the data class in there
+
+#+name:max_binary_treep1
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+from itertools import groupby
+# from pipetools import pipe, X
+
+@dataclass
+class Node:
+    """node for the binary tree"""
+    id: int
+    left: int = None
+    right: int = None
+
+problem_list = [3, 2, 1, 6, 0, 5]
+
+def dispatch_on_group(nums, tree):
+    grouped = groupby(nums, lambda x: x == max(nums))
+    if len(nums) == 0:
+        yield tree
+    else:
+        match grouped:
+            case [(True, a), (False, b)]:
+                return(b)
+        # handle max at top
+            case [(False, c), (True, d), (False, e)]:
+                return(c)
+        # handle max in middle
+            case [(False, f), (True, g)]:
+                return(f)
+        # handle max at end
+
+a_list = dispatch_on_group(problem_list, [])
+
+for num in a_list:
+    print(num)
+
+#+end_src
+
+#+RESULTS: max_binary_treep1
+: {'max': 6, 'left': [3, 2, 1], 'right': [0, 5]}
+
+Okay, I have the basics in place, I need to make a sort of recursive thing. I want to call a function on a list.
+
+The list is going to get split into 3 parts. Then I am going to... pattern match?
+
+I want to add a node to the tree I am building with the list. The next node is going to take the max in the list as it's id, then the left and right are it's children. The children are going to recursively be the bits of the list before and after the max in the origional list. 
+
+hmn... it looks like if I try to unpack, I am going to get an error if the number of things in the resulting list is wrong. 
+
+...I really think Pattern matching is the right way to handle this.
+
+
+#+name:test
+#+begin_src python :python python3 :results output
+from itertools import groupby
+
+problem_list = [6, 0, 5]
+
+grouped = groupby(problem_list, lambda x: x == max(problem_list))
+
+match list(grouped):
+case [(true, _), x, x]:
+
+#+end_src
+
+
+**** attempt 2
+Okay, I think I could still use pattern matching, but I am going to stop trying to use the group_by function. I am just going to make my own. I spent a hour last time trying to get the list after the tuple in group_by, and I would rather just get the list my self.
+
+#+name:max_binary_treep2
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+
+@dataclass
+class Node:
+    """node for the binary tree"""
+    id: int
+    left: int = None
+    right: int = None
+
+problem_list = [[3, 2, 1, 6, 4, 5]]
+
+def split_on_max(nums):
+    "take a list of nums, and return a map. The map will have the max, and maybe a left and maybe a right"
+    max_num = max(nums)
+    len_min_one = (len(nums) - 1)
+    if len_min_one == 0:
+        return [{"max": max_num}, nums[1:]]
+    elif nums.index(max_num) == 0:
+        return [{"max": max_num, "right": nums[1:]}, nums[1:]]
+    elif nums.index(max_num) == len_min_one:
+        return  [{"max": max_num, "left": nums[:len_min_one]},
+                 nums[:len_min_one]]
+    else:
+        return [{"max": max_num, "left": nums[0:nums.index(max_num)], "right": nums[(nums.index(max_num) + 1):]},
+                nums[0:nums.index(max_num)],
+                nums[(nums.index(max_num) + 1):]]
+
+def dict_to_node(dict, tree):
+    "take a dict produced by split on max, and add a node to a tree"
+    if "left" in dict and "right" in dict:
+        return tree + [Node(dict["max"], max(dict["left"]), max(dict["right"]))]
+    elif "left" in dict:
+        return tree + [Node(dict["max"], max(dict["left"]))]
+    elif "right" in dict:
+        return tree + [Node(dict["max"], None, max(dict["right"]))]
+    else:
+        return tree + [Node(dict["max"])]
+
+def max_bin(nums):
+    """take list of list of nums and finally return a tree of nodes that represent the maximum binary tree"""
+    tree = []
+    while len(nums) > 0:
+        next = split_on_max(nums[0])
+        next_tree = dict_to_node(next[0], tree)
+        next = next + nums[1:]
+        tree = next_tree
+        nums = list(filter(None, next[1:]))
+    return next_tree
+
+print(max_bin(problem_list))
+#+end_src
+
+#+RESULTS: max_binary_treep2
+: [Node(id=6, left=3, right=5), Node(id=3, left=None, right=2), Node(id=2, left=None, right=1), Node(id=1, left=None, right=None), Node(id=5, left=4, right=None), Node(id=4, left=None, right=None)]
+
+...what a horrible solution. Haha. Man, that while loop is nasty. And I have this weird list this that carries around extra bits of things as it goes through the split by max function, it's just a mess. At least what comes in at the max_bin function ist just a list of list, and I get back a list of nodes. That much is sane.
+
+
+
+**** Let's make it nice
+[2022-08-21 Sun]
+
+So I solved the problem, but it looks horrid. I think the problem is not that I am using Python, and not Hy. The problem is not that I am not able to use Elixir. The problem is I need to learn how to write things to be prettier in Python.
+
+So let's add type hints, better function names, and make it the way I would want to see it if I needed to use this next year to make a maximum binary tree.
+
+#+name:max_binary_tree_pretty
+#+begin_src python :python python3 :results output
+from dataclasses import dataclass
+
+
+@dataclass
+class Node:
+    """node for the binary tree"""
+    id: int
+    left: int = None
+    right: int = None
+
+
+def split_on_max(nums: list) -> list:
+    """Split the first list (of lists) of nums on the max,
+    then return a list with a dict to pass to make node"""
+    max_num = max(nums)
+    len_min_one = (len(nums) - 1)
+    if len_min_one == 0:
+        return [{"max": max_num}, nums[1:]]
+    elif nums.index(max_num) == 0:
+        return [{"max": max_num,
+                 "right": nums[1:]},
+                nums[1:]]
+    elif nums.index(max_num) == len_min_one:
+        return [{
+            "max": max_num,
+            "left": nums[:len_min_one]},
+                nums[:len_min_one]]
+    else:
+        return [{
+            "max": max_num,
+            "left": nums[0:nums.index(max_num)],
+            "right": nums[(nums.index(max_num) + 1):]},
+                nums[0:nums.index(max_num)], nums[(nums.index(max_num) + 1):]]
+
+
+def make_node(dict: dict, tree: list) -> list:
+    "take a dict produced by split on max, and add a node to the tree"
+    if "left" in dict and "right" in dict:
+        return tree + [Node(dict["max"], max(dict["left"]), max(dict["right"]))]
+    elif "left" in dict:
+        return tree + [Node(dict["max"], max(dict["left"]))]
+    elif "right" in dict:
+        return tree + [Node(dict["max"], None, max(dict["right"]))]
+    else:
+        return tree + [Node(dict["max"])]
+
+
+def max_bin(nums: list) -> list:
+    """take list of list of nums and finally
+    return a tree of nodes that represent the maximum binary tree"""
+    tree = []
+    while len(nums) > 0:
+        dict_at_zero = split_on_max(nums[0]) + nums[1:]
+        tree = make_node(dict_at_zero[0], tree)
+        nums = list(filter(None, dict_at_zero[1:]))
+    return tree
+
+
+problem_list = [[3, 2, 1, 6, 4, 5]]
+
+print(max_bin(problem_list))
+#+end_src
+
+#+RESULTS: max_binary_tree_pretty
+: [Node(id=6, left=3, right=5), Node(id=3, left=None, right=2), Node(id=2, left=None, right=1), Node(id=1, left=None, right=None), Node(id=5, left=4, right=None), Node(id=4, left=None, right=None)]
+
+Okay. Better. I still don't like how Python handles the business of doing this whole bit with the while loop, but it gets the job done. I also don't like having using all those ifs and elses to handle what to do.
+
+I wonder if there is another way of doing this that doesn't need that while loop, or avoids the intermediary dict_at_zero, tree, and nums variables?
+
+Well I need nums anyway to get the problem list in. And I need to return the tree when it's done. And dict_at_zero is kind of my accumulator. I can't use reduce because it's not one call per item in a list. I can't use map for the same reason. I would call a function recursively. I would probably do something similar to the while loop here in a pipeline in Elixir, and call the function it's self at the end of the pipe. A separate function head would handle the base case.
+
+Could Elixir do the ifs and elses in the make node and split of max? Well group by in Elixir was working pretty well.
+*** Custom thing for Scratch??
+https://en.scratch-wiki.info/wiki/Communicating_to_Scratch_via_Python_with_a_GUI
+
+It looks like you can talk to a running Scratch program with Python via... sockets?!
+
+If that really works, I would make Aimee the thing she needs from Scratch in a Python script and just send it to her.
+
+And it it's a socket, can I talk to it with ANY language that can make and talk to sockets?
 ** What should the first project be?
 [2022-07-27 Wed]
 I am starting to think I am hitting the limits of the usefulness of my Python book. I am going to do my best to finish it up, but really there are things I won't need or want to do in Elixir that I am being walked through how to do in Python, and I don't know if it's necessarily going to help me to finish all of it if its just to be "compleationist".
@@ -3825,7 +4297,7 @@ So I just realized that LFE and Elixir cover a lot of the same ground. So rather
 
 1. Elixir
 2. Clojure
-3. Python
+3. Python/Hy
 4. Gleam/LFE
 
    Gleam isn't something I am going to start writing right away, but I could see myself picking it up easily if I wanted static types and JS export. 
@@ -3845,7 +4317,6 @@ So I just realized that LFE and Elixir cover a lot of the same ground. So rather
 | C           | Managing memory is hard          |
 | C++         | Managing memory is hard          |
 | Racket      | Nice, but A bit too experimental |
-| Hy          | Nice, but way too experimental   |
 | Javascript  | Just no                          |
 | Common Lisp | A bit crusty, but nice           |
 | Ruby        | indifferent                      |
@@ -10156,4 +10627,201 @@ Making generic a genetic solution to a CSP problem... hmn.  I mean I guess I cou
 Advanced form of tournament selection, yeah I was thinking of doing that from the moment I read about how it worked. So if I am thinking of problems 1 and 2 right, I could just add an advanced tournament selection bit to a genetic solution to the bridges problem... wait but that's a graph problem? Anyway, yeah I just tell it to flail around instead of narrowing it down to just the right solution. The key must be that this is supposed to take any old CSP. So given vars, domains, and constraints, do a genetic style of finding the solution. Shouldn't actually be that hard I supposed.
 
 Anyway, but before I jump into unit 5, I want to do a little bit of Elixir just on a small problem. Let's go find a small leet code problem to throw in there.
+
+[2022-08-23 Tue]
+It's been a bit since I read Unit 5, and I think it's time to get started on this. And I am going to write it in Python after all. I really do like Elixir and LFE, but I need to get a job first. I can't let Python study take a back-seat just yet. 
+
+*** Let's make it a scheduling problem
+[2022-08-23 Tue]
+I have been thinking about what kind of problem a genetic algorithm could be used to solve, and I realized it might be nice in something like a scheduling problem. When there is no one right answer, it's hard to direct a computer into what kinds of solutions that might be good. So a bit of randomness might be a good way to see what other ways there are of getting to an answer.
+
+**** initial ideas
+I am going to make the CSP I want to solve do some work for my job. I will be sure I keep the names out of it, but let's say I have people, availible days, where they live as... hmn If I really wanted to use this later I should make this a set of GPS coordinates... maybe I can make this XY, but leave enough flexibility I could swap in GPS for the XY and actully use it. So people and places of work. I want to match people to places of work based on which places of work need people and which people can work those days. The fitness is how close people and places of work end up being, and how many people are left without places to work and how many places of work don't get enough people.
+
+
+...should I make this swappable for two fitness functions? What if I make this so it can optimize on an arbitrary fitness function?
+
+The way I could imagine this being useful is, let's say I want to try a schedule that keeps everyone super close to where they live. I make a fitness function that only considers the total distance people are from the the place they are assigned. The generational algorithm is good because each time you pick people is a certain order, the slots that get filled changed, and some people end up getting all or less of their days at various places. But you might not know to set them to a less than ideal spot if a different more obvious first placement always goes first.
+
+If each generation takes random teachers, and assigns them to random schools, the fitness would be to then try another assignment set, and see which one results in the total distance people are from places of work changes. If the total distance everyone has to travel goes down, it becomes the basis for the next generation.
+
+I could also do a similar run for places of work and how many days are left empty. I could run it again with how many people have all the days they want filled. 
+
+It kinds of sounds like I need a way to "see" what kind of solution comes out the other side. Swap the fitness function, and see what kind of results show up. Try different fitness functions and see how the other areas change. The things I could see being useful are:
+1. How many places of work are missing day
+2. How many total days are missing for work places
+3. How many people are missing at least one day
+4. How many totals days people are missing
+5. How many people have to travel more than X
+6. The total distance all people travel
+7. How many different places each person has to go to work
+8. A hybrid of all these
+
+   If I could define a way of encoding the people, work places, and locations in XY of all this, I could then run a generational algorithm that could create generations of solutions, use the fitness function to see which did best, then tweak that solution a few different ways and run again.
+   The kinds of tweaking I could see would be the order things are assigned. I could for example assign random people to random places, but eventually you would want to assign people based on which place is closest to there they are, or has the schedule that matches their availability best. But that sort of prioritization would be hard to put into code, so it you just assign each person to an availible slot in a different order, you get very different parings. Each generation could just swap the order each available slot is considered for assignment. By swapping the order locations and schools are assigned, you get different total fitness totals. 
+
+   It's almost ready. I feel like next I want to get a better idea of how I could combine these fitness functions. What if I want a hybrid? What I want a total scheduled the keep as many teachers as possible to one school, but also want to keep distance down. Is there a way I could do it better then just changing the order each person is assigned to a place?
+
+   The constraints are the MTWRF of each person and place. I bassically want to create parings where each places MTWRF has a person associated with it, and each persons MTWRF has a place associated with it. Whether each person or place has a M or T etc will determine if it is eligible to be paired.
+
+   ...I want to be able to swap in a function that chooses how the pairing happens. For example
+   Take this list of people, and assign all their days from the places closest to them
+   or
+   assign all these people, keeping all their days to the same school first before trying other schools
+
+   ...if there a easy way of being able to express that in a generational algorithm?
+
+   Let's say I take the list of people. First person comes up, I could affect where they get assigned by sorting the list of places that could give them work. I could list the by their distance from the person, then sort the list of places again when going through the list again for the next person. 
+
+   hmn... I was thinking of chaning the order of both the people, and the places. But if the final fitness fuction returns a good score, chanign the order both side are assigned could ruin an "goodness" that was present in that generation.
+
+   It's kind of like I want to assign an order to the people, then leave that set for the whole run while slightly mutating the list of which locations and their days they have get assigned. Slowly, the list of locations will start to crowd around the people who they should be assigned to.
+
+   So I think the randomness could be slowly promoting or demoting random places each generation. Take 5 mutations, take the most fit, and mutate that to get 5 more.
+
+   I could start the people sorted in some kind of order and see how that affects the final result.
+
+   My previous CSP solvers did not allow for partial solutions. In this case there is very likely going to be less than ideal, or better solutions. So I think I need to kind of tweak how I do this.
+
+   I was creating a function that said what the next legal moves are, then walking a tree of possibilities. But what I am proposing now is that there are multiple right answers I want, and I dont want to try them all. I want to try them in different orders and see which is closest to what I am looking for.
+
+   How about this:
+   1. Start with a two lists; person-days and location-days
+
+   2. sort person-days by some funciton (mayeb group them by place, or many days to least etc)
+
+   3. shuffle location days
+
+   4. take one person day from the first list
+
+   5. walk down the list of location days till it can be assigned
+
+   6. record the assignment, and remove the person day and location day from the origional lists
+
+   7. do the next person day, and repeat till all the person days have been attempetd
+
+   8. if the person day can't be fit anywhere, mark it "attempted and failed"
+
+   9. finally collect all these assignemnts
+
+   10. from the list of assignments, calculate a fitness score
+
+   11. do this 5 times, but mutate the list of location days. So randomly move them up or down in the list
+
+   12. once 5 runs are done, compare the score of each generation.
+
+   13. take the most fit, and mutate it 5 times. runt them through assignment
+
+   14. take the most fit from those and mutate 5 times again.
+
+   15. repeat for X generations or till fitness reaches some threshold.
+
+
+       Fitness reaches a threshold... there is cool idea. I could just run it till I get an answer that is "good enough". I could make that lower with increasing runs and see how much more time it takes with each run. 
+
+
+       Here is another idea. let's make it 10 mutations. Why 10? because my MPB has 10 cores. Run it in parallel 10 times one on each core. take the most fit, calculate the new mutations, then pass 10 mutants to the cores to run in parallel again. 
+
+       It would be fun to write this in Elixir too and see what that is like performance wise in Python vs. Elixir. But first Python. 
+
+**** Another attempt at describing the problem.
+[2022-08-24 Wed]
+Okay, think I can describe it now.
+
+I am going a genetic schedule maker. It will take in as it's input 3 things
+
+1. people, defined as their availability and where they are as an X Y pair
+2. Locations defined basically the same way, but it's not availability, its work
+3. a fitness function
+
+   The fitness function can be composed of two criteria. I could for example combine the least number of people missing days and locations missing days into a single number and compare new generations based on that. It bigger numbers are better, I could see things getting weird, so maybe I should make everything try to be as low as possible?
+
+   The majority of the work will be done by assignment. Two lists are "looped over". Available people are assigned the first possible place they can be sent. And to generate randomness in the next generation, random elements in the second list will be promoted or demoted in the list of assignment.
+
+   A function that handles the generation will do the following:
+   1. Start the first generation by taking the fixed order of one list, and a shuffled second list. This is run through the assignment function, and it's fitness is calculated.
+
+   2. The starting list is then run through a mutation function, and 10 extra copies are made (one for each core on my machine)
+
+   3. The fitness of each is also calculated
+
+   4. The fitness of the parent and the next generation are compared.
+
+   5. The most fit becomes the parent of a new generation.
+
+   6. This is repeated a bunch of times and the best parent/child is returned as a proposed set of people assigned to places
+
+   Okay. I am ready. Let's do this in a dedicated Python file.
+
+   Looks like I need to made a person exist multiple times. Same goes for locations. Because I need to be able to break up how which schools a single person goes to.
+**** Starting on the data containers
+[2022-08-25 Thu]
+
+What is the right word fort hose? Data classes? I need a thing to hold what data goes together in the program. 
+
+
+**** Slight digression
+[2022-08-27 Sat]
+So this week I didn't make that much headway. I have a much clearer idea of how to move forward, but I don't know how to do this really simple thing and I want to see what ways I could do it, then actually write the function.
+
+I have two lists, I want to make pairs. But conditionally. If they can pair, I want them as a pair. All the items from the lists that could not be paired get chucked at the end.
+
+It's almost map. It's almost a reduce. But I want to try a few more options before I write a while loop.
+
+The while loop option seems easy enough. I just do a for comprehension from the first list, and take items one at a time from the list on the right. Once I find a pair. I just return the pair... actually no. I mutate. I find a pair, then set the pair's assignment values to show they were paired then go keep going through the rest of the for.
+
+So that is
+for (list 1) element
+while I haven't found a pair
+try to pair, once found
+mutate both the element and the discovered pair
+break, keep going with the for
+
+...that's horrid.
+
+In Elixir, I would probably just take the first of a filtered second list, and a call map on the first list. But the ability to cut the computation short in Python sounds like a good exercise. I think I can express this with a bunch of generators
+
+I make a generator local to this function. I take in a the two lists. I do the four comprehension, but instead of a while loop I use a generator. ...oh man I make a generator per itteration of the first list don't I? Becasue I am doing the computation with the element from the first list hard-coded.
+
+oh, I think I see how that is supposed to work. Python wants you to use filter and next.
+
+
+#+name:filter-next
+#+begin_src python :python python3 :results output
+my_list = [1, 2, 3, 4]
+print(next(filter(lambda x: x == 3, my_list)))
+#+end_src
+
+#+RESULTS: filter-next
+: 3
+
+#+RESULTS: name
+
+#+name:hy-filter-next
+#+begin_src hy :results output
+(import toolz *)
+(require hyrule *)
+
+(setv my-list [1 2 3 4])
+
+(print (next (filter (fn [x] (= x 3)) my-list)))
+#+end_src
+
+#+RESULTS: hy-filter-next
+: 3
+
+wrote it in Hy for good measure. So what is nice about this for what I am trying to do, is I can just write the lambda that tells me if it's a match and call next on the a filter, and I only compute up to the first hit. Nice. But I want to know how to handle the case where there is no match.
+
+Is that an if? if stop iteration, pass? Otherwise mutate the x and y?
+
+**** Now to implement it
+[2022-08-29 Mon]
+
+I like the idea of using this Lazy filter to get what I want. And yes, I am probably just going to mutate the thing once I figure out what I am after.
+
+...nice. That went surprisingly well. I do end up doing some mutation of the lists, but it's all just in the function. And I don't think I need to do much more of that mutating stuff later in this. 
+
+... I think this is quite literally everything I need to do the assignment of shifts. That is kind of crazy. And I am optimizing how many checks get done to in that whole process with my lazy filter. And by using Enumerate, I get indexes to allow me to go back index into the original arrays.
+
+
 
