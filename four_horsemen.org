@@ -4275,6 +4275,63 @@ Oh, there is an idea too. I could make a Phoenix web app. I will probably need a
 
 I could contribute to the Sonic Pi project. It looks like Jose Valim is stepping in to fill the void left by Joe now that he is no longer around to maintain the Erlang server.
 
+** Javascript
+[2022-09-03 Sat]
+
+Looks like I might get to write some Google App script for work. And that is basically Javascript, so I need to learn the syntax. Let's get that started
+
+*** The basics
+#+name:rite-of-passage
+#+begin_src js :results output
+console.log("Hello world")
+#+end_src
+
+#+RESULTS: rite-of-passage
+: Hello world
+
+I have a bad feeling about this... haha.
+
+#+name:some-math
+#+begin_src js :results output
+console.log(10 / 4)
+#+end_src
+
+#+RESULTS: some-math
+: 2.5
+
+Okay, math works about the way I thought it would
+
+#+name:advanced-math
+#+begin_src js :results output
+console.log(Math.floor(2.5))
+#+end_src
+
+#+RESULTS: advanced-math
+: 2
+
+Okay, I have a Math module.
+
+#+name:remainder-test
+#+begin_src js :results output
+console.log(8 % 2);
+#+end_src
+
+#+RESULTS: remainder-test
+: 0
+
+Javascript appears to want semicolons at the end of all statements.
+
+#+name:arrays-in-javascript
+#+begin_src js :results output
+const myVar  = [4, 5, 1, 2, 3];
+
+console.log(myVar.find(a => a == 5));
+#+end_src
+
+#+RESULTS: arrays-in-javascript
+: 5
+
+wow this is going to take getting used to.
 * Languages I am working on
 [2022-08-12 Fri]
 
@@ -4321,6 +4378,7 @@ So I just realized that LFE and Elixir cover a lot of the same ground. So rather
 | Common Lisp | A bit crusty, but nice           |
 | Ruby        | indifferent                      |
 | Go          | indifferent                      |
+| Javascript  | Let's see how it goes            |
 
 * Classic programming problems
 [2022-01-17 Mon]
@@ -10825,3 +10883,23 @@ I like the idea of using this Lazy filter to get what I want. And yes, I am prob
 
 
 
+
+**** Next is the fitness function
+[2022-08-30 Tue]
+Man, If I can knock this out by the end of September, or half way through September, that would be pretty cool. Today, I want to write the function that calculates fintess, and if I can run that into the part of the allgo that needs it that would be a great night of coding
+
+...Yikes. well I got stuck on two things. Python reduce and the math sqrt function. I needed to make the number positive before taking the square root and then I needed to make the first value to pass into reduce zero before doing the reduce.
+
+
+**** Oh my gosh, this is going fast
+[2022-08-31 Wed]
+
+I think I am going to finish this in about two weeks. I need another helper function to quickly restore a paragon to be unassigned. I think since I don't move them during fitness calculation, I can just take the paragon that wins a generation and set all the places and peeps to none.
+
+Once I have that I should be able to finish it up. Maybe I can even finish that up tomorrow.
+
+**** I finished... and it works
+[2022-09-01 Thu]
+I was not expecting to finish so quickly, but then again I guess I really I am getting used to how all this works.
+
+I think I might do the threaded version if I don't get the chance to make this google apps script thing for GSA. Or I am going to very soon be up to my neck in Javascript and SQL. Lovely.
