@@ -1000,6 +1000,18 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
+#+begin_example
+warning: Steam.iterate/2 is undefined (module Steam is not available or is yet to be defined)
+  iex:13: Pilecubes.find_nb/1
+
+warning: Enum.list/1 is undefined or private
+  iex:16: Pilecubes.find_nb/1
+
+,** (UndefinedFunctionError) function Steam.iterate/2 is undefined (module Steam is not available)
+    Steam.iterate(1, #Function<2.53787412/1 in Pilecubes.find_nb/1>)
+    iex:13: Pilecubes.find_nb/1
+    iex:22: (file)
+#+end_example
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -3046,6 +3058,27 @@ problem_nums = [3, 2, 1, 6, 5, 4]
 Mbt.solve(problem_nums)
 #+end_src
 
+#+RESULTS: Max-bin-tree2
+#+begin_example
+,** (SyntaxError) /var/folders/cz/q7cpzfnj28l0vc69yh465szm0000gn/T/babel-DyY1x5/elixir-3lhnuY:14:58: unexpected keyword: do:. In case you wanted to write a "do" expression, you must either use do-blocks or separate the keyword argument with comma. For example, you should either write:
+
+    if some_condition? do
+      :this
+    else
+      :that
+    end
+
+or the equivalent construct:
+
+    if(some_condition?, do: :this, else: :that)
+
+where "some_condition?" is the first argument and the second argument is a keyword list.
+
+You may see this error if you forget a trailing comma before the "do" in a "do" block
+    (iex 1.14.0) expanding macro: IEx.Helpers.import_file/1
+    iex:4: (file)
+#+end_example
+
 **** Reduce version
 
 #+name:Max-bin-reduce
@@ -3133,8 +3166,454 @@ problem_digraph = for x <- [1, 2, 3], do: :digraph.add_vertex(start_digraph, x, 
 
 Hmn... Need to learn how this library works
 
-** LFE
+*** Min cost climbing stairs
+[2022-09-19 Mon]
 
+https://leetcode.com/problems/min-cost-climbing-stairs/
+
+I am moving this here after a bit of a realization I had watching a Conner Hookstra talk. Racket is going to be a cool place to learn about how cool esoteric language features, or ways of computing. But Elixir is still going to be the place that I want to keep most of my computation and certainly where I would build a distributed system.
+
+But this I started away from Racket I would like to finish it before moving on.
+
+**** Attempt 3
+
+#+name:min-climb-stairs3
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Climb_stairs do
+  
+  def climb_stairs({cost, remain}) when length(remain) == 0, do: cost
+  def climb_stairs({cost, remain}) when length(remain) == 1 do
+    cost + hd(remain)
+  end
+  def climb_stairs({cost, remain}) when hd(remain) > hd(tl(remain)) do
+    cheaper_list = tl(tl(remain))
+    cheaper_cost = hd((tl(tl(remain))))
+    climb_stairs({cheaper_cost + cost, cheaper_list})
+  end
+  def climb_stairs({cost, remain}) do
+    cheaper_list = tl(remain)
+    cheaper_cost = hd(tl(remain))
+    climb_stairs({cheaper_cost + cost, cheaper_list})
+  end
+end
+
+
+problem_list = [4,3,2,1]
+Climb_stairs.climb_stairs({0,problem_list})
+#+end_src
+
+#+RESULTS: min-climb-stairs3
+: ** (ArgumentError) errors were found at the given arguments:
+: 
+:   * 1st argument: not a nonempty list
+: 
+:     :erlang.hd([])
+:     iex:11: Climb_stairs.climb_stairs/1
+:     iex:23: (file)
+
+Okay, I see what was happening there. I was calling hd on empty lists when trying to jump ahead by two when the list there was a smaller element further out.
+
+**** Attempt 4
+So what I realized while I was thinking about the gaurd clauses was that I actually need to build this to make in an initial path where as many of the step as possible are 2. Jumping over as many steps as possible is a great baseline. And changes from there will only be made if the total cost drops.
+
+I sort of have 3 lists going here. Once is the problem list. Another is the solution set of 1s and 2s that are the solution. And third, is the mask that I get from the solution, that I use to calculate the total cost from the problem set. I could very easily do that with a zip and drop_where the tuple has the element signaling I should drop it.
+
+Before I charge into this again, how to set whether to stick the a stutter step at the top or end if the list is odd. I kind of want to stick it at the top. But can I think of a good reason why? And if not, I guess it doesn't matter.
+
+#+name:min-climb-stairs4
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Climb_stairs do
+  @moduledoc """
+  Leet code practice for calculating the minimum cost to climb a set of stairs
+  """
+
+  @doc """
+  Take the initial list and create a base line of steps to take to traverse it. We assume the fewere steps the better to we take all 2 steps unless the list is odd in length, in which ase we plot a 1 at the top. From here we try stetter steps to see if we can lover the total cost
+  """
+  def calc_baseline(initial) do
+    Stream.take(Stream.cycle([1]), length(initial))
+    |> Enum.to_list()
+  end
+
+  @doc """
+  Take a list of steps to take and convert it into a 1-0 mask. This will make calculating the total cost easier without needign to walk the list
+  """
+  def path_to_mask(path)do
+    Enum.map(path, fn x -> if x == 2, do: [1,0], else: 1 end)
+    |> List.flatten()
+  end
+  
+  @doc """
+  Take a path, and a list of step costs, and return the total cost that path takes
+  """
+  def path_to_cost(list, path)do
+    path
+    |> path_to_mask()
+    |> Enum.zip(list)
+    |> Enum.reduce(0, fn x, acc -> (elem(x,0) * elem(x,1)) + acc end)
+  end
+end
+
+
+problem_list = [4,3,2,1,5]
+base_path = Climb_stairs.calc_baseline(problem_list)
+
+Climb_stairs.path_to_cost(problem_list, base_path)
+#+end_src
+
+#+RESULTS: min-climb-stairs4
+: 15
+
+Well that was surprisingly easy. I do love this pipe operator. So next I need to figure out how I am going to find the optimum.
+
+A naive solution would be to calculate all the permutations of 1s and 0s, and just throw all the legal ones at the problem list. Take the least expensive. a more targeted approach would be to try to "skip" steps. Starting with the most expensive. Define skipping a step by inserting a intentional stutter step before the step I want to avoid, and then a 2 right before it so I don't need to pay the cost. I could also think of it like putting a zero on all the big steps and 1s before them. But I need to calculate the total cost before and after to see if it makes sense.
+
+And I need to do these recursively. I can't just map. If I map over the list, the list stays static. I actually want to try skipping steps on the list that results from other decisions to skip.
+
+The question becomes might I miss optimizations if I don't do these one at a time? And if I start by skipping the biggest cost steps first, isn't the guaranteed to give me the best gains?
+
+...I thought of something else. If I make the base line all single steps, and then place 0s on all the expensive steps, then define a path as all 1s, and replace a 2 when then next step is a 0, I have another way of optimizing things. Because I can just keep replacing expensive steps till it's illegal. The result should be 
+
+**** Attempt 5
+
+#+name:min-climb-stairs5
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Climb_stairs do
+  @moduledoc """
+  Leet code practice for calculating the minimum cost to climb a set of stairs
+  """
+
+  @doc """
+  Take the initial list and create a base line of steps to take to traverse it. We assume the fewere steps the better to we take all 2 steps unless the list is odd in length, in which ase we plot a 1 at the top. From here we try stetter steps to see if we can lover the total cost
+  """
+  def calc_baseline(initial) do
+    Stream.take(Stream.cycle([1]), length(initial))
+    |> Enum.to_list()
+  end
+
+  @doc """
+  Take a list of steps to take and convert it into a 1-0 mask. This will make calculating the total cost easier without needign to walk the list
+  """
+  def path_to_mask(path)do
+    Enum.map(path, fn x -> if x == 2, do: [1,0], else: 1 end)
+    |> List.flatten()
+  end
+  
+  @doc """
+  Take a path, and a list of step costs, and return the total cost that path takes
+  """
+  def path_to_cost(list, path)do
+    path
+    |> path_to_mask()
+    |> Enum.zip(list)
+    |> Enum.reduce(0, fn x, acc -> (elem(x,0) * elem(x,1)) + acc end)
+  end
+
+  @doc """
+  take the problems list and zip it with some IDs so I ca track indexes, and sort while we are at it.
+  """
+  def make_ids_list(list) do
+    Enum.zip(0..length(list) - 1, list)
+    |> List.keysort(1, :desc)
+    end
+  
+  def maybe_skip(possible, working_mask) do
+    [index_before, index, index_after] = [elem(possible,0) - 1, elem(possible,0), elem(possible,0) + 1]
+    cond do
+      length(working_mask) == 1 ->
+        working_mask
+      index_after >= length(working_mask) and Enum.at(working_mask, index_before) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      index_before < 0 and Enum.at(working_mask, index_after) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      index_after <= length(working_mask) and Enum.at(working_mask, index_before) == 1 and
+      index_before >= 0 and Enum.at(working_mask, index_after) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      true ->
+        working_mask
+        end
+    end
+end
+
+
+problem_list = [4,3,2,1,9]
+base_path = Climb_stairs.calc_baseline(problem_list)
+ids = Climb_stairs.make_ids_list(problem_list)
+# first = Climb_stairs.maybe_skip(Enum.at(ids,0), base_path)
+
+Climb_stairs.maybe_skip(Enum.at(ids,0), base_path)
+
+#+end_src
+
+#+RESULTS: min-climb-stairs5
+| 1 | 1 | 1 | 1 | 0 |
+
+
+**** Attempt 6
+[2022-09-20 Tue]
+Almost done
+
+#+name:min-climb-stairs6
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Climb_stairs do
+  @moduledoc """
+  Leet code practice for calculating the minimum cost to climb a set of stairs
+  """
+
+  @doc """
+  Take the initial list and create a base line of steps to take to traverse it. We assume the fewere steps the better to we take all 2 steps unless the list is odd in length, in which ase we plot a 1 at the top. From here we try stetter steps to see if we can lover the total cost
+  """
+  def calc_baseline(initial) do
+    Stream.take(Stream.cycle([1]), length(initial))
+    |> Enum.to_list()
+  end
+  
+  @doc """
+  take the problems list and zip it with some IDs so I ca track indexes, and sort while we are at it.
+  """
+  def make_ids_list(list) do
+    Enum.zip(0..length(list) - 1, list)
+    |> List.keysort(1, :desc)
+    end
+  
+  def maybe_skip(possible, working_mask) do
+    [index_before, index, index_after] = [elem(possible,0) - 1, elem(possible,0), elem(possible,0) + 1]
+    cond do
+      length(working_mask) == 1 ->
+        working_mask
+      index_after >= length(working_mask) and Enum.at(working_mask, index_before) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      index_before < 0 and Enum.at(working_mask, index_after) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      index_after <= length(working_mask) and Enum.at(working_mask, index_before) == 1 and
+      index_before >= 0 and Enum.at(working_mask, index_after) == 1 ->
+        List.replace_at(working_mask, index, 0)
+      true ->
+        working_mask
+        end
+    end
+
+  def apply_skips(problem_list) do
+    base_line = calc_baseline(problem_list)
+    optimizations = make_ids_list(problem_list)
+    Enum.reduce(optimizations, base_line, fn next, acc -> maybe_skip(next, acc) end)
+    end
+end
+
+Climb_stairs.apply_skips(problem_list)
+
+#+end_src
+
+#+RESULTS: min-climb-stairs6
+| 1 | 0 | 1 | 1 | 0 |
+
+Okay, so what this is missing is the last step to go from all the 0,1s to 2s, but I am done with this problem. I am actually really happy with what the final functions look like. Make a baseline of all single steps. Create ID indexs steps and order them by cost. Then optimize the skips fro most costly to least, run through a possible optimisation one at a time then call it good. 
+
+*** Code war probelm
+https://www.codewars.com/kata/514b92a657cdc65150000006
+
+So DuShawn found this site and it seems pretty nice. Like Leet-code except it has less of a pay wall apparently. 
+#+name:mult-of-three-or-5
+#+begin_src elixir :results output
+
+Code.compiler_options(ignore_module_conflict: true)
+defmodule Challenge do
+  def solution(number) when number <= 0, do: 0
+  def solution(number) do
+    threes = Enum.map(1..number,fn x -> x * 3 end)
+    just_threes = Enum.take_while(threes, fn x -> x < number end)
+    fives = Enum.map(1..number,fn x -> x * 5 end)
+    just_fives = Enum.take_while(fives, fn x -> x < number end)
+    both = Enum.concat(just_threes, just_fives)
+    final_set = Enum.uniq(both)
+    Enum.reduce(final_set,0, fn x,a -> x + a end)
+  end
+end
+
+Challenge.solution(10)
+#+end_src
+
+then I found a guy who wrote this:
+#+name:code-wars
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Challenge do
+  def solution(number) do 
+    Enum.filter(0..number-1, fn(x) -> rem(x,3) == 0 or rem(x,5) == 0 end) |> Enum.sum
+  end
+end
+
+Challenge.solution(-5)
+#+end_src
+
+#+RESULTS: code-wars
+: -14
+
+Umm... yes. That looks much better. Why didn't I know you can do an Or in the middle of a lambda like that? That is such a great idea. Just a Enum Filter, then pipe it into Sum. Very nice. 
+
+I have been writting too much Javascript... haha.
+
+Ha, no case to cover the negative case though. Ah well. It was good to learn from it how they decide to use that or to do the checks of what is a multiple. 
+
+*** Anagram detection
+[2022-09-27 Tue]
+
+
+#+name:anagram
+#+begin_src elixir :results output
+
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Anagram do
+  @moduledoc """
+  Take in two strings and return a bool depending on if the two strings are anagrams
+  """
+
+  @spec anagram?(String.t(), String.t()) :: boolean
+  def anagram?(a, b) do
+    lower_a = String.downcase(a)
+    lower_b = String.downcase(b)
+    list_a = String.graphemes(lower_a)
+    list_b = String.graphemes(lower_b)
+    Enum.map(list_a, fn x -> x in list_b end)
+    |> Enum.concat([Enum.frequencies(list_a) == Enum.frequencies(list_b)])
+    |> Enum.all?()
+    end
+end
+Anagram.anagram?("abbba", "aaaba")
+#+end_src
+
+#+RESULTS: name
+: false
+
+It's not the most cleaver or readable, but it has the right idea and it reads okay.
+
+*** Build a pile of Cubes
+[2022-09-28 Wed]
+Code wars problem. 
+
+Okay, I think I want to make this a stream where I take items off as long as they are less the the total given. Once I get a total that is more than the target total, I either return the number or the negative 1.
+
+What does that stream look like? I guess the first is: 1 cubed. or... 1? then 2 cubed... oh nice. So it's litterally list of ints where it's 1 cubed, then 2 cubed, and I can store the stream as a tuple where the first number is the number that would be the answer, and the next number is the total... wait.
+
+Yeah, it's better that is be the total to it's easy to compare it against the target total. Can I define a stream recursively?
+#+name:find-cubes
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Pilecubes do
+  
+  @moduledoc """
+  Return -1 if there is no number of cubes, otherwise calculate how many
+  cubes would be stacked for a given area
+  """
+  def calc_cubes(tup) do
+    level = elem(tup,0) + 1
+    running_total = ((level * level) * level) + elem(tup,1)
+    {level, running_total}
+  end
+  
+  @spec find_nb(int) :: int
+  def find_nb(m) do
+    find_nb_recur({1,1},m)
+   end
+  
+  def find_nb_recur(acc,m) when elem(acc,1) > m, do: -1
+  
+  def find_nb_recur(acc,m) when elem(acc,1) == m, do: elem(acc,0)
+
+  def find_nb_recur(acc,m) do
+    find_nb_recur(calc_cubes(acc), m)
+  end
+end
+
+Pilecubes.find_nb(1071225)
+#+end_src
+
+#+RESULTS: find-cubes
+: 45
+
+Well isn't this interesting. I have what seems to be a perfectly valid solution that is just too darned slow.
+
+Okay, looks like the recursive solution is a LOT faster.
+
+*** Remove vowels
+[2022-10-01 Sat]
+
+...that was way too easy
+
+
+#+name:no-vowels
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Kata do
+@moduledoc """
+Strip vowels from a string
+"""
+
+@spec disemvowel(String.t) :: String.t
+  def disemvowel(s) do
+    String.graphemes(s)
+    |> Enum.filter(fn x -> not( String.downcase(x) in ["a","e","i","o","u",]) end)
+    |> Enum.join
+  end
+end
+
+Kata.disemvowel("Hello World")
+#+end_src
+
+#+RESULTS: no-vowels
+: Hll Wrld
+
+That was about as simple as my solutions have been. And while the top voted solutions in Codewars has regular expressions, I like this just fine. The regular expression is probably faster. But this makes sense to my mind. Split it into a list, filter if it's not in the lowercase version of these letters, then put it back together.
+
+*** Is it a perfect square?
+[2022-10-01 Sat]
+
+The other one was two easy to doing two today
+
+
+#+name:square-checker
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Math do
+  @moduledoc """
+  Predicate for perfect squares
+  """
+
+  @spec square?(integer) :: integer
+
+  def square?(n) when (n < 0), do: false
+
+  def square?(n) do
+    floor(:math.sqrt(n)) == :math.sqrt(n)
+  end
+
+end
+
+
+Math.square?(9)
+#+end_src
+
+#+RESULTS: square-checker
+: true
+
+** LFE
+LFE is a language I don't imagine I will ever get to write in a production app. But the fact it exists and I can write it is pretty darned cool.
+*** Intro stuff
 #+name:test4
 #+begin_src lfe :results output
 (+ 3 9)
@@ -3469,6 +3948,20 @@ hmn... I know this is not what tuples are for, but can you stick tuples on the e
 
 thought so.
 
+#+name:new-tup-syntax
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(++ (tuple 3 4) (tuple 5 6))
+#+end_src
+
+#+RESULTS: new-tup-syntax
+: lfe> (++ (tuple 3 4) (tuple 5 6))
+: ** exception error: bad argument
+:   in (erlang : ++ #(3 4) #(5 6))
+: 
+
+It's not just the syntax for tuples. They really don't want you to do that. Okay. Fine by me.
 *** Pattern matching
 [2022-07-31 Sun]
 Erlang lives and breaths pattern matching. So does Elxiir. And yet I don't really know how it works in LFE. Let's fix that.
@@ -3540,11 +4033,147 @@ x
 
 Okay interesting. It works for lists, but not in tuples? Well that can't be right. There HAS to be way to get the value from a tuple that starts with ok. That is fundamental to how lots of Erlang works.
 
+[2022-09-15 Thu 19:54]
+Figured it out
+
+#+name:tuple-matching
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set (tuple 3 4 y) (tuple 3 4 5))
+y
+#+end_src
+
+#+RESULTS: tuple-matching
+: #(3 4 5)
+: lfe> y
+: 5
+
+There is it.
 *** I can call Elixir from LFE?!?
 [2022-08-27 Sat]
 https://github.com/lfex/nx
 
 So I don't think I can make it work in Org babel blocks, but it appears you can make an LFE app that just straight up calls out to Elixir. 
+
+*** Min cost climbing stairs
+[2022-09-15 Thu]
+I wanted to keep LFE fresh in my mind. It's been a while since I made that big long project that solved a maze in LFE, and since it's just Erlang I feel like keeping LFE under my fingers is bound to be good to retaining the Elixir I know too. And this problem seems simple enough for some light coding in the evening.
+https://leetcode.com/problems/min-cost-climbing-stairs/
+
+The idea is you have a staircase, taking a step requires you to take either one or two steps. Each step had a cost. You pay the cost of that step then you can go either one or two steps.
+
+I feel like this is a recursive call. Just look at the next two steps, see which is less, and walk to that one. Stop when there are no more steps to climb.
+
+**** attempt one
+#+name:cost-climbing stairs
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set problem-set (list 3 5 4 6 7 4 78 9 4 3))
+
+
+(defun climb-stairs
+  ((#(cost rem) (when (=:= (length rem) 0)) cost))
+  ((#(cost last-step) (when (=:= (length last-step) 1)) (+ cost last-step)))
+  ((#(cost stairs) (if (> (car stairs) (cadr stairs))
+                         (climb-stairs (tuple (+ cost (cadr stairs)) (cadr stairs)))
+                         (climb-stairs (tuple (+ cost (car stairs)) (car stairs)))))))
+
+(climb-stairs (tuple 0 problem-list))
+#+end_src
+
+#+RESULTS: cost-climbing stairs
+: climb-stairs
+: lfe> 
+: lfe> (climb-stairs (tuple 0 problem-list))
+: ** exception error: function climb-stairs/1 undefined
+: 
+
+
+I feel like this should work. Let me try it in Elixir
+
+#+name:peave-of-mind
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Cs do
+  
+  def climb_stairs({cost, remain}) when length(remain) == 0, do: cost
+  def climb_stairs({cost, remain}) when length(remain) == 1 do
+    cost + hd(remain)
+  end
+  def climb_stairs({cost, remain}) when hd(remain) > hd(tl(remain)) do
+    cheaper_list = tl(tl(remain))
+    cheaper_cost = hd((tl(tl(remain))))
+    climb_stairs({cheaper_cost + cost, cheaper_list})
+  end
+  def climb_stairs({cost, remain}) do
+    cheaper_list = tl(remain)
+    cheaper_cost = hd(tl(remain))
+    climb_stairs({cheaper_cost + cost, cheaper_list})
+  end
+end
+
+
+problem_list = [1,2,3,4]
+Cs.climb_stairs({0,problem_list})
+#+end_src
+
+#+RESULTS: peave-of-mind
+: 13
+
+hmn. I am doing something pretty wrong in both of these.
+
+**** Attempt 2
+Well I sort of got my naive implementation working in Elixir. I was litterly in bed when I realized it's not this simple. I need to assume that the best choice is always to go two steps. Knowing if I could do a "stutter step" to avoid a stair should be calculated against the cost of the starircase traversal as a whole.
+
+So I have a better idea of exactly what I need to do now, but I am more interested in knowing why I got the syntax of this working in ELixir but not LFE. I must be missing something about the LFE syntax.
+
+
+#+name:lfe-function-head-test
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun my-func
+  ([a b] (when (> a b)) "A was bigger")
+  ([a b] 'true (+ a b)))
+
+
+(my-func 5 2)
+#+end_src
+
+#+RESULTS: lfe-function-head-test
+: lfe> 
+: lfe> (my-func 5 2)
+: "A was bigger"
+
+Oh
+https://lfe.io/books/tutorial/sequential/conds.html?search=true
+
+Now I get it. In Elixir you write the name of the function a bunch of times. In LFE, you match the input args like the above. Stick the args comming in, then the gaurd, then the body.
+
+
+#+name:with-tuples
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun my-func
+  ([a] (when (> (tref a 1) (tref a 2))) "First was bigger")
+  ([a] 'true (+ (tref a 1) (tref a 2))))
+
+
+(my-func #(5 3))
+#+end_src
+
+#+RESULTS: with-tuples
+: lfe> 
+: lfe> (my-func #(5 3))
+: "First was bigger"
+
+So it appears if I want to split the parts of a tuple in LFE, I can't do that in the function head... really?
+
+wait, can elixir do that?
 
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
@@ -3568,7 +4197,7 @@ Hy looks like it is working again. And I kind of like the idea of keeping Hy aro
 #+RESULTS: clj-style-arrow
 : 77
 
-** Racket?
+** Racket
 *** Intro
 #+name:what-vm
 #+begin_src racket
@@ -3818,6 +4447,17 @@ Here is it working with an infinite list
 
 #+RESULTS: Lazy-racket
 | 3 | 5 | 7 | 9 | 11 | 13 | 15 |
+*** Data collections
+[2022-09-19 Mon]
+
+So I am getting back in Racket a little for it's ability to let me play with programming language features, and I think I am getting a better idea of how require statements work now.
+#+name:collectinons
+#+begin_src racket
+#lang lazy
+(require data/pvector data/collection)
+
+(print (conj (pvector 2 3 4 5) 5))
+#+end_src
 
 ** Clojure
 You know what, I wanted to add ClojureScript here, but it's impossible to get it working. Why not just stick to good old java clojure? That can't be the worst idea in the world. 
@@ -4275,11 +4915,21 @@ Oh, there is an idea too. I could make a Phoenix web app. I will probably need a
 
 I could contribute to the Sonic Pi project. It looks like Jose Valim is stepping in to fill the void left by Joe now that he is no longer around to maintain the Erlang server.
 
-** Javascript
+
+*** after the Python book
+[2022-09-21 Wed]
+I only have two or three chapters left in the Python. And if I am seriously thinking about applying to any jobs, I think it might be a good time to take break from the textbook and make something. I could make that LFE tool I wanted to make a to help get Org-babel with LFE working better. But I don't really think any one will be impressed with some Elisp as a project I have made. It's probably going to just take a month or so while I read how the Elixir one works and re-tool it to work LFE.
+
+If I really wanted to get into web stuff, I should just make a Phoenix app already. I am sure there is a pretty decent hello world to follow and then I could make a really simple webapp. A Django app is also bound to be pretty straight forward, it maybe a bit too big. I would probably have a better first run with Flask.
+
+Making something in Python is also bound to be better for getting a job. But if Mericari is really the first place I am going to apply to, I think they would take anything if its good. 
+
+It looks like I actually can't make my little Pi into a public web-sever. Making it accessible from the world wide web appears to be pretty hard. And possibly expensive. I'll have to think of a another way to use it. It can still do things on the Internet. But me letting the world get at it from anywhere is going to be tough. 
+
+** JavaScript
 [2022-09-03 Sat]
 
 Looks like I might get to write some Google App script for work. And that is basically Javascript, so I need to learn the syntax. Let's get that started
-
 *** The basics
 #+name:rite-of-passage
 #+begin_src js :results output
@@ -4332,11 +4982,257 @@ console.log(myVar.find(a => a == 5));
 : 5
 
 wow this is going to take getting used to.
+
+*** Day after my first run
+[2022-09-05 Mon]
+Today I set my self a small goal to re-do a hacky function I had for a spreadsheet and it went pretty well. The final Javascript ended up looking like this:
+
+#+name:matrix-javascript
+#+begin_src js :results output
+/**
+ * Matrix-to-unique-concat
+ *
+ * @param {IDs} Do a unique() call and pass that first
+ * @param {cells} Pass in a 2d matrix where the first col matches IDs, and the second call are the vals to concat
+ * @return a matrix of unique elements and their catted values
+ * @customfunction
+ */
+
+function matrixToUniqueConcat(ids, theCells) {
+    res = ids.map(x => theCells.filter(y => y[0] == x));
+    return res.map(y => y.map(x => x[1]).reduce((a,b) => [b] + [' '] + [a]));
+}
+#+end_src
+
+Not bad right? two lines. I even reverse the elements from the filter by concatenating B then A in the reduce.
+
+Mostly Map, filter, and Reduce. Not too shabby. Not particularly functional, but it takes in data, and spit out new data. No less than 4 lambdas though. I could say that is a bit excessive.
+
+*** Time for some leet code
+[2022-09-05 Mon]
+Day one of coding at work is done, but I still need to get the language under my finger. I have a pretty good idea of what I need to do to make functions for a spreadsheet, but I don't feel comfortable with JavaScript.
+
+So instead of reaching out to find something I don't know, let's do something I know, but haven't implemented in JS before. 
+
+How about that two sum problem?
+**** Does JS have the equivalent of Python combinations?
+#+name:js-two-sum
+#+begin_src js :results output
+let nums = [2, 5, 9, 10, 4];
+let target = 19;
+
+function pairs (item, array){
+    let filtered = array.filter(x => x != item);
+    return filtered.map(x => [item, x]);
+}
+
+let matrix = nums.map(x => pairs(x, nums)).flat();
+
+const itter = matrix[Symbol.iterator]();
+
+let res = itter.next();
+
+while (res.value[0] + res.value[1] != target){
+    res = itter.next();
+}
+
+
+console.log(res.value);
+#+end_src
+
+#+RESULTS: js-two-sum
+: [ 9, 10 ]
+
+No. it doesn't. But it wasn't that hard to make. And you know what, if I can stick to mostly filter, map, and reduce, it feels sort of functional. I have NO idea if this is efficient JS at all. But it makes sense to me.
+
+Have I ever done this in Elixir, or LFE?
+
+*** Lazy filter
+[2022-09-06 Tue]
+My goal tonight it just to see if I can do things like treat Javascript like Elixir and just call things a lazy collection and filter it, then only pay for what I pull.
+https://raganwald.com/2015/02/17/lazy-iteratables-in-javascript.html
+I have hope. But it appears to require some work
+https://javascript.plainenglish.io/javascript-lazy-evaluation-generators-examples-included-f9eaa517f969
+
+Two articles that seem to have it working, but not sure if it's really first class or not.
+https://codepen.io/jasonmcaffee/pen/ZEpeQBq?editors=0010
+Hmn. I am starting to think it's not first class. Everyone seems to be making their own.
+
+https://lambdaisland.com/blog/2016-10-01-clojurescript-and-google-apps-script
+No way, I might be able to do this in Clojurescript? That would certainly get around needing to get any lazy libraries
+
+*** Var vs let
+[2022-09-07 Wed]
+So I watched a video, and it looks like Javascript is trying to get around the confusion of hoisting by introducing let and const. Nice. Once less thing to worry about.
+*** More leet code in JS
+Longest consecutive sequence. Why not.
+
+Oh man, My Elixir solution is nice, but it's tied to recursion, and pattern matching to function heads.
+
+Let's talk through the solutiion, I am going to solve this is a reduce. The reduce is my "one pass". The Reduce is going to take the each elemnt track a few things. Firstly, it needs to know what the value of the current step is. Then is sets the length of the current running list to the max only is the current list if bigger than the last max.
+
+As I am reducing, if I hit a number where the next number does not exist, I increment my accumulator. If this number is the end of of a run, then I just make it the length of that.
+
+hmn... okay I am still not quite getting it. And I need to do this is a slightly less recursive way. The reduce is good.
+
+You know what, let's just sketch it out.
+**** attempt one
+#+name:consecutive-list
+#+begin_src js :results output
+let testNums = [8, 3, 5, 2, 6, 1];
+// expected answer is 3 for 123
+
+function longestRun (number, numList){
+    let res = 0;
+    if (numList.includes(number - 1)) {
+        () => {};
+    }else if (numList.includes(number + 1)){
+        let tracker = 0;
+        let res = [number, numList, tracker];
+        do{
+            if (numList.includes(number + 1)){
+                number += 1
+                tracker += 1
+                res = [number, numList, tracker];
+            }else{
+                res = tracker;
+            }
+        }while (!(Number.isInteger(res)));
+    }else{
+        ()=>{};
+    }
+    return res;
+}
+
+function cl (nums){
+    nums.reduce((next, acc) => Math.max(longestRun(next, nums), acc));
+}
+console.log(cl(testNums))
+#+end_src
+
+#+RESULTS: consecutive-list
+: undefined
+
+Well it runs, but it hangs
+
+**** Debugging
+[2022-09-08 Thu]
+It took me an hour to wrap my head around how to do this again in Javascript. Let's make it a little prettier and find out where it is breaking
+
+
+#+name:consecutive-list2
+#+begin_src js :results output
+const testNums = [1,2,8,9,3];
+// expected answer is 3 for 123
+
+function longestRun (number, numList){
+    let res = 1;
+    if (numList.includes(number - 1)) {
+        () => {};
+    }else if (numList.includes(number + 1)){
+        let stopper = 0;
+        do{
+            if (numList.includes(number + 1)){
+                number += 1;
+                res += 1;
+            }else{
+                stopper = 1;
+            }
+        }while (stopper == 0);
+    }
+    return res;
+}
+
+function conNums (nums){
+    return nums.reduce((a, n) => Math.max(longestRun(n, nums), a),0);
+}
+
+// function conNums (nums){
+//     let newNums = nums.map(x => longestRun(x, nums));
+// return Math.max(...newNums);
+//     }
+
+console.log(conNums(testNums));
+#+end_src
+
+#+RESULTS: consecutive-list2
+: 3
+
+well cool, testing the top function I see that it doesn't give me the right answer when I feed in know values, so I know which one is broken.
+
+Did a quick test on ifs and things look okay there.
+
+nope. That's where I am breaking
+
+OH MY GOSH. that did not need to be that hard. I was so sure that the problem was lacking a initial value for reduce. But I could not find a good example of where it was supposed to go.
+
+Then I though the problem was Max and getting called with an array instead of individuals numbers. But I gave up on reduce and just did this, and it works. 
+
+https://stackoverflow.com/questions/51966345/javascript-array-reduce-with-math-max
+This might be why reduce is not working
+
+.... I forgot the return. Lovely.
+
+*** Bundles
+[2022-09-12 Mon]
+
+Tooling is programming work too right?
+
+I am close to being able to use Gleam to write google apps script. I might just need to work out which bundler will get the javascript output in a format that GAS likes.
+
+So far I have tried
+- [X] Rollup
+- [X] Esbuild
+  
+  I don't know if they had more options that could have gotten me to the finish line. But I am not about to do a really fine toothed comb of this till know what on earth is going on.
+
+  Next let's try... Webpack?
+
+  Okay, so what google apps script doesn't like are private field declarations. I need to export a version of all of Gleam that has no private field declarations. Or a verion of JS that doesn't use them
+
+  Esbuild seem to be working the best.
+
+  Okay, ES build it is
+
+  https://github.com/mahaker/esbuild-gas-plugin
+
+  I found a plugin that appears to be designed to make this work with GAS.
+
+  But the google sheet doesn't seem to like exported functions, and it doesn't like private filed decorations
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes
+  But if I delete the "#"s and the bare declaration of "current", I get it so save at least.
+
+  It's not very close to working, but it's getting somewhere.
+  
+*** Gleam interop
+[2022-09-13 Tue]
+So I made lots of progress getting Gleam to export JS that just works in Google spreadsheets. But I ran into the same snag that Clojurescript was giving me. I need a way to get JS arrays into the the language I am coding in, then back out.
+
+I found out that ES build has a plugin for exporting JS to GAS. That was a nice start. Then I I found this:
+https://medium.com/google-cloud/how-to-write-a-custom-function-library-for-google-sheets-87f62729e684
+
+Which explained why I couldn't see the functions I had made in gleam. And I got a hello world working. Nice! But I can't get JS arrays to be handled by Gleam code as Gleam lists. Bummer.
+
+No sure what else I can do unless Gleam has some kind of interop for getting JS objects in and out of gleam.
+
+*** Javascript Zip
+[2022-09-27 Tue]
+#+name:js-zip
+#+begin_src js :results output
+var list1 = [1,2,3];
+var list2 = [4,5,6];
+var zipped = list1.map(function(e, i) {return [e,list2[i]]});
+console.log(zipped);
+#+end_src
+
+#+RESULTS: js-zip
+: [ [ 1, 4 ], [ 2, 5 ], [ 3, 6 ] ]
+
+So Javascript does not have a built in Zip, but this pattern gets me a zip. I find myself reaching for this all the time, and I imagine I am going to need it again if I end up needing to write more Google apps scripts.
 * Languages I am working on
 [2022-08-12 Fri]
 
 Rather than re-writting this all over the place, I want to put this where I can see how it changes overtime.
-
 ** Start of 2022
 It's time to get this off to a good start. I have been trying to get Clojure to work for so long thinking that Lisp was going to make me able to code so much better than you average Joe learning to code. But then I tried to learn C from a real programmer and I found out it's a lot harder than I thought. But that is not going to scare me away. I will find a way to wrap my head around this. and I am going to learn these 4 (6?) languages along the way.
 
@@ -4369,16 +5265,20 @@ So I just realized that LFE and Elixir cover a lot of the same ground. So rather
    Python kind of sticks out, but I could see it being useful one day. It's extremely popular at the moment and it has lots of libraries. Keeping up with Python at least at a basic level is bound to be useful one day.
    
 ** Languages I have tried
-| Language    | notes                            |
-|-------------+----------------------------------|
-| C           | Managing memory is hard          |
-| C++         | Managing memory is hard          |
-| Racket      | Nice, but A bit too experimental |
-| Javascript  | Just no                          |
-| Common Lisp | A bit crusty, but nice           |
-| Ruby        | indifferent                      |
-| Go          | indifferent                      |
-| Javascript  | Let's see how it goes            |
+| Language    | notes                                 |
+|-------------+---------------------------------------|
+| C           | Managing memory is hard               |
+| C++         | Managing memory is hard               |
+| Racket      | Nice for experimenting with languages |
+| Javascript  | Just no                               |
+| Common Lisp | A bit crusty, but nice                |
+| Ruby        | indifferent                           |
+| Go          | indifferent                           |
+| Elixir      | Very nice                             |
+| LFE         | Very nice                             |
+| Clojure     | Very nice                             |
+| Gleam       | Nice                                  |
+| Python      | indifferent                           |
 
 * Classic programming problems
 [2022-01-17 Mon]
