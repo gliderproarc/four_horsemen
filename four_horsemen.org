@@ -1000,18 +1000,11 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-#+begin_example
-warning: Steam.iterate/2 is undefined (module Steam is not available or is yet to be defined)
-  iex:13: Pilecubes.find_nb/1
-
-warning: Enum.list/1 is undefined or private
-  iex:16: Pilecubes.find_nb/1
-
-,** (UndefinedFunctionError) function Steam.iterate/2 is undefined (module Steam is not available)
-    Steam.iterate(1, #Function<2.53787412/1 in Pilecubes.find_nb/1>)
-    iex:13: Pilecubes.find_nb/1
-    iex:22: (file)
-#+end_example
+|   1 |      1 |
+|  42 |   2500 |
+| 246 |  84100 |
+| 287 |  84100 |
+| 728 | 722500 |
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -3611,6 +3604,298 @@ Math.square?(9)
 #+RESULTS: square-checker
 : true
 
+*** valid parentheses
+[2022-10-03 Mon]
+Mam this sounds like that problem I saw code report do on this. I just strip everything that is not a paren, replace left with plus one, and right with minus one, and do a plus scan. It also need to start with an open paren.
+
+#+name:valid-parens
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule ParenthesesValidator do
+@moduledoc """
+Validate a string to see if the parenthesis math and are in the right order
+"""
+
+  @spec valid_parenthesis(String.t) :: Stirng.t
+  def valid_parentheses(string) when string == "", do: true
+    
+  def valid_parentheses(string) do
+    res = make_number_line(string)
+    if(-1 in res, do: false, else: List.last(res) == 0)
+  end
+
+  def make_number_line(string) do
+    string
+    |> String.graphemes()
+    |> Enum.filter(fn x -> x == "(" or x == ")" end)
+    |> Enum.map(fn x -> if(x == "(", do: 1, else: -1) end)
+    |> Enum.scan(fn x,y -> x + y end)
+    |> Enum.to_list()
+    end
+end
+
+
+ParenthesesValidator.valid_parentheses("()")
+# ParenthesesValidator.make_number_line("()")
+#+end_src
+
+#+RESULTS: valid-parens
+: true
+
+Okay, that was ok. But Reduce_while is what I wish I could have done
+
+#+name:name
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule ParenthesesValidator do
+  def valid_parentheses(string) do
+    string
+    |> String.graphemes()
+    |> Enum.reduce_while(0, fn "(", n -> {:cont, n + 1}
+                               ")", 0 -> {:halt, -1}
+                               ")", n -> {:cont, n - 1}
+                               _, n -> {:cont, n} end) == 0
+  end
+end
+#+end_src
+
+That looks so nice. Not my solution.
+
+*** Squares in list
+[2022-10-04 Tue]
+
+I think I can use reduce while. The problem wants to know if in two lists if the one list contains all the squares of the other. So arrays A and B, and in B are all and only the squares.
+
+#+name:squares
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Aretheythesame do
+  
+@spec comp([number], [number]) :: boolean
+  def comp(a, b) when length(a) == 0 or length(b) == 0, do: false
+  def comp(a, b) do
+    float_a = Enum.map(a, fn x-> :math.sqrt((x * x)) end)
+    float_b = Enum.map(b, fn x-> :math.sqrt((x * x)) end)
+   res1 = Enum.reduce_while(float_a, true, fn _x, false -> {:halt, false}
+                                  x, true -> {:cont, x * x in float_b} end)
+   res2 = Enum.reduce_while(float_b, true, fn _x, false -> {:halt, false}
+                                  x, true -> {:cont, :math.sqrt(x) in float_a} end)
+   res1 and res2
+  end
+end
+
+  Aretheythesame.comp([2,2,3], [4,9,9])
+#+end_src
+
+#+RESULTS: squares
+: true
+
+OKay two weird things i need to take care of to finish this guy out.
+
+I need to make it so two empty lists is true. And I need to make it so the 2,2,3 and 4,9,9 returns false, because while the answer is in there, it need to be the exact number of squares
+
+**** fixing it up
+[2022-10-05 Wed]
+
+#+name:squares2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Aretheythesame do
+  @moduledoc """
+  Return true if the numbers in the second list are the number in the first list squared, and only those numbers
+  """
+
+  @spec comp([number], [number]) :: boolean
+  def comp(a, b) when length(a) == 0 and length(b) == 0, do: true
+  def comp(a, b) when length(a) == 0 or length(b) == 0, do: false
+  def comp(a, b) do
+    sorted_a = Enum.sort(a)
+    sorted_b = Enum.sort(b)
+    res1 = Enum.reduce_while(sorted_a, {true, sorted_b}, fn _x, {false, list} -> {:halt, {false, list}}
+                                                             x, {true, list} -> {:cont, {(x * x) == hd(list) , tl(list)}} end)
+    elem(res1,0)
+  end
+end
+
+# Aretheythesame.comp([2,2,3], [4,9,9])
+
+Aretheythesame.comp([121, 144, 19, 161, 19, 144, 19, 11],
+  [11*11, 121*121, 144*144, 19*19, 161*161, 19*19, 144*144, 19*19])
+#+end_src
+
+#+RESULTS: squares2
+: true
+
+*** Integers: Recreation One
+[2022-10-05 Wed]
+
+Don't think I will have time to finish this one, but I think I can at least get a start on it
+
+So it looks like I need to return a list of numbers in a range. the list if numbers where the sum of all it's divisors are a square number.
+
+I am thinking this is not a bad time to use that reduce while again. Because I need to avoid calculating things twice.
+
+If I can know it's time to move on to the next squared number, I can test other numbers along the way by just subtracting their divisors from it instead of adding them up, then trying to take their square root to see if it's a whole number
+
+I could also make a list of square numbers and add up divisors of numbers till I find it in a list of square numbers, But knowing the range of square numbers to work with seems tricky.
+
+I wonder if there is a better way?
+
+I am tempted to take from a list. But I used stream the other time and they were slow. This is SO much math. I really with there was a way to memowise at least some of this. It feels like it's going to be so slow.
+1. Take a number
+2. Return a list of it's divisors
+3. Square all of them
+4. Add them all together
+5. Take the square root
+6. See if it's a whole number
+7. if it is, add that number and the sum of it's squared divisors to a return list
+8. Do this for all numbers in the range provided to the entry function
+
+   I feel like this would be so much easier in Python. Why not just do this in Python rather than stick to Elixir for something this math heavy?
+
+**** Let's try it in Elixir once
+#+name:integer_one
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule RecreationOne do
+  def list_divisors(num) do
+    res = Enum.filter(1..num, fn x -> rem(num, x) == 0 end)
+    |> Enum.map(fn x -> x * x end)
+    |> Enum.sum
+    square = :math.sqrt(res)
+    {square == Float.floor(square,0), res}
+  end
+  
+  def list_squared(m, n) do
+    m..n
+    |> Enum.map(fn x -> {x, list_divisors(x)} end)
+    |> Enum.filter(fn x -> elem(elem(x,1),0) end)
+    |> Enum.map(fn x -> {elem(x,0), elem(elem(x,1),1)} end)
+  end
+end
+RecreationOne.list_squared(487,3458)
+#+end_src
+
+#+RESULTS: integer_one
+|  728 |  722500 |
+| 1434 | 2856100 |
+| 1673 | 2856100 |
+| 1880 | 4884100 |
+
+**** In parallel
+[2022-10-08 Sat]
+
+#+name:list-squared2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule RecreationOne do
+  def list_divisors(num) do
+    res = Enum.filter(1..num, fn x -> rem(num, x) == 0 end)
+    |> Enum.map(fn x -> x * x end)
+    |> Enum.sum
+    square = :math.sqrt(res)
+    {num, res, square == Float.floor(square,0)}
+  end
+  
+  def pmap(collection, function) do
+    collection
+    |> Enum.map(&Task.async(fn -> function.(&1) end))
+    |> Enum.map(&Task.await(&1))
+  end
+  
+  def list_squared(m, n) do
+    m..n
+    |> pmap(fn x -> list_divisors(x) end)
+    |> Enum.filter(fn x -> elem(x,2) end)
+    |> Enum.map(fn x -> Tuple.delete_at(x,2) end)
+  end
+end
+
+RecreationOne.list_squared(1,30000)
+#+end_src
+
+#+RESULTS: list-squared2
+|      1 |           1 |
+|     42 |        2500 |
+|    246 |       84100 |
+|    287 |       84100 |
+|    728 |      722500 |
+|   1434 |     2856100 |
+|   1673 |     2856100 |
+|   1880 |     4884100 |
+|   4264 |    24304900 |
+|   6237 |    45024100 |
+|   9799 |    96079204 |
+|   9855 |   113635600 |
+|  18330 |   488410000 |
+|  21352 |   607622500 |
+|  21385 |   488410000 |
+|  24856 |   825412900 |
+|  36531 |  1514610724 |
+|  39990 |  2313610000 |
+|  46655 |  2313610000 |
+|  57270 |  4747210000 |
+|  66815 |  4747210000 |
+|  92664 | 13011964900 |
+| 125255 | 16430112400 |
+| 156570 | 35532250000 |
+| 182665 | 35532250000 |
+
+That should not need to need that pmap, but it's my way of getting parallel execution to try to eek out a little more from the sorry beam that is trying to run these problems for me on CodeWars.
+
+What really got me, was I made the EXACT same implementation in Clojure, and it worked almost the first time. The JVM just chewed through this.
+
+The Pmap implementation I found here: https://nathanmlong.com/2014/07/pmap-in-elixir/
+
+And something tells me I will be using it alot
+
+*** RGB to Hex conversion
+[2022-10-08 Sat]
+
+I am going to take a triple of RGB values, convert them to hex, then spit them out as a single string. Sounds pretty easy to me. What could be so hard?
+
+Oh, it's not a built in. Haha. Okay.
+
+#+name:convert-rgb
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+
+defmodule Kata do
+@moduledoc """
+Convert a rgb triple to hex
+"""
+
+defp clamp(num) do
+  cond do
+    num <= 0 -> 0
+    num >= 255 -> 255
+    true -> num
+    end
+  end
+
+@spec rgb(integer, integer, integer) :: String.t
+    def rgb(r,g,b) do
+    [r, g, b]
+    |> Enum.map(fn x -> clamp(x) end)
+    |> Enum.map(fn x -> Integer.to_string(x, 16) end)
+    |> Enum.map(fn x -> String.pad_leading(x, 2, "0") end)
+    |> Enum.join
+    end
+end
+
+      Kata.rgb(1,2,3)
+#+end_src
+
+#+RESULTS: convert-rgb
+: 010203
+
+Never mind. That WAS easy.
+
 ** LFE
 LFE is a language I don't imagine I will ever get to write in a production app. But the fact it exists and I can write it is pretty darned cool.
 *** Intro stuff
@@ -4486,6 +4771,46 @@ So if this suddenly stops working in the future, here is what to check
 4. Did you turn off Cider as the orb-babel backend?
 
    ...but oddly enough, I think I will mostly be running if from the Java side. Since mostly I am using Clojure for the JVM at this point.
+   
+*** Integer work
+[2022-10-08 Sat]
+
+I hear Java is good at this stuff. Let's see if the same algo in Clojure beats Elixir
+
+#+name:clj-int-work
+#+begin_src clojure :results value
+(ns sumdivsq.core)
+
+(defn div-sum [num]
+  "Take an int and return the sum of it's squared divisors"
+  (->> (range 1 (+ num 1))
+       (filter (fn [x] (= 0 (mod num x))))
+       (map (fn [x] (* x x)))
+       (reduce +)))
+
+(defn num-sum-bool [num]
+  "Take a number and return a list of it's self, it's div-sum and it that sum is a square number"
+  (let [sum (div-sum num)
+        sqrt (Math/sqrt sum)]
+    (list num sum (= sqrt (Math/floor sqrt)))))
+
+(defn list-squared [m n]
+  "test all numbers between m and n if they have a square sum of squared divisors"
+  (->> (range m n)
+       (map (fn [x] (num-sum-bool x)))
+       (filter (fn [x] (= (nth x 2) 'true)))
+       (map (fn [x] (drop-last x)))))
+
+(list-squared 1 1000)
+;; (div-sum 42)
+#+end_src
+
+#+RESULTS: clj-int-work
+| #'sumdivsq.core/div-sum                                |
+| #'sumdivsq.core/num-sum-bool                           |
+| #'sumdivsq.core/list-squared                           |
+| ((1 1) (42 2500) (246 84100) (287 84100) (728 722500)) |
+
 ** Elisp
 While not exactly the language I intend to use for most things, it IS the language of Emacs, and I do intend to be using that a lot, so keeping some Elisp under my fingers is a good idea.
 
