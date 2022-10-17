@@ -1000,11 +1000,7 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-|   1 |      1 |
-|  42 |   2500 |
-| 246 |  84100 |
-| 287 |  84100 |
-| 728 | 722500 |
+: 5
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -3896,6 +3892,181 @@ end
 
 Never mind. That WAS easy.
 
+*** IP validation
+[2022-10-09 Sun]
+
+This should also be pretty quick
+
+#+name:ip-validator
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Solution do
+  @moduledoc """
+  Validate an IP address
+  """
+  
+  def validate_one(str) do
+    cond do
+      Integer.parse(str) == :error -> false
+      elem(Integer.parse(str),1) != "" -> false
+      str == "0" -> true
+      String.contains?(str, " ") -> false
+      elem(String.next_codepoint(str),0) == "0" -> false
+      String.to_integer(str) > 255 or String.to_integer(str) < 0 -> false
+      true -> true
+    end
+  end
+  
+  @spec is_valid_ip(String.t) :: bool
+  def is_valid_ip(ip) when ip == "", do: false
+  def is_valid_ip(ip) do
+    res =String.split(ip, ".")
+    |> Enum.reduce_while(0, fn x, acc ->
+      if(validate_one(x), do: {:cont, acc + 1}, else: {:halt, 0}) end)
+    res == 4
+  end
+end
+
+Solution.is_valid_ip("300/2/3/4")
+# Solution.validate_one("01")
+
+#+end_src
+
+#+RESULTS: ip-validator
+: false
+
+OKay I did that the hard way. The right way is this:
+
+#+name:name
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Solution do
+    def is_valid_ip(ip) do
+      case :inet.parse_address(to_charlist(ip)) do
+        {:ok, _any} -> true
+        {_other, _any} -> false
+      end
+    end
+end
+#+end_src
+
+really simple match. And there is a library in Erlang for that (of course)
+
+*** Human readable time
+[2022-10-11 Tue]
+
+I think Elixir has this covered in the standard library
+#+name:format-seconds
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule HumanReadable do
+@moduledoc """
+Produce human readable time from seconds
+"""
+
+@spec format(integer) :: String.t
+  def format(seconds) when seconds < 3600 do
+    Time.from_erl({0,0,0})
+    |>elem(1)
+    |> Time.add(seconds, :second)
+    |> Time.truncate(:second)
+    |> Time.to_string
+    end
+  
+  def format(seconds) do
+    secs = rem(seconds, 3600)
+    hours = div(seconds, 3600)
+    hours_padded = String.pad_leading("#{hours}",2 ,"0")
+    mins_and_secs = Time.from_erl({0,0,0})
+    |> elem(1)
+    |> Time.add(secs, :second)
+    |> Time.truncate(:second)
+    |> Time.to_string
+    |> String.slice(3..7)
+    "#{hours_padded}:#{mins_and_secs}"
+  end
+end
+
+      HumanReadable.format(5000)
+#+end_src
+
+#+RESULTS: format-seconds
+: 01:23:20
+
+Not my greatest work. But I got it done pretty quickly. And I got a pretty good work out of how to use formatted strings in Elixir.
+
+*** Sum by factors
+[2022-10-12 Wed]
+This looks like it's going to take a while... just to understand what on earth the problem is asking me to do.
+
+and since it's path, I feel like I am going to end up needing to do this in Clojure to have it finish before I get a timeout.
+
+Oh.... okay I got it.
+
+**** Wow, that sounds hard
+So I am going to get a list of numbers. I need to figure out how many of them have prime factors. Then for each prime factor, I want to sum all the numbers from the origional list for which that prime was a factor.
+
+I feel like I am going to waste so much work if I just walk through this top to bottom.
+
+I could for example, take a list of prime numbers. Then walk each one and filter the origional list of numbers to see if they devide evnely. Then sum those numbers.
+
+and stop when the primes I have tested are beyond the biggest number in the list.
+
+So how do I get a list of primes in Erlang in the first place? Lovely, it appears there is no library function for that. Maybe it's faster to just get all the factors of the numbers, and which of those are prime?
+
+If I had a list of prime numbers to start, That simplfies what I need to itterate over alot. It's just a pass over the ints in the list. once per prime before the largest numbers. As I finish each pass, I can also total the ints in the list for which that prime was a factor. yeah that sounds like it's the fastes. But how do I get a list of prime numbers to start?
+
+Hmn... it appears I need to make a prime sieve.
+#+name:sum-by-factors
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Sumofdivided do
+
+  def pmap(collection, function) do
+    collection
+    |> Enum.map(&Task.async(fn -> function.(&1) end))
+    |> Enum.map(&Task.await(&1))
+  end
+  
+  def sieve(num) do
+    res = pmap(Enum.to_list(2..num), fn x -> if(Enum.all?(Enum.to_list(2..(x - 1)), fn z -> rem(x,z) != 0 end), do: x, else: []) end)
+    |> Enum.filter(fn x -> x != [] end)
+    Enum.concat([2], res)
+  end
+  
+  def sum_ints_by_factor(prime,ints) do
+    res = Enum.reduce(ints,{0,0}, fn x, acc -> if(rem(x,prime) == 0, do: {elem(acc,0) + x, elem(acc,1) + 1}, else: acc) end)
+    {prime, res}
+    end
+  
+  def sum_of_divided(lst) do
+    primes = pmap(lst, fn x -> abs(x) end)
+    |> Enum.max
+    |> sieve
+    pmap(primes, fn x -> sum_ints_by_factor(x,lst) end)
+    |> Enum.filter(fn x -> elem(elem(x,1),1) != 0 end)
+    |> Enum.map(fn x -> {elem(x,0), elem(elem(x,1),0)} end)
+  end
+end
+Sumofdivided.sum_of_divided([15,21,24,30,45])
+#+end_src
+
+#+RESULTS: sum-by-factors
+| 2 |  54 |
+| 3 | 135 |
+| 5 |  90 |
+| 7 |  21 |
+
+Wow. I got really close to doing that in an hour.  I think I just need to allow the posobility of a zero sum
+
+**** Yup, should have written it in Clojure
+[2022-10-13 Thu]
+
+Let's do this on the JVM.
 ** LFE
 LFE is a language I don't imagine I will ever get to write in a production app. But the fact it exists and I can write it is pretty darned cool.
 *** Intro stuff
@@ -4811,6 +4982,144 @@ I hear Java is good at this stuff. Let's see if the same algo in Clojure beats E
 | #'sumdivsq.core/list-squared                           |
 | ((1 1) (42 2500) (246 84100) (287 84100) (728 722500)) |
 
+*** Sum by factors take 2
+[2022-10-13 Thu]
+Wrote this once in Elixir. Need it on the JVM apparently. Just going to re-implement it.
+
+#+name:sum-by-factors-2
+#+begin_src clojure :results value
+(ns sumbyfactors.core)
+
+(defn sieve [num]
+  (reduce
+   (fn [primes number]
+     (if (some zero? (map (partial mod number) primes))
+       primes
+       (conj primes number)))
+   [2]
+   (take num (iterate inc 3))))
+  
+  (defn sum-ints-by-factors [prime ints]
+    (->> (reduce (fn [x y]
+                   (if (= (rem y prime) 0)
+                     (list (+ (first x) y) (+ 1 (second x)))
+                     x))
+                 (list 0 0)
+                 ints)
+         (list prime)))
+
+  (defn sum-of-divided [lst]
+    (->> lst
+         (map (fn [x] (max x (- x))))
+         (apply max)
+         (sieve)
+         (map (fn [x] (sum-ints-by-factors x lst)))
+         (filter (fn [x] (not= (second (second x)) 0)))
+         (map (fn [x] (list (first x) (first (second x)))))))
+
+  (sum-of-divided [15 21 24 30 -45])
+#+end_src
+
+#+RESULTS: sum-by-factors-2
+| #'sumbyfactors.core/sieve               |
+| #'sumbyfactors.core/sum-ints-by-factors |
+| #'sumbyfactors.core/sum-of-divided      |
+| ((2 54) (3 45) (5 0) (7 21))            |
+
+well... maybe it's not me writing bad Elixir. Maybe my algorithm is just really inefficient. 
+
+I am still getting the time out error. 
+
+But as I was looking at Clojure documentation, I found the above Sieve. And now it passes the tests. I wonder if I could re-implement that in Elixir?
+
+*** Can use at work
+[2022-10-15 Sat]
+
+So I finally got my head wrapped around how to get CLJS working with GAS, and I am so happy. Now it's time to get serrious about being able to write Clojure.
+
+*** Stop gninnipS My sdroW
+[2022-10-15 Sat]
+
+This is going to be quick.
+1. Take a string
+2. Split on space
+3. Reverse all words 5 or more characters long
+4. join them all back and return
+
+#+name:spin-words
+#+begin_src clojure :results value
+(ns clojure.spin-words
+  (:require [clojure.string :as str]))
+
+(defn rev-if-big [string]
+       (if (> (count string) 4)
+         (str/reverse string)
+         string))
+
+(defn spin-words [string]
+  (if (not (str/includes? string " "))
+    (rev-if-big string)
+    (->> (str/split string #" ")
+         (map (fn [x] (rev-if-big x)))
+         (str/join " "))))
+
+(spin-words "hi there govenour")
+#+end_src
+
+#+RESULTS: spin-words
+| #'clojure.spin-words/rev-if-big |
+| #'clojure.spin-words/spin-words |
+| "hi ereht ruonevog"             |
+ 
+*** Bit counting
+[2022-10-15 Sat]
+
+Two in a day. The last one was too easy.
+
+#+name:bit-counting
+#+begin_src clojure :results value
+(ns clojure.bit-counting
+  (:require [clojure.string :as str]))
+
+(defn count-bits [n]
+  "Count the 1s in the binary represenation of an int"
+  (as-> n val
+    (Integer/toBinaryString val)
+    (str/replace val #"0" "")
+    (seq val)
+    (map (fn [x] 1) val)
+    (reduce + val)))
+
+
+(count-bits 1234)
+#+end_src
+
+#+RESULTS: bit-counting
+| #'clojure.bit-counting/count-bits |
+|                                 5 |
+
+Got it. Excpet for one problem. There is a Java built in for this.
+
+#+name:build-in-bit-counter
+#+begin_src clojure :results value
+(Integer/bitCount 1234)
+#+end_src
+
+#+RESULTS: build-in-bit-counter
+: 5
+
+Does Javascript have that? Probably not right?
+
+#+name:js-bit-count
+#+begin_src clojurescript :results value
+(require '[goog.math :as math])
+(math/clamp 100 0 5)
+#+end_src
+
+#+RESULTS: js-bit-count
+: 5
+
+Hmn. JS has some stuff I can use, but nothing like Java. 
 ** Elisp
 While not exactly the language I intend to use for most things, it IS the language of Emacs, and I do intend to be using that a lot, so keeping some Elisp under my fingers is a good idea.
 
