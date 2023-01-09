@@ -1000,7 +1000,8 @@ Let's do one in Hy and see how it goes ...with numba
 #+end_src
 
 #+RESULTS: name
-: 5
+| class clojure.lang.Compiler$CompilerException |
+| class java.lang.IllegalStateException         |
 
 Something rather interesting is how quickly that stops giving me bigger numbers as the starting integer increases.
 
@@ -4067,8 +4068,1067 @@ Wow. I got really close to doing that in an hour.  I think I just need to allow 
 [2022-10-13 Thu]
 
 Let's do this on the JVM.
+
+*** Count 9s
+[2022-11-15 Tue]
+
+I am going to make a Phoenix site. And to get my head back in Elixir mode, I am doing this problem.
+
+https://www.codewars.com/kata/55143152820d22cdf00001bb/train/elixir
+
+Cool idea for a problem. It lends it's self to the horribly inefficient solution of counting up one at a time and simply splitting the number by it's places, and counting up the 9s. But that is a:
+1. Split to individual digits
+2. toss all the non-9s
+3. tally them up
+4. store them in a running count
+5. for every single from 1 to the target
+
+   That could be really inefficient.
+
+   But when you think of 10, it's just 1. Every number from 90 through 98 is a an extra 9. 99 gets it's extra 9. meaning up to 100 is 10.
+
+   hmn...
+
+   Let's try doing a few of these by hand. Write the bad slow solution to be able to ask the questions easier
+
+#+name:how-many-9s
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+  
+  def nines_in_num(num) do
+    Integer.digits(num)
+    |> Enum.count(fn x -> x == 9 end)
+  end
+  
+  def count_nines(num) when num < 9, do: 0
+  def count_nines(num) do
+    prep = prep(num)
+    Enum.reduce(prep[:start]..num, prep[:count], fn x, acc -> acc + nines_in_num(x) end)
+  end
+  # def count_nines(num) when num < 9, do: 0
+  # def count_nines(9), do: 0
+  # def count_nines(num) do
+  #   prep = prep(num)
+  #   count_nines_recur(prep[:start], num, prep[:count])
+  #   end
+  # def count_nines_recur(num, target, acc) when num == target, do: acc
+  
+  # def count_nines_recur(num, target, acc) do
+  #   count_nines_recur(num + 1, target, acc + nines_in_num(num))
+  # end
+
+  
+  def prep (num) do
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    nine_count = Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    nines = Stream.iterate(9, &((&1 *10) + 9))
+    n_count = Stream.zip(nines, nine_count)
+    Enum.reduce_while(n_count, %{start: 9, count: 1}, fn x, acc ->
+      if elem(x,0) < num, do: {:cont, %{start: (elem(x,0) + 1), count: elem(x,1)}},
+        else: {:halt, acc} end)
+  end
+  
+end
+
+
+# Count_nines.prep(100)
+# Count_nines.count_nines(3455461945695)
+Count_nines.count_nines(989)
+# Count_nines.count_nines(2000)
+# Count_nines.count_nines(3000)
+# Count_nines.count_nines(4000)
+# Count_nines.count_nines(5000)
+#+end_src
+
+#+RESULTS: how-many-9s
+: 279
+
+Cool, the naive solution took just 30 min. Yeah, Elixir is nice to write.
+
+COOL pattern:
+1 -> 0
+9 -> 1
+99 -> 20
+999 -> 300
+9999 -> 4000
+
+What that is saying is I can know the number of nines at the factors of 10 by just increasing by a factor of 10, and adding one to the first digit.
+
+I have a horrible optimization. Run map instead of reduce and do the map in parallel. Call nines in num in parallel on all the numbers, then sum them. 
+
+...well the tail-call recursive function doesn't solve it either. ...okay it solves it but it's not fast enough.
+
+**** a way to cut down on work
+[2022-11-16 Wed]
+
+Okay I think I have a way of making this faster. But I need to figure out how to some math
+
+I need to make this pattern:
+1
+20
+300
+4000
+
+Do I really need to use that "digits" function here? Surely there is a way to do that with just math right?
+
+#+name:number-pattern
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Test do
+  def pat() do
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    nines = Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    Stream.take(nines, 10)
+    |> Enum.to_list()
+  end
+end
+
+Test.pat()
+#+end_src
+
+#+RESULTS: number-pattern
+| 1 | 20 | 300 | 4000 | 50000 | 600000 | 7000000 | 80000000 | 900000000 | 10000000000 |
+
+
+**** I need an even better way to cut down work
+[2022-11-17 Thu]
+
+So I can go up to HUGE numbers. That is not the problem. The problem is doing the work between by bigger guesses.
+
+Here are some more numbers
+ 1000 -> 300
+ 2000 -> 600
+ 3000 -> 1200
+
+ Even cooler
+
+ 8000 -> 2400
+ 9000 -> 2700
+ 10000 -> 4000
+
+
+ It's like I need a counting system
+
+|  10 |  1 |
+|  20 |  1 |
+|  30 |  1 |
+|  40 |  1 |
+|  50 |  1 |
+|  60 |  1 |
+|  70 |  1 |
+|  80 |  1 |
+|  90 |  1 |
+| 100 | 10 |
+| 110 |  1 |
+
+So I count 10s like they are worth 1, but if I am going from 90 to 100, then it's worth 10.
+
+Okay, I have my solution.
+
+10 -> 1
+100 -> 20
+110 ->  21
+
+I can run this on the places.
+
+But I have already been coding this a bit today, (got a kind of early start). So I am going to finish this later.
+
+
+**** I think I got it
+[2022-11-19 Sat]
+Finishing this up on the Saturday after I started. Using the naive approach, I did some guess and check work about how the numbers form a pattern and I think I got it.
+
+I am going to make alist of numbers to count by that is one longer than the list of digits in the number passed to me.
+Then I multiple the digits at the place by that those numbers are "worth".
+I just walk up the numbers and multiply till I get all the nums, then sum.
+
+left:  8966401902
+     right: 8088014954
+
+#+name:how-many-9s-v2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+    
+  def count_nines(num) do
+    digits = Integer.digits(num)
+    |> Enum.reverse()
+    |> Enum.concat([0])
+    worths = worth(length(digits))
+    # [digits, worths]
+    Enum.reduce(digits, %{total: 0, carry: 0, worth: 0, rem_worths: worths},
+      fn x, acc -> if x == 9,
+     do: %{total: acc[:total] + ((x + acc[:carry]) * acc[:worth]),
+           carry: 1,
+           worth: hd(acc[:rem_worths]),
+           rem_worths: tl(acc[:rem_worths])},
+          else: %{total: acc[:total] + ((x + acc[:carry]) * acc[:worth]),
+                  carry: 0,
+                  worth: hd(acc[:rem_worths]),
+                  rem_worths: tl(acc[:rem_worths])} end)
+    |> Map.get(:total)
+  end
+
+  def worth(digits) do
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    |> Stream.take(digits)
+    |> Enum.to_list()
+  end
+end
+
+Count_nines.count_nines(99)
+#+end_src
+
+#+RESULTS: how-many-9s-v2
+: 30
+
+Almost.
+
+I really do need to walk from top to bottom.
+
+And it's more like,
+
+a 9 is worth on more "worth value"
+and it will promote all the digits below it one worth, including 9s.
+
+... I think I need to do it as subtraction.
+
+**** No... I don't got it
+[2022-11-21 Mon]
+
+I am going to spend today playing with the way the numebrs make pattenrs. Becuase the problem is not with my code. My problem is with how I am thinking of the problem. 
+
+#+name:tester-9s
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+  
+  def nines_in_num(num) do
+    Integer.digits(num)
+    |> Enum.count(fn x -> x == 9 end)
+  end
+  
+  def count_nines(num) do
+    Enum.reduce(1..num, 0, fn x, acc -> acc + nines_in_num(x) end)
+  end
+  end
+
+Count_nines.count_nines(900)
+#+end_src
+
+#+RESULTS: tester-9s
+: 181
+
+Okay so I am making a table to think about how numbers go up. And the idea I had before seems to hold. Each "place" is "worth" a number based on that pattern. Let's see if it works for 100s
+
+
+***** musing
+|    Num |   Res | comment                                                      |
+|--------+-------+--------------------------------------------------------------|
+|      1 |     0 |                                                              |
+|      9 |     1 |                                                              |
+|     10 |     1 |                                                              |
+|     19 |     2 |                                                              |
+|     29 |     3 |                                                              |
+|     99 |    20 |                                                              |
+|    100 |    20 |                                                              |
+|     98 |    18 |                                                              |
+|     97 |    17 |                                                              |
+|     96 |    16 |                                                              |
+|    900 |   181 |                                                              |
+|    901 |   182 |                                                              |
+|   1000 |   300 |                                                              |
+|   1100 |   320 |                                                              |
+|   1200 |   340 |                                                              |
+|   1900 |   481 | what?!                                                       |
+|   1800 |   460 |                                                              |
+|  10000 |  4000 |                                                              |
+| 100000 | 50000 |                                                              |
+|        |       |                                                              |
+|   1990 |   581 | having any numbers of 9s makes all other numbers significant |
+|   1991 |   582 | and those numbers should be worth their place                |
+|        |       |                                                              |
+|   9109 |  2831 | hundreds are worth 20?                                       |
+|   9209 |  2951 | But this increase in 100 is worth 120?                       |
+|        |       |                                                              |
+|   9000 |  2701 | This makes sense.                                            |
+|   9000 |  2702 | add 1                                                        |
+|        |       |                                                              |
+|   1000 |   300 |                                                              |
+|    900 |   181 |                                                              |
+|   1900 |   481 | that looks so easy.                                          |
+|        |       |                                                              |
+|     90 |    20 |                                                              |
+|      8 |     0 |                                                              |
+|     98 |    18 | and it doesn't hold                                          |
+|        |       |                                                              |
+|     80 |     8 |                                                              |
+|     89 |     9 |                                                              |
+|     90 |    10 | oh right. 90 is only worth 10                                |
+|    100 |    20 |                                                              |
+
+
+So if a 9 is present ANYWHERE, all numbers are worth their actual places + 1?
+
+If that holds I could have a 9 at the bottom of 1009 and increase by a thousand and get another... 300?
+
+
+|   Num |   Res | comment |
+|-------+-------+---------|
+|  1009 |   301 |         |
+|  2009 |   601 |         |
+| 91000 | 37301 |         |
+| 92000 | 38601 |         |
+|       |       |         |
+| 11000 |  4300 |         |
+| 12000 |  4600 | holds   |
+
+No, the 9 means something different it it's higher up.
+
+A increase of 1000 should be 300. But when there is a 9 above it, it's worth 1000 and 300
+
+Where on earth is that thousand comming from?
+
+The 9 above means something else
+
+
+|   Num |   Res | comment  |
+|-------+-------+----------|
+| 90010 | 36012 |          |
+| 90020 | 36023 | up by 11 |
+|  9010 |  2712 |          |
+|  9020 |  2723 | also 11  |
+
+
+That is nice a regular. So the distance of the 9 above the numbers doesn't matter. All 10s are supposed to be worth 1. But in this case they are worth 10, and a 1... wait huh?
+
+90 is worth 10. That is in the 10s place. 80 is worth 8 (one for each of the tens).
+
+
+|   Num |   Res | comment                                                              |
+|-------+-------+----------------------------------------------------------------------|
+|     7 |     0 |                                                                      |
+|     8 |     0 |                                                                      |
+|     9 |     1 | going up less than the value of the place, but get an extra at the 9 |
+|    70 |     7 |                                                                      |
+|    80 |     8 |                                                                      |
+|    90 |    10 |                                                                      |
+|   700 |   140 |                                                                      |
+|   800 |   160 | predict the next number is going to be worth a twenty plus...1       |
+|   899 |   180 | there is my weird extra 1                                            |
+|   900 |   181 | yeah                                                                 |
+|  7000 |  2100 |                                                                      |
+|  8000 |  2400 | worth 300. So 9000 is +300 and ...1?                                 |
+|  9000 |  2701 | exactly                                                              |
+|  9100 |  2821 | hundres are good for 20, so what is with the extra 100?              |
+| 90000 | 36001 | thousands are usually worth 300, so plus another 1300?               |
+| 91000 | 37301 | yes                                                                  |
+
+
+Is that 100 the hundred I added? no way.
+
+Okay. So If there is a number above you, the digits below also count for themselves.
+
+10s are always worth 1. But all the digits... including 0, below the 9 in 90 are worth 1, so it comes out to 20.
+
+from 100, you start all over again. but now you are counting from 20.
+
+So getting to 10, you are now working with 1s from adding each 10.
+
+Explaining that extra a from 899 to 900 is really weird. Can this really be so bad to just do the naive way?
+
+New theory:
+
+If a number starts with a 9, then it is worth the 10 above minus the difference between the number below it and all 9s.
+
+So 1900 should equal what ever 2000 would be minus... 99
+2000 is 600. So 1900 should be 600 minus 99?
+
+501?
+
+481 Close.
+
+999 is 300
+900 is 181
+the difference between those two numbers is 99. 
+
+So I should have been looking at 1900 and saying, claculate the 1000 by it7s self to be 300. then at the 900, treat it like 999, but minus 99. So 999 is 300, minus 99 is 181. plus 300 is 481.
+
+...no. The distance between 999 and 900 is 119.
+***** And I think that is the formula
+[2022-11-23 Wed]
+
+Okay, time to finish this guy up. I need to re-make my stream with the 9s, and feed them into a reduce that pulls them out till one is bigger than the target number
+
+
+#+name:how-many-9s-v3
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+    
+  # def count_nines(num) do
+    
+  # end
+
+  def nines(target) do
+    nines = Stream.iterate(9, &((&1 * 10) + 9))
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    |> Stream.zip(nines)
+    |> Stream.drop_while(fn {num, _worth} -> num < target end)
+    |> Stream.take(1)
+    |> Enum.to_list()
+  end
+end
+
+Count_nines.nines(10)
+#+end_src
+
+#+RESULTS: how-many-9s-v3
+| 20 | 99 |
+
+***** Nope. That is not the formula.
+
+Tried coutning base 9, and I tried dividing by 9 and looking at the total.
+
+Maybe next I shoudl look at the reminder after doing the devide by 9. That could show me what I am missing.
+
+***** Let's finish this
+[2022-11-26 Sat]
+It's getting annoying more than anything else that I haven't figured out how to solve this, so let's just be done with it and finish it off.
+
+I think I will see more of the pattern if I can get more than one value at a time. So let's take naive function, and map over a list of numbers in a range. Then get the results and the difference between the values and see what patterns emerge.
+
+
+#+name:tester-9splus
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+  
+  def nines_in_num(num) do
+    Integer.digits(num)
+    |> Enum.count(fn x -> x == 9 end)
+  end
+  
+  def count_nines(num) do
+    Enum.reduce(1..num, 0, fn x, acc -> acc + nines_in_num(x) end)
+  end
+
+  def nine_over_range(start, last) do
+    Enum.map(start..last, fn x -> {x, count_nines(x), (count_nines(start) - count_nines(x))} end)
+  end
+
+  
+  def nine_map(nine_list) do
+    Enum.map(nine_list, fn x -> {x, count_nines(x), (count_nines(x + 1) - count_nines(x))} end)
+  end
+  
+end
+
+Count_nines.nine_map([999, 900,90,9])
+# Count_nines.nine_over_range()
+#+end_src
+
+#+RESULTS: tester-9splus
+| 999 | 300 | 0 |
+| 900 | 181 | 1 |
+|  90 |  10 | 1 |
+|   9 |   1 | 0 |
+
+Okay. This visualization is helping. There appears to be a cool pattern. To get to the next number, I can subtract the number of nines in the previous number. 
+
+Trying to count by numbers bigger than one at a time always has those weird jumps
+
+What I want is a rule. If I can make a rule for handling each place, I can calculate huge numbers
+
+- The rule for handling a number a number with no 9s above it is, multiply the number by the value of it's place
+
+  1s and worth 0
+  10s are worth 1
+  100s are worth 20
+  1000s are worth 300 etc
+
+  Based on that, let's do 8888
+
+  It works.
+
+  Now I try to see if I can get the rule to apply to parts of numbers above a 9
+
+  Nice. It also works.
+
+  So I just need the rule for how to calculate a number under 9s.
+
+  it IS promotion.
+
+  the difference between 0 and 88 under a 9 is 96. 96 is 88 + 8. it's the number plus what the number is worth.
+
+  
+| 9000 | 2701 | 1 |
+|  999 |  300 | 0 |
+| 9999 | 4000 | 0 |
+
+Yes. a number under 9000, being 999. Is equal to the worth of 9000, plus the worth of 999, plus 999. 
+
+So is there a recursive definition?
+
+The worth of x if x is a 9 is the worth of x at the highest place plus the worth of the reaming number below x plus x?!
+
+hmn... I wonder if I could define it going the other way?
+
+The worth of a number less than the 99999 above it is, distance to the 9999 and the worth of the distance.
+
+
+In the case above the worth of 9000 is 999 less than 9999
+9999 is worth 4000
+so 4000 minus the worth of 999?
+
+I got it!
+
+If a number starts with a 9, I take the value of the 9999 above it. Then I get the distance between that number and the 9 above it. I then subtract the number from the total above, then subtract the worth of the distance.
+
+***** Maybe this is the one
+#+name:how-many-9s-v4
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+
+  def count_nines(num) when num < 9, do: 0
+  def count_nines(9), do: 1
+  def count_nines(num) do
+    nine_list = nines(num)
+    count_nines_recur(num, nine_list, elem(List.last(nine_list), 0))
+  end
+
+  def count_nines_recur(num, _nine_list, total) when num < 9, do: total
+  def count_nines_recur(9, _nine_list, total), do: total - 1
+  def count_nines_recur(num, _nine_list, _total) do
+    num
+  end
+
+  def nines(target) do
+    nines = Stream.iterate(9, &((&1 * 10) + 9))
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    |> Stream.zip(nines)
+    |> Stream.take_while(&(elem(&1,0) <= target))
+    |> Enum.to_list()
+  end
+end
+
+Count_nines.count_nines(99)
+#+end_src
+
+#+RESULTS: how-many-9s-v4
+: 99
+
+OKay, I think I need 3 "branches" to this.
+
+1. If the number has no 9s, great. Solve with the simple multiplication of places by their values
+2. If the number starts with a 9, great. take the value of the 9999 above the number subtract the distace to the target and the value of the distance
+3. If there is a nine part way through, the number must be split into two constituants. the part of above the 9, and the number under it stating with 9.
+
+   
+#+name:how-many-9s-v5
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+    
+  def place_value(9,value,flag,running) do
+    [running + ( 9 * value) + 9 * 1, 1]
+  end
+  
+  def place_value(num,place,value,flag,running) do
+    [running + ( num * value) + 9 * flag, flag]
+  end
+
+  # place vlaue will be mapped over a list of the digits of the target number
+  # I need to prep a list that has {the num at the place,
+  #                                 the value at that place}
+  # the rest can be part of an accumulator I pass to reduce
+  
+  def prep (num) do
+    places = Stream.iterate(1, &(&1 * 10))
+    nums = Stream.iterate(1, &(&1 + 1))
+    pairs = Stream.zip(nums, places)
+    nine_count = Stream.map(pairs, fn x -> elem(x,0) * elem(x,1) end)
+    nines = Stream.iterate(9, &((&1 *10) + 9))
+    n_count = Stream.zip(nines, nine_count)
+    Enum.reduce_while(n_count, %{start: 9, count: 1}, fn x, acc ->
+      if elem(x,0) < num, do: {:cont, %{start: (elem(x,0) + 1), count: elem(x,1)}},
+        else: {:halt, acc} end)
+  end
+  
+end
+
+
+# Count_nines.prep(100)
+# Count_nines.count_nines(3455461945695)
+Count_nines.count_nines(989)
+# Count_nines.count_nines(2000)
+# Count_nines.count_nines(3000)
+# Count_nines.count_nines(4000)
+# Count_nines.count_nines(5000)
+#+end_src
+***** one more attempt at a sane solution
+I think I can do this with a stream.
+
+#+name:as-a-stream
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_by_nines do
+
+  def inc_one(0), do: 1
+  def inc_one(list) do
+    Enum.map(list, fn x -> x + 1 end)
+    # |> Enum.to_list()
+  end
+
+  
+  def pattern(length) do
+    Stream.unfold([0], fn x -> {x, List.flatten([x,x,x,x,x,x,x,inc_one(x)])} end)
+    |> Stream.concat()
+    |> Stream.take(length)
+    |> Enum.to_list()
+    |> Enum.sum()
+  end
+end
+
+Count_by_nines.pattern(999999)
+# Count_by_nines.give_me_nine([0])
+#+end_src
+
+#+RESULTS: as-a-stream
+: 721075
+
+***** Final musing
+
+99 is worth 20
+88 is worth 8
+999 is worth 300
+988 should be 277 when I am done
+
+can I calculate my way to that?
+
+well what I thought I was going to do is say that 999 is worth 300 so 988 is worth the difference between... what was it again?
+
+Subtrsct the distance... and the value of the distacne?
+
+so 999 to 988 is 11 right?
+
+300 minus 11 is 289
+minus the value of 11 which is 1?
+
+so 288? no I am off by 11.
+
+Let's try another set
+
+
+9999 is worth 4000
+9888 should be 3757
+888 is worth 168
+
+yeah the 888 is worth like nothing.
+
+9999 is 4000, minus 9888 is 111 or 3889
+
+and the value of 111 21, so down to 3868
+
+cool I need to minus twice the distance? Becasue both times I am off by the distance.
+
+Let's try smaller
+
+
+99 and 98
+
+99 is worth 20
+98 should be worth 18
+the distance is 2
+so 20 minus 2
+is 18, I don't need to minus it again.... hmn.
+wait, the distance is 1.
+so it works. Because the value of the distance is also 0
+
+
+hmn.
+
+If this works for numbers that don't start with a 9, I would be so happy.
+
+
+888
+
+888 should be worth 168
+999 is worth 300
+and the distance between them is worth 21
+
+for 888, it's actually just the same thing as if I didn't subtract the distance twice.
+
+111 + 21 = 300 - 111
+
+So... why does the case that starts with a 9 have to be so weird?
+
+9 and 8
+
+9 and 8 are 1 appart. so it's the distance minus the value of 9, and the value of the distance which is zero.
+
+9 and 60
+distance between then is 39, worth 4
+
+the value of 99 is 20
+60 should be worth 6
+20 minus... 39?
+
+99 and 90
+
+distnace is 9, worth of the distance is 1, 9 plus 1 is 10 99 should be
+
+Okay. I think I can do this walking places down from top to bottom.
+
+If it's a number, it's worth it's value plus it's self if it have come after a 9
+If it's a nine, it's worth it7s value and number after is are worth their vlaue plus them selves.
+
+
+999, 900, 90, 9
+
+900 is worth 100s at 20, times 9 is 180
+90 is worth 10s at 1, which is 9
+9 is worth 1s and zero which is 0
+
+
+hmn... I feel like I am missing a plus 1 somewhere. 
+
+
+let7s try 9999
+
+4000 1000s are worth 300
+
+so weird... why is that method short by such a weird number?
+**** Let's do this the hard way
+[2022-11-29 Tue]
+Okay, I think I can solve this for huge numbers, but my optimization is pretty painful to think about.
+
+I am going to branch for 3 cases.
+1. When the number has no 9s
+2. when the number has a 9 at the beginning
+3. when the number has a 9 but the first number isn't.
+
+   I could do a recursive walk down the places of the target number till I hit a 9, and that is not a bad idea, but I just want to check I can treat numbers under a 9 the same way, or if I need to do anything special to calculate them.
+
+   
+*** User name validation
+[2023-01-03 Tue]
+Just a quick little problem to try out the Coderbyte website
+
+https://www.coderbyte.com/editor/Codeland%20Username%20Validation:Elixir
+
+Looks like the want me to check a string and make sure it only has letters and underscores, and numbers
+
+#+name:codeuserval
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule CodelandUsernameValidation do
+  def letter_start?(gstr, letters) do
+    first = to_string(List.first(gstr))
+    if(Enum.member?(letters, first), do: gstr, else: [])
+  end
+
+  def uscore_end?(gstr) do
+    if(List.last(gstr) == "_", do: [], else: gstr)
+  end
+
+  def length?(lst) do
+    if(length(lst) > 3 and length(lst) < 26, do: lst, else: [])
+  end
+
+  
+  def contains_only?([], _letters, _nums), do: false
+  def contains_only?(gstr, letters, nums) do
+    all = letters ++ nums ++ ["_"]
+    length(Enum.reject(gstr, fn x -> Enum.member?(all, x) end)) == 0
+  end
+
+  def run(str) do
+    letters =["A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+              "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+              "U", "V", "W", "X", "Y", "Z"]
+    nums = ["1", "2", "2", "3", "4", "5",
+            "6", "7", "8", "9", "0"]
+    String.upcase(str)
+    |> String.graphemes()
+    |> Enum.filter(fn x -> letter_start?([x], letters) end)
+    |> then(&uscore_end?(&1))
+    |> then(&length?(&1))
+    |> then(&contains_only?(&1, letters, nums))
+  end
+end
+
+CodelandUsernameValidation.run("Abcfjhfjhfjfhjfhjfhjfhjfhjfhfjhfjfhj")
+#+end_src
+
+#+RESULTS: codeuserval
+: false
+
+done.
+
+Man... I am pretty rusty at that. Plus the checking of the multiple things on a list of predicates was pretty painful. That could have been so much easier.
+
+...I fell like I should have made it a reduce. I could have a made a list with all the function calls, and then do a reduce while. As soon as I get an empty list, short-circuit out.
+
+And a stream to make the function calls lazy. That could have saved me the bunch of if elses.
 ** LFE
 LFE is a language I don't imagine I will ever get to write in a production app. But the fact it exists and I can write it is pretty darned cool.
+*** Syntax reference
+[2022-12-20 Tue]
+
+I have been looking up a lot of LFE syntax, and it's hard to find it sometimes. This will be my personal reference for how to write certain kinds of things
+**** Match-lambda
+You want to use these when you have a lambda that you want to pattern match on the input arguments
+
+#+name:match-lambda
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun the-answer (nums)
+  "give it 'the answer'"
+  (lists:map (match-lambda ((42) "This is the answer to the ultimate question")
+                           ((_) "This was something I wasn't expecting"))
+             nums))
+
+(the-answer '(22 33 42))
+#+end_src
+
+#+RESULTS: match-lambda
+: lfe> 
+: lfe> (the-answer '(22 33 42))
+: ("This was something I wasn't expecting"
+:  "This was something I wasn't expecting"
+:  "This is the answer to the ultimate question")
+
+Cool. That is about what I wanted to show. So if:
+- you have a list of numbers
+- and you want to map over them with a lambda
+- but you don't want to use a conditional in the lambda
+
+  ...then use this.
+
+  Erlang lists:map takes a fun then a list and runs the function on each item of the list. Here I am matching on 42, and saying something else for all the others.
+
+  Contrast this with how it would be done in Elixir:
+
+#+name:elixir-no-match-lambda
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule No_ml do
+
+  def the_answer (nums) do
+    Enum.map(nums, fn
+      42 -> "This is the answer to the ultimate question"
+      _ -> "This was something I wasn't expecting" end)
+  end
+end
+No_ml.the_answer([1, 2, 42])
+
+
+#+end_src
+
+In Elixir, there is no need to do anything special to match on the inputs to a lambda. It does that by default. You just add pairs of inputs and function bodies to run. 
+#+RESULTS:
+| This was something I wasn't expecting | This was something I wasn't expecting | This is the answer to the ultimate question |
+**** Tuples and maps
+I know how to make these with special functions, but I want to get used to the quicker syntax.
+
+1. Tuples
+
+#+name:tuple-test
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set tuptup #("first" 1))
+tuptup
+#+end_src 
+
+#+RESULTS: tuple-test
+: #("first" 1)
+: lfe> tuptup
+: #("first" 1)
+
+#() makes a tuple of the things in the parens
+
+2. Maps
+
+   Erlang doesn't call them the same thing as Clojure and Elixir, but I need to use them in LFE. So let's try this:
+
+  #+name:prop-list
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set user-list
+     (list
+      #("Bob"
+        30
+        "likes chocolate")
+      #("Ann"
+        20
+        "Is young")
+      #("Bill"
+        45
+        "REALLY likes chocolate")))
+
+(proplists:lookup "Bob" user-list)
+#+end_src
+
+#+RESULTS:
+:  #("Ann" 20 "Is young")
+:  #("Bill" 45 "REALLY likes chocolate"))
+: lfe> 
+: lfe> (proplists:lookup "Bob" user-list)
+: #("Bob" 30 "likes chocolate")
+
+There you have it. You don't need any special syntax for maps. The proplist module will let you look up vals by keys, and list the keys and vals in the map.
+**** Pattern match on input args
+So in Elixir it appears to be common to just make a bunch of function heads when pattern matching on functions arguments. But in LFE there is another way... the way I wish I could be doing this in Elixir
+
+#+name:pattern-match-args
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun safe-divide
+  ; Don't divide by zero. and Don't use the doc string syntax here. Use a comment
+  ((_ 0) "Uh uh! That's a no-no")
+  ((0 _) 0)
+  ((a b) (/ a b)))
+  
+(safe-divide 10 0)
+(safe-divide 10 5)
+#+end_src
+
+#+RESULTS: pattern-match-args
+: "Uh uh! That's a no-no"
+: lfe> (safe-divide 10 5)
+: 2.0
+: lfe> (safe-divide 5)
+: ** exception error: bad match-lambda form
+
+So what is going on here is I am listing out the Arguments I want to match on, and running different function bodies depending on how that goes.
+
+Note that the arity needs to be the same.
+**** Elixir stream unfold
+Also good to see how the Elixir interop works
+
+#+name:unfold-lfe
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun make-nums (num)
+  "make a stream"
+  ;; (Elixir.Enum:to_list
+   (Elixir.Enum:take (Elixir.Stream:unfold num (match-lambda
+                               ((0) 'nil)
+                               ((n) (tuple n (- n 1))))) 3))
+   
+
+(make-nums 5)
+#+end_src
+
+#+RESULTS: unfold-lfe
+: lfe> 
+: lfe> (make-nums 5)
+: (5 4 3)
+
+
+Cool. I think I figured it out.
+
+#+name:unfold-lfe-2
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun make-nums (num)
+  "make a stream"
+  ;; (Elixir.Enum:to_list
+   (Elixir.Enum:take (Elixir.Stream:unfold num (match-lambda
+                               ((0) 'nil)
+                               ((n) #(n (- n 1))))) 3))
+   
+
+(make-nums 5)
+#+end_src
+
+#+RESULTS: unfold-lfe-2
+: lfe> 
+: lfe> (make-nums 5)
+: (n n n)
+
+See all the Ns? the short hand for making tuples doesn't work when inside a lambda getting passed to Elixir
+
+#+name:unfold-lfe-3
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun make-nums (num)
+  "make a stream"
+   (-> (Elixir.Stream:unfold num (match-lambda
+                               ((0) 'nil)
+                               ((n) (tuple n (- n 1)))))
+       (Elixir.Enum:to_list)))
+   
+
+(make-nums 5)
+#+end_src
+
+#+RESULTS: unfold-lfe-3
+: lfe> 
+: lfe> (make-nums 5)
+: (5 4 3 2 1)
+
+Success.
+
+So that is bassically the LFE version of the Elixir docs demo function for the unfold function. This shows a few cool things
+1. The use of the arrow function passing things to Elixir functions
+2. The in-ability to use the #() syntax for tuples when passing things to Elixir
+**** Match tuple interior
+[2022-12-21 Wed]
+
+So I do this in Elixir, and it look like you can do it in LFE too.
+
+#+name:tuple-pattern-match
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun match-me
+  (((tuple m n)) (when (=:= m 4)) n)
+  ((_) "first wasn't 4"))
+
+(match-me (tuple 4 3))
+#+end_src
+
+#+RESULTS: tuple-pattern-match
+: lfe> 
+: lfe> (match-me (tuple 4 3))
+: 3
+
+As the functions match-me gets it's arguments, they are being matched into M and N and when M is 4, n is returned
 *** Intro stuff
 #+name:test4
 #+begin_src lfe :results output
@@ -4236,12 +5296,6 @@ I have  a pretty good idea of how I am going to do it to:
 (valid-bracket "thit")
 
 #+end_src
-
-#+RESULTS: valid-brackets
-: valid-bracket
-: lfe> 
-: lfe> (valid-bracket "thit")
-: (1 0 1 0)
 
 Well this is taking longer than I thought it would. But it's getting done.
 
@@ -4630,6 +5684,117 @@ Now I get it. In Elixir you write the name of the function a bunch of times. In 
 So it appears if I want to split the parts of a tuple in LFE, I can't do that in the function head... really?
 
 wait, can elixir do that?
+
+*** I CAN call Elixir from LFE
+[2022-12-18 Sun]
+
+Okay, this was a lot simpler than I was trying to make it:
+
+#+name:name
+#+begin_src bash :results output
+lfe -pa /opt/homebrew/opt/elixir/lib/elixir/ebin
+#+end_src
+
+What that does is load Elixir into the LFE repl session. I got the idea from reading this:
+
+https://gist.github.com/oubiwann/29bc3398f2be3cef76e5
+
+Which explained how to do it from a LFE project, but if I can just add that to the LFE session that spawns when I call to Org-babel...
+
+Done.
+
+So this is going to break the next time I want to install this whole thing again, so I am going to detail how I made it so I can fix in the next install or until I decide to fork this and maintain my own branch.
+
+In the ob-lfe.el file, I removed the string that tries to exapnd out where to get LFE dependencies. It's currently set to look for project dependencies, but I wanted to point it to Elxir. So I replaced
+
+#+begin_quote
+"deps/*/ebin"
+#+end_quote
+
+#+begin_quote
+/opt/homebrew/opt/elixir/lib/elixir/ebin
+#+end_quote
+
+And now:
+
+#+name:elx-from-lfe
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(set stream (Elixir.Stream:cycle '(1 2 3)))
+(Elixir.Enum:take stream 10)
+#+end_src
+
+#+RESULTS: elx-from-lfe
+: #Fun<Elixir.Stream.63.124013645/2>
+: lfe> (Elixir.Enum:take stream 10)
+: (1 2 3 1 2 3 1 2 3 1)
+
+...Mind is blown. I can't even right now.
+
+Before I just go about my merry way programming in LFE almost exclusively from now on, I should try to make a org babel flag.
+
+how nice it would be if you could pass in an argument to an org-babel function and say if you want to include Elixir? Just add the block argument.
+
+So if I do get around to forking this, I just should look into how to add block arguments and how I could make that easier for me and other LFE users later.
+
+*** What to do with LFE?
+[2022-12-18 Sun]
+
+I just figured out how to call Elixir functions from LFE. I am now even more happy with the Erlang ecosystem. I can get a Lisp that is almost Clojure, and just call Elixir just like that. If I want to write like Ruby, I can do that. If I want to write in a Lisp I can do that too.
+
+My first instinct is do some toy problems, but I can't really test them on a site like the code-wars site because it's not supported. And having a site test my code has actually been really helpful in making me think about efficiency.
+
+*** Just a quick practice problem
+[2022-12-19 Mon]
+
+I don't really have a good plan for what to do with LFE yet, but this new ability to use Elixir is just too good to pass up and opportunity to use it.
+
+Let's grab a Leet code problem this time.
+https://leetcode.com/problems/maximum-product-subarray/
+
+Maximum product subarray.
+
+Take an array of nums, find the biggest sub array (when multiplying them all together).
+
+#+name:max-product-subarray
+#+begin_src lfe
+(include-lib "/Users/robertclay/lfe/include/clj.lfe")
+
+(defun unfold-all
+  ;;unfold till done
+  (((tuple l res)) (when (=:= (length l) 1)) (++ (list l) res))
+  (((tuple l res)) (unfold-all (tuple (lists:droplast l) (++ (array-unfold l) res)))))
+
+(defun array-unfold (array)
+  "Take an array and return the subarrays is can be split into"
+  (-> (Elixir.Stream:unfold array (match-lambda
+                                    (('()) 'nil)
+                                    ((l) (tuple l (cdr l)))))
+      (Elixir.Enum:to_list)))
+
+(defun max-subarray (array)
+  "Take an array and provide the max product of subarrays"
+  (->
+   (unfold-all (tuple array '()))
+   (Elixir.Enum:map (lambda (x) (Elixir.Enum:product x)))
+   (Elixir.Enum:max)))
+
+(max-subarray '(5 -2 4 3))
+#+end_src
+
+#+RESULTS: max-product-subarray
+: lfe>    (Elixir.Enum:max)))
+: max-subarray
+: lfe> 
+: lfe> (max-subarray '(5 -2 4 3 ))
+: 12
+
+It works.
+
+It's probably horribly in efficient, but it works.
+
+...what I kind of expected, is that this looks a LOT like what it would be in plain Elixir. And I don't know if giving up most of the Elixir ecosystem makes this worth it just to get parens.
 
 ** Swap LFE for Hy [2022-01-23 Sun] 
 Updated Spacemacs and Hy code block executing broke. Can't really complain, but it's just another reminder that Hy is only in alpha and liable to break at any moment.
@@ -5287,6 +6452,428 @@ I am looking at other solutions, and it  looks like I forgot about frequencies a
 Frequencies lets me look at the count of die without needing a function. Then I just deal with ones and 5s kind of special. Group-by does something similar.
 
 My idea of "removing" the die as I pass the set through rules does make the end look like of like how I would do it in my head, See if there are any triples, then take the meaning single die scores at the end. But the functions they need to call along the way got way too complicated. I just need to do more of these. 
+
+*** Primes in numbers
+[2022-10-24 Mon]
+Oh joy. More math
+
+#+name:Primes-in-numbers
+#+begin_src clojure :results value
+(ns prime-decomp.core)
+
+(defn prime-factors [n]
+  (clojure.string/replace 
+   (->> (reduce reduce-primes [[n 1] [0]] (repeat 1))
+       (first)
+       (rest)
+       (filter (fn [x] (< 0 (second x))))
+       (map (fn [x] (if (= (second x) 1)
+                      [(first x)]
+                      [(second x) '* '* (first x)]
+                      )))
+       (map (fn [x] (into () x) ))
+       (apply str)) #" " ""))
+
+
+(defn next-prime [n]
+  "give me the next biggest prime"
+  (.nextProbablePrime (biginteger n)))
+
+(defn reduce-one-prime [prime-num lst]
+  "devide a num by a prime till it returns a remainder"
+  (let [prime (first prime-num)
+        num (second prime-num)]
+    (reduce (fn [acc elem] (if (not= (rem (first acc) prime) 0)
+                             (reduced [[(first acc) prime] (conj lst [prime (second acc)])])
+                             [(/ (first acc) prime) (+ (second acc) 1)])) [num 0] (repeat prime))))
+
+(defn reduce-primes [acc ignored]
+  "reducer for prime-factors"
+  (if (= (first (first acc)) 1)
+    (reduced (rest acc))
+    (reduce-one-prime [(next-prime (second (first acc))) (first (first acc))]
+                      (second acc))))
+
+(defn prime-factors [n]
+  (clojure.string/replace 
+   (->> (reduce reduce-primes [[n 1] [0]] (repeat 1))
+        (first)
+        (rest)
+        (filter (fn [x] (< 0 (second x))))
+        (map (fn [x] (if (= (second x) 1)
+                       [(first x)]
+                       [(second x) '* '* (first x)]
+                       )))
+        (map (fn [x] (into () x) ))
+        (apply str)) #" " ""))
+
+(prime-factors 304)
+#+end_src
+
+#+RESULTS: Primes-in-numbers
+| #'prime-decomp.core/prime-factors    |
+| #'prime-decomp.core/next-prime       |
+| #'prime-decomp.core/reduce-one-prime |
+| #'prime-decomp.core/reduce-primes    |
+| #'prime-decomp.core/prime-factors    |
+| "(2**4)(19)"                         |
+
+So it appears they want me to show a number comprised of primes.
+
+And it looks like I need to return it as this nasty string.
+
+hmn... it's not as bad as I first thought. Looks like I can just divide 
+
+Okay, I have my steps. I start with a list of primes from 1 to the number. then I:
+
+1. try to divide the number by 2
+2. If I can, do it again, keeping track of how many times I divide by two
+3. if it can' be divided by two, move from trying to divide by two, to dividing by the next biggest prime.
+4. repeat till the number is 1.
+
+   Well, I could do reduce, and sort of model this the way the imperative process works, but let's think a little first. Is there a simpler way to express this?
+   I could do something like reduce over the list of primes. Each time I run reduce, I call a function that does that "divide me by this number as many times as you can and keep track of how many times". Once that is done, then I move on to the next prime.
+
+   Okay, so there are at least two reduce funcitons. One handles the calling of each prime in increasing order. The other handles one prime at a time and returns how many times that number can be reduced by that prime. And the outer reduce needs to know to terminate.
+
+   Nested reduce functions would do the trick. Can I do better?
+
+   Is there another math expression for asking how many times you can divide a number by another number till it doesn't divide evenly?
+
+   A for comprehension doesn't feel like it would work. And I really don't want to write this as recursion. Clojure can do that, but it doesn't feel nesisary. I would write the reduce before that. 
+
+   Okay. I want to remember how to do this.
+
+  
+**** I don't need to make the list up front
+[2022-10-25 Tue]
+
+I can make the primes one at a time and only on demand. That should also help be more efficient.
+
+Getting close.
+
+**** Done
+[2022-10-26 Wed]
+
+...I finished that in two days. So 3 hours or so. I can get faster. For one thing, the syntax is still slowing me down. And I need to learn how to work in a Clojure buffer to get more help from the error messages. But if I can get as fast as I was with Elixir, this is looking pretty good. 
+
+*** Strip comments
+[2022-10-27 Thu]
+
+This is strings. Looks Like I am going to be learning about what the Java standard library can do with those. 
+
+#+name:strip-comments
+#+begin_src clojure :results value
+(ns strip-comments)
+(require '[clojure.string :as str])
+
+(defn drop-after-chars [string chars]
+  "drop everything aftter char in string if char exits"
+  (reduce (fn [acc elem]
+            (subs acc 0
+                  (if (= nil (str/index-of acc elem))
+                    (count acc)
+                   (str/index-of acc elem))))
+          string chars))
+
+(defn strip-comments [text comment-symbols]
+  "remove comments"
+  (as-> text val
+    (str/split val #"\n")
+    (map (fn [x] (drop-after-chars x comment-symbols)) val)
+    ;; (str/trimr val)
+    (str/join "\n" val)))
+
+(strip-comments "apples, pears # and bananas\ngrapes\nbananas !apples" '("#" "$"))
+
+;; (strip-comments "apples#pears" '("#" "$"))
+;; (drop-after-chars "bigand hairy places" '("#" "$"))
+#+end_src
+
+#+RESULTS: strip-comments
+| #'strip-comments/drop-after-chars         |
+| #'strip-comments/strip-comments           |
+| "apples, pears \ngrapes\nbananas !apples" |
+
+It would have been more accurate to say strip things after Bangs and hashes, and all the whitespace at ends of lines.
+
+It's also weird that I may get strings that come in as multiline strings. I need to deal with the new line characters.
+
+Woa, I think I need to be able to change what the comment symbols can be. Well okay that is probably not so bad. It's just a matter of dealing with a character and calling it special.
+
+I was thinking I could split on the new line characters, but then I need to keep them when I put it all back to gether.
+#+name:splitter
+#+begin_src clojure :results value
+(require '[clojure.string :as str])
+(str/join "s" (str/split "this is a test" #"s"))
+#+end_src
+
+#+RESULTS: splitter
+: this is a test
+
+That is useful. I can split on the newlines, the join on a new line and get the old text back.
+
+Hmn... there is another built in that looks like it could work called "Split-lines" for splitting on the new line characters.
+
+Calling trimr on the string after things after the comment character are gone would get rid of trainling whitespace.
+
+I just need to know how to drop everything after a character in a string and I am mostly ready to start writing this.
+
+oh... I think I just call split on the comment characters. And if it's not there, I get my origional string back.
+
+*** Largest Difference in Increasing Indexes
+[2022-10-31 Mon]
+
+This is really confusing. But I got it. I want to look at each element of a big list, and find all the other elements at the same size or greater. For all the "pairs" that I find, I want to give the distance between their indexes.
+
+So I could do a reduce. It would be spelling out a lot, but it would do the trick. I tell it to go through each item and track the biggest distance. Go through the list from that index and get a boolean map. Drop all the extra falses at the end of the list. If the list is of length one, move on. If the list is bigger than 1, take the max of the old highest distance and the currently found distant pair.
+
+It's not too shabby, But let's see if I can get a better graph on this before just making yet another reduce.
+
+Yeah no the more I think about it the more I want to make this a reduce.
+
+Here are a few things I though of. One, I can make the reduce "accumulator" a map. one is the max, the next is the list so far. 
+
+Yeah, the syntax of that is a lot nicer:
+
+#+name:map-accumilator
+#+begin_src clojure :results value
+(reduce (fn [acc elem]
+          (merge {:num (+ (:num acc) elem)} acc))
+        {:num 0 :unused "hi"}
+        [1 2 3 4 5])
+;; (:a {:a 1 :b 2})
+#+end_src
+
+#+RESULTS: map-accumilator
+| :num | 0 | :unused | hi |
+
+That's nicer right? No need for a named argument. Just use a map. Make a map with the new val set in the accumulator, and then merge the maps.
+
+I with there were a more elegant way of doing this "boolean map" and drop false from the end thing.
+
+hmn... what if I do a different sort of reduce there?
+I do something like the reduce while. I slowly drop things off the end of the list till I hit something equal to or bigger than the origional elemnt, when I hit that, call it reduced and return the length of the list so far. If I hit a length of 1, call it good at 1. 
+
+Man I feel like think of everything in terms of reduce now.
+
+#+name:drop-till
+#+begin_src clojure :results value
+(reduce (fn [acc elem]
+          (if
+            (>= elem (:target acc)) (reduced acc)
+            (merge acc {:list (rest (:list acc))})))
+            {:list '(1 2 3 4) :target 1} '(1 2 3 4))
+#+end_src
+
+#+RESULTS: drop-till
+| :list | (1 2 3 4) | :target | 1 |
+
+There we go. Yeah, this map merging thing makes so much more sense. And it looks like the same idea can work in Elixir.
+
+**** Let's work on this reduce function a bit more
+[2022-11-01 Tue]
+Okay I think I can perfect this reduce a bit more. I want the reduce to pass back the list. If there are no elements equal to or smaller I will take nil.
+
+The reduce needs to be supplies the list and the target but it's the same as the list that goes at the end. If I can name that, it should be simple enough to call it in a chain of functions.
+
+It will be something like
+1. Take in the original list
+2. Map over the... list in all it's length dropping the head and getting the distance from the hear to the furthest num equal to or greater.
+3. change those lists to counts
+4. take the max of the whole list
+
+   That step 2 is FUNKY. 
+
+   I think I can make those by using drop
+   I take the list, and map over a range of numbers. The map drops items off the origional list.
+   Then I need to be able to pass those lists to the reduce function.
+
+   Okay got it.
+
+#+name:largest-dif-increasing-sums
+#+begin_src clojure :results value
+(ns cw-practice)
+
+(defn largest-diff [lst]
+  "take a list a returnt the longest list fromt he head to the last >= elem"
+  (let [rev (reverse lst)]
+  (:list (reduce (fn [acc elem]
+            (if
+                (>= elem (:target acc)) (reduced acc)
+                (merge acc {:list (rest (:list acc))})))
+          {:list rev :target (last rev)} rev))))
+
+(defn solve [lst]
+  "solve"
+  (as-> lst val
+    (map (fn [x] (drop x val)) (range (count val)))
+    (map (fn [x] (largest-diff x)) val)
+    (map (fn [x] (- (count x) 1)) val)
+    (apply max val)))
+
+(solve [9 4 1 10 3 4 0 -1 -2])
+#+end_src
+
+#+RESULTS: largest-dif-increasing-sums
+| #'cw-practice/largest-diff |
+| #'cw-practice/solve        |
+| 4                          |
+
+...oh wow I'm done.
+
+*** Smallest possible sum 
+[2022-11-03 Thu]
+
+The explanation is horrible. But I think I get what they are trying to make me do. I take a list of numbers, then I get the remainder of dividing all the elements by the smallest number. I then take the difference between the two smallest elements. Then I multiple that by the length of the array. ...I think.
+
+#+name:smalles-posible-sum
+#+begin_src clojure :results value
+(ns smallest-sum.core)
+
+(defn solution
+  [arr]
+  (let
+      [sorted (sort arr)
+       smallest (first sorted)
+       drop-first (rest sorted)]
+    (if (= (count arr) 1) (first arr)
+        (as-> drop-first val
+          (map (fn [x] (rem x smallest)) val)
+          (map (fn [x] (if (= x 0) smallest x)) val)
+          (map (fn [x] (apply min val)) val)
+          (conj val (first val))
+          (apply + val)
+          ))))
+
+(solution [1 21 55])
+(solution [6 9 12])
+#+end_src
+
+#+RESULTS: smalles-posible-sum
+| #'smallest-sum.core/solution |
+|                            3 |
+|                            9 |
+
+Well... I got the solution in less than an hour. But it's not performant.
+
+#+name:smallest-sum-2
+#+begin_src clojure :results value
+(ns smallest-sum.core)
+
+(defn solution
+  [arr]
+  (let
+       [smallest (apply min arr)]
+    (if (= (count arr) 1) (first arr)
+        (as-> arr val
+          (map (fn [x] (rem x smallest)) val)
+          (map (fn [x] (if (= x 0) smallest x)) val)
+          (* (count arr) (apply min val))
+          ))))
+(solution [2000 2000 19])
+#+end_src
+
+#+RESULTS: smallest-sum-2
+| #'smallest-sum.core/solution |
+|                           15 |
+
+This apparently is fast enough, but fails a few tests. The two tests I miss both say my answer is off by a factor of two. weird.
+
+**** Weird way to solve it
+[2022-11-07 Mon]
+
+Apparently just some of the random tests were throwing my faster solution off. So after enough submission attempts, they eventually accepted it. I still don't get what they were trying to make you do. 
+
+*** Decimal to Factorial and Back
+[2022-11-08 Tue]
+
+So this one has a MUCH better explanation, and I think I know what to do.
+
+#+name:dec-fact
+#+begin_src clojure :results value
+(ns fact-radix.core)
+(require '[clojure.string :as str])
+
+(defn letter-to-num [ltr]
+  "take a number over 9 and encode it as a letter"
+  (def mapped (zipmap (str/split "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" #"") (range 0 36)))
+  (mapped ltr))
+
+(defn num-to-letter [num]
+  "take a number over 9 and encode it as a letter"
+  (def mapped (zipmap  (range 10 36) (str/split "ABCDEFGHIJKLMNOPQRSTUVWXYZ" #"")))
+  (mapped num))
+
+(defn fact-string [num]
+  "pass the number back as a string if less than 9, other wise call num-letter"
+  (if (> 10 num) (str num) (num-to-letter num)))
+
+(defn factorial [num]
+  "return the factorial of a number"
+(loop [n (bigint num), accumulator 1]
+  (if (zero? n)
+    accumulator
+    (recur (dec n) (* accumulator n)))))
+  
+(defn dec2FactString [nb]
+  "divide by increasing ints till result of division is zero"
+  (reduce (fn [acc num] (if (= (:total acc) 0) (reduced (:string acc))
+                            {:total (quot (:total acc) num)
+                             :string (str/join [(fact-string (rem (:total acc) num)) (:string acc)])}))
+          {:total nb :string ""} (drop 1(range))))
+
+(defn factString2Dec [strg]
+  "take a string and returnt the represented num"
+  (as-> strg val
+    (apply str (reverse val))
+    (str/split val #"")
+    (reduce (fn [acc elem] {:next-fact (+ 1 (:next-fact acc))
+                            :total (+ (* (factorial (:next-fact acc)) (letter-to-num elem)) (:total acc))})
+            {:next-fact 0 :total 0} val)
+    (:total val)
+    ))
+
+
+(factString2Dec "341010")
+;; (factorial 4)
+#+end_src
+
+#+RESULTS: dec-fact
+| #'fact-radix.core/letter-to-num  |
+| #'fact-radix.core/num-to-letter  |
+| #'fact-radix.core/fact-string    |
+| #'fact-radix.core/factorial      |
+| #'fact-radix.core/dec2FactString |
+| #'fact-radix.core/factString2Dec |
+| {:next-fact 6, :total 463N}      |
+
+
+I need two functions, One is going to take a number, and split the digit into their places, then I need to multiple them from back to front by 0 then 1 then 2 etc.
+
+The other function will do successive division. Take a decimal number, divide by 1 then 2 then 3 etc, logging the remainer as I go. When the division returns 0 (not remainder zero, the other one), then return the remainders joined into a single string.
+
+This is bound to be useful
+
+
+#+name:str-num
+#+begin_src clojure :results value
+(require '[clojure.string :as str])
+
+(def my-list (str/split "302" #""))
+(+ (read-string (first my-list)) 4)
+
+#+end_src
+
+This syntax lets me take a string in the factorial form, and get back strings of all the places. 
+
+
+...wait. This is going to be harder. Because I need to use letters A through Z when I run out of numbers to do in factorial. Let's do the easy one first.
+
+**** Another hint
+
+I figured out where the letters come in. A remainer has to be converted into a letter if it's bigger than 9
+
 ** Elisp
 While not exactly the language I intend to use for most things, it IS the language of Emacs, and I do intend to be using that a lot, so keeping some Elisp under my fingers is a good idea.
 
@@ -12604,3 +14191,28 @@ Once I have that I should be able to finish it up. Maybe I can even finish that 
 I was not expecting to finish so quickly, but then again I guess I really I am getting used to how all this works.
 
 I think I might do the threaded version if I don't get the chance to make this google apps script thing for GSA. Or I am going to very soon be up to my neck in Javascript and SQL. Lovely.
+
+* LiveBook practice
+[2023-01-04 Wed]
+
+So in 2023, I want to start getting into ML bit by bit. And a great tool for that is the Elixir LiveBook. I am learning Elixir. And the LiveBook it's self is made in Phoenix, which I am also learning. And I have some chapters coming up about it in my CS topics Python book, so the timing is great too.
+
+But since I will be mostly writing the stuff I make in the LiveBooks them selves, I will just stick to keeping a sort of journal of how it's going.
+** Graphs
+[2023-01-04 Wed]
+So as much I want to dive into making some ML models, it looks like a big part of ML is working with Data. And looking at a bunch of numbers is a great way to get started with Data. Plush it's usefully for all kinds of stuff.
+
+Maybe once I get better at the visualisation, I can add the Elixir equivalent of pandas.
+
+...well day 1 went pretty badly. I think I need to learn a bit more about how Vega lite works, and how this Elixir table module works
+
+*** Got them working
+[2023-01-09 Mon]
+I actually finished this last week, but I managed to figured out how the Vega lite bindings wanted to see the data so I could print out a graph. Now I think it's time to learn some Explorer so I can make prettier data before I visualize it.
+
+** Explorer
+[2023-01-09 Mon]
+
+Now that I can make graphs and sort of understand how they work, it's time to work with tabular data. Enter the Elixir equivalent of Pandas: Explorer.
+
+Let's use that idea I used when learning pandas. Find a Pokemon CSV file.
