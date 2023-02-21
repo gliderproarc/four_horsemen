@@ -1,0 +1,572 @@
+# 6.7 Clustering
+
+```elixir
+Mix.install(
+  [
+    {:scholar, github: "elixir-nx/scholar"},
+    {:exla, "0.4.0"},
+    {:explorer, "~> 0.4"},
+    {:stb_image, "~> 0.6"},
+    {:scidata, "~> 0.1.9"},
+    {:req, "~> 0.3.3"},
+    {:kino, "~> 0.8.0"},
+    {:vega_lite, "~> 0.1.6"},
+    {:kino_vega_lite, "~> 0.1.7"},
+    # {:nx, github: "elixir-nx/nx", sparse: "nx", override: true}
+    {:nx, "0.4.1", override: true}
+  ],
+  config: [nx: [default_defn_options: [compiler: EXLA]]]
+)
+```
+
+## Section
+
+```elixir
+require Explorer.DataFrame
+alias Explorer.DataFrame, as: Df
+alias Explorer.Series, as: Sf
+alias VegaLite, as: Vl
+```
+
+Yes, It's up and running
+
+[2023-01-25]
+
+Well I finally have a reason to want to try out Kmeans, and now that livebook has these spiffy notebooks to do that sort of work in, let's see how it goes
+
+```elixir
+data =
+  Df.from_csv!("/Users/robertclay/Downloads/iiitd/Academic_Block/AHU/0/Energy.csv",
+    header: false,
+    delimiter: ","
+  )
+```
+
+Well you know what, I think I would rather figure this out another day. Let's use the Iris data set first.
+
+```elixir
+iris = Explorer.Datasets.iris()
+Explorer.DataFrame.describe(iris)
+```
+
+<!-- livebook:{"attrs":{"chart_title":null,"height":null,"layers":[{"chart_type":"point","color_field":"species","color_field_aggregate":null,"color_field_bin":false,"color_field_scale_scheme":null,"color_field_type":"nominal","data_variable":"iris","x_field":"petal_length","x_field_aggregate":null,"x_field_bin":false,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"petal_width","y_field_aggregate":null,"y_field_bin":false,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.Vl","width":null},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+
+```elixir
+Vl.new()
+|> Vl.data_from_values(iris, only: ["petal_length", "petal_width", "species"])
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "petal_length", type: :quantitative)
+|> Vl.encode_field(:y, "petal_width", type: :quantitative)
+|> Vl.encode_field(:color, "species", type: :nominal)
+```
+
+....hahaha.  Well that is a graph of the data by Color. And no, I didn't write that Vega lite code by hand. The smart cell did it for me. But the smart cell sure does make the easy ones eady to start up quickly.
+
+Before I give up on the CSV file, let me try again.
+
+Oh nice! Now it's working!!
+
+```elixir
+described_data = Df.describe(data)
+```
+
+Hmn... well it loads, but it appears to be empty. That is not right. I have opened it up. it has data.
+
+<!-- livebook:{"attrs":{"chart_title":null,"height":400,"layers":[{"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":false,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"data","x_field":"__count__","x_field_aggregate":null,"x_field_bin":false,"x_field_scale_type":null,"x_field_type":null,"y_field":"column_2","y_field_aggregate":null,"y_field_bin":false,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.Vl","width":800},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+
+```elixir
+Vl.new(width: 800, height: 400)
+|> Vl.data_from_values(data, only: ["column_2"])
+|> Vl.mark(:point)
+|> Vl.encode(:x, aggregate: :count)
+|> Vl.encode_field(:y, "column_2", type: :quantitative)
+```
+
+Okay cool, this worked. I got the data from some random CSV of the internet. But what is weird about the second reading, it's listed as two increasing numbers. I am assuing column 1 is time. The other column is probably a running total of energy used.
+
+I wonder how hard it would be to make a 3rd columm that was the change between rows? Looks like it's done by making a serries then mutating the dataframe with the serries. Let's try it
+
+```elixir
+change =
+  Df.pull(data, :column_2)
+  |> Sf.shift(1)
+
+diff_data =
+  Df.put(data, :column_3, change)
+  |> Df.mutate(column_4: column_3 - column_2)
+```
+
+<!-- livebook:{"attrs":{"chart_title":null,"height":null,"layers":[{"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":false,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"diff_data","x_field":"column_1","x_field_aggregate":null,"x_field_bin":false,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"column_4","y_field_aggregate":null,"y_field_bin":false,"y_field_scale_type":null,"y_field_type":"nominal"}],"vl_alias":"Elixir.Vl","width":null},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+
+```elixir
+Vl.new()
+|> Vl.data_from_values(diff_data, only: ["column_1", "column_4"])
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "column_1", type: :quantitative)
+|> Vl.encode_field(:y, "column_4", type: :nominal)
+```
+
+Well that was not so straight forward, But I did excactly what I wanted. I wanted to show change by row. So I took a column, shifted it down one, and did substration between the shift. What I REALY need to do now, is try to do a Kmeans cluster of this, but first I need to show how to make sense of the time data.
+
+<!-- livebook:{"break_markdown":true} -->
+
+[2023-01-30 Mon]
+
+Let's try to get at the time data.
+
+```elixir
+Time.from_seconds_after_midnight(1.401595223e12)
+```
+
+Haha, well somthings are just nice to do in Emacs
+| 1401595223000.0 |               0 | 1401595223000.0 |
+| 1401595253000.0 | 1401595223000.0 |         30000.0 |
+| 1401595283000.0 | 1401595253000.0 |         30000.0 |
+| 1401595313000.0 | 1401595283000.0 |         30000.0 |
+| 1401595343000.0 | 1401595313000.0 |         30000.0 |
+| 1401595373000.0 | 1401595343000.0 |         30000.0 |
+| 1401595403000.0 | 1401595373000.0 |         30000.0 |
+| 1401595433000.0 | 1401595403000.0 |         30000.0 |
+| 1401595463000.0 | 1401595433000.0 |         30000.0 |
+| 1401595493000.0 | 1401595463000.0 |         30000.0 |
+| 1401595523000.0 | 1401595493000.0 |         30000.0 |
+| 1401595553000.0 | 1401595523000.0 |         30000.0 |
+| 1401595583000.0 | 1401595553000.0 |         30000.0 |
+| 1401595613000.0 | 1401595583000.0 |         30000.0 |
+#+TBLFM: $3 = '(- $1 $2);N
+
+That is an Org table where I did a simple experiment with some of the raw data in the CSV.
+
+the numbers in Col 1 are all going up by 30,000 for each row in the csv file. So what does that mean for me?
+
+Assuming that is seconds, each reading is 8.3 hours after the next. hmn...
+If only it were 8. That would be nice and cyclical. one third of a day. This could almost be a three times a day electric meter read in seconds.
+
+But it's not quite a clean 28800. That would be exactly 8 hours. So what else could it be? What comes in units of 30,000?
+
+Well it's not difinitive, but it could be miliseconds. That would be 30 sec. Twice a min sounds fairly reasonible. But I don't know where the data starts. hmn
+
+Nice! Looks like this website is guessing the way I was thinking:
+
+Convert epoch to human-readable date and vice versa
+
+Timestamp to Human date  [batch convert]
+Supports Unix timestamps in seconds, milliseconds, microseconds and nanoseconds.
+Assuming that this timestamp is in milliseconds:
+GMT: Sunday, June 1, 2014 4:00:23 AM
+Your time zone: Sunday, June 1, 2014 1:00:23 PM GMT+09:00
+Relative: 9 years ago
+
+So if it's right this whole set starts at 4 in the mornins On Sunday June 1st in 2014.
+
+Now I want to see if I can get Elixir to convert this whole column of the miliseconds.
+
+```elixir
+1_401_595_223_000
+|> DateTime.from_unix!(:millisecond)
+|> DateTime.to_string()
+```
+
+Got it. Nice. Now let's see if I can map that accross a table.
+
+```elixir
+defmodule Cluster_practice2 do
+  def mill_to_datetime(num) do
+    DateTime.from_unix!(trunc(num), :millisecond)
+    |> DateTime.to_string()
+  end
+end
+
+# plus_times = Df.mutate(diff_data,column_5: Cluster_practice.mill_to_datetime(column_1))
+Cluster_practice2.mill_to_datetime(1.401595223e12)
+```
+
+Well that is kind of frustrating, it works. I just can't figure out how to map that accross the values in a column.
+
+```elixir
+plus_times = Df.mutate(diff_data, column_4: Cluster_practice2.mill_to_datetime(column_1))
+```
+
+But it is TOO a number.
+
+```elixir
+plus_times =
+  Df.mutate_with(diff_data, &[column_5: Cluster_practice2.mill_to_datetime(&1["column_1"])])
+```
+
+I give up for today
+
+<!-- livebook:{"break_markdown":true} -->
+
+Okay
+[2023-01-31 Tue]
+
+Let's do this the hard way.
+
+```elixir
+times =
+  Df.pull(diff_data, :column_1)
+  |> Explorer.Series.transform(&Cluster_practice2.mill_to_datetime/1)
+
+plus_times = Df.put(diff_data, :column_5, times)
+```
+
+Nice. That did it
+
+<!-- livebook:{"attrs":{"chart_title":null,"height":800,"layers":[{"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":false,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"plus_times","x_field":"column_4","x_field_aggregate":null,"x_field_bin":false,"x_field_scale_type":null,"x_field_type":"nominal","y_field":"column_5","y_field_aggregate":null,"y_field_bin":false,"y_field_scale_type":null,"y_field_type":"temporal"}],"vl_alias":"Elixir.Vl","width":200},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+
+```elixir
+Vl.new(width: 200, height: 800)
+|> Vl.data_from_values(plus_times, only: ["column_4", "column_5"])
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "column_4", type: :nominal)
+|> Vl.encode_field(:y, "column_5", type: :temporal)
+```
+
+```elixir
+Df.tail(plus_times, 5)
+```
+
+Okay. There we go. I did. I took a CSV file of data. Electric meter data. And I now I have added two useful columns to it. I have change over time, and a date time.
+
+And having changed how I chart it a bit, I see a way I could cluster this. I DO have this repeating clster at times of the day on days of the week. Now to see how to do clustering on a Explorer dataframe.
+
+## Trying the Scholar tutorial
+
+```elixir
+plus_times
+```
+
+[2023-02-06]
+Time to get back to this. I did some fiddling around with the depenencies and I got it working.
+
+```elixir
+# note I already imported Explorer.Dataframe, so no need to requrie it again
+
+# alias VegaLite, as: Vl
+# require Explorer.DataFrame
+seed = 42
+```
+
+```elixir
+defmodule Iris.Data do
+  def df_to_matrix(df) do
+    df
+    |> Df.names()
+    |> Enum.map(&Sf.to_tensor(df[&1]))
+    |> Nx.stack(axis: 1)
+  end
+
+  def df_to_label_vector(df, name) do
+    Df.dummies(df, [name])
+    |> df_to_matrix()
+    |> Nx.argmax(axis: 1)
+  end
+end
+```
+
+```elixir
+df = Explorer.Datasets.iris()
+
+y = Iris.Data.df_to_label_vector(df, "species")
+
+x =
+  df
+  |> Df.discard(["species"])
+  |> Iris.Data.df_to_matrix()
+```
+
+```elixir
+grouped_data = Df.group_by(df, "species")
+
+grouped_data
+|> Df.summarise(
+  petal_length: mean(petal_length),
+  petal_width: mean(petal_width),
+  sepal_width: mean(sepal_width),
+  sepal_length: mean(sepal_length)
+)
+```
+
+```elixir
+Vl.new(title: [text: "Histograms of petal_length column by species", offset: 25])
+|> Vl.data_from_values(df)
+|> Vl.facet(
+  [field: "species"],
+  Vl.new(width: 200, height: 200)
+  |> Vl.mark(:bar)
+  |> Vl.encode_field(:x, "petal_length", type: :quantitative, bin: true)
+  |> Vl.encode(:y, aggregate: :count, scale: [domain: [0, 55]])
+)
+```
+
+```elixir
+Vl.new(
+  width: 300,
+  height: 300,
+  title: [
+    text: "Scatterplot of data samples pojected on plane petal_width x petal_length",
+    offset: 25
+  ]
+)
+|> Vl.data_from_values(df)
+|> Vl.mark(:circle)
+|> Vl.encode_field(:x, "petal_length", type: :quantitative)
+|> Vl.encode_field(:y, "petal_width", type: :quantitative)
+|> Vl.encode_field(:color, "species")
+```
+
+```elixir
+Vl.new(
+  title: [
+    text: "Scatterplot of data samples pojected on plane petal_width x petal_length by species",
+    offset: 25
+  ]
+)
+|> Vl.data_from_values(df)
+|> Vl.facet(
+  [field: "species"],
+  Vl.new(width: 200, height: 200)
+  |> Vl.mark(:point)
+  |> Vl.encode_field(:x, "petal_length", type: :quantitative)
+  |> Vl.encode_field(:y, "petal_width", type: :quantitative)
+)
+```
+
+```elixir
+clusterings = 1..11
+
+models =
+  for num_clusters <- clusterings do
+    Scholar.Cluster.KMeans.fit(x, num_clusters: num_clusters, seed: seed)
+  end
+
+inertias = for model <- models, do: Nx.to_number(model.inertia)
+```
+
+Well, and I am stuck again. Looks like I went a little quickly, but I did have a pretty good idea of what was going on. It helps that I kind of already know basically what it should be trying to do later, but I am kind of worried that even with just following code someone else wrote it's already breaking.
+
+I think the library is still kind of young and needs some TLC and battle testing before it's ready for someone to go to work in this.
+
+Hmn... I spotted something:
+https://hexdocs.pm/exla/EXLA.Op.html#power/3
+
+"power" is a function in EXLA.Op. "pow" is not. Could it be that it's calling the wrong thing somewhere in NX?
+
+Hold on, I had errors when doing setup
+
+warning: function pow/3 required by behaviour Nx.Backend is not implemented (in module EXLA.Backend)
+  lib/exla/backend.ex:1: EXLA.Backend (module)
+
+warning: Nx.Defn.Expr.power/3 is undefined or private. Did you mean:
+
+and
+
+warning: Nx.power/2 is deprecated. Use pow/2 instead
+Invalid call found at 2 locations:
+  lib/scholar/metrics/distance.ex:325: Scholar.Metrics.Distance."__defn:minkowski_n__"/3
+  lib/scholar/metrics/distance.ex:327: Scholar.Metrics.Distance."__defn:minkowski_n__"/3
+
+warning: Nx.power/2 is deprecated. Use pow/2 instead
+  lib/scholar/interpolation/cubic_spline.ex:278: Scholar.Interpolation.CubicSpline."__defn:predict_n__"/3
+
+hmn... so it looks like Nx, Scholar, and EXLA all need to agree on what the poqwe functino should be.
+
+Man... Could I figure out what it should be called and make a pull reqruest?
+
+<!-- livebook:{"break_markdown":true} -->
+
+[2023-02-07]
+
+Okay!!! I walked back version numbers of Nx and ELXA till it ran. Look like at ELXA version 4.0 It's running on my machine. It looks like it might not have even been a issue with the libray. It might haven been EXLA just not playing nice with my laptop.
+
+so with deps of
+
+Mix.install(
+  [
+
+```
+{:scholar, github: "elixir-nx/scholar"},
+{:exla, "0.4.0"},
+{:explorer, "~> 0.4"},
+{:stb_image, "~> 0.6"},
+{:scidata, "~> 0.1.9"},
+{:req, "~> 0.3.3"},
+{:kino, "~> 0.8.0"},
+{:vega_lite, "~> 0.1.6"},
+{:kino_vega_lite, "~> 0.1.7"},
+#{:nx, github: "elixir-nx/nx", sparse: "nx", override: true}
+{:nx, "0.4.1", override: true}
+```
+
+],
+  config: [nx: [default_defn_options: [compiler: EXLA]]
+  ]
+)
+
+Now it's runnning.
+
+```elixir
+Vl.new(width: 600, height: 300, title: "Elbow Plot")
+|> Vl.data_from_values(num_clusters: clusterings, inertia: inertias)
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "num_clusters",
+  title: "Number of Clusters",
+  type: :ordinal,
+  axis: [label_angle: 0]
+)
+|> Vl.encode_field(:y, "inertia", title: "Inertia", type: :quantitative)
+```
+
+Nice. It works!
+
+```elixir
+defmodule Iris.Clusters do
+  import Nx.Defn
+
+  defn sort_clusters(model) do
+    # We sort clusters by the first coordinate
+    order = Nx.argsort(model.clusters[[0..-1//1, 0]])
+    labels_maping = Nx.argsort(order)
+
+    %{
+      model
+      | labels: Nx.take(labels_maping, model.labels),
+        clusters: Nx.take(model.clusters, order)
+    }
+  end
+end
+```
+
+```elixir
+best_model = Enum.at(models, 2)
+best_model = Iris.Clusters.sort_clusters(best_model)
+accuracy = Scholar.Metrics.accuracy(best_model.labels, y)
+```
+
+```elixir
+coords = [
+  cluster_petal_length: best_model.clusters[[0..-1//1, 2]] |> Nx.to_flat_list(),
+  cluster_petal_width: best_model.clusters[[0..-1//1, 3]] |> Nx.to_flat_list()
+]
+
+Vl.new(
+  width: 300,
+  height: 300,
+  title: [
+    text:
+      "Scatterplot of data samples pojected on plane petal_width x petal_length with calculated centroids",
+    offset: 25
+  ]
+)
+|> Vl.layers([
+  Vl.new()
+  |> Vl.data_from_values(df)
+  |> Vl.mark(:circle)
+  |> Vl.encode_field(:x, "petal_length", type: :quantitative)
+  |> Vl.encode_field(:y, "petal_width", type: :quantitative)
+  |> Vl.encode_field(:color, "species"),
+  Vl.new()
+  |> Vl.data_from_values(coords)
+  |> Vl.mark(:circle, color: :green, size: 100)
+  |> Vl.encode_field(:x, "cluster_petal_length", type: :quantitative)
+  |> Vl.encode_field(:y, "cluster_petal_width", type: :quantitative)
+])
+```
+
+And that ends part 1 of the Livebook in the Scholar repo. Now to see if I can use those methods, but with my data from that CSV file instead.
+
+## Make my own clusters
+
+```elixir
+plus_times
+```
+
+
+
+<!-- livebook:{"break_markdown":true} -->
+
+The tutorial takes the DF and groups it. what would I group this by?
+
+```elixir
+times_prep =
+  Df.drop_nil(plus_times)
+  |> Df.select(["column_1", "column_4"])
+  |> Iris.Data.df_to_matrix()
+```
+
+```elixir
+power_clusterings = 1..11
+
+power_models =
+  for num_clusters <- power_clusterings do
+    Scholar.Cluster.KMeans.fit(times_prep, num_clusters: num_clusters, seed: seed)
+  end
+
+power_inertias = for model <- power_models, do: Nx.to_number(model.inertia)
+```
+
+Well, that appeared to do something.
+
+```elixir
+Vl.new(width: 600, height: 300, title: "Power Elbow Plot")
+|> Vl.data_from_values(num_clusters: power_clusterings, inertia: power_inertias)
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "num_clusters",
+  title: "Number of Clusters",
+  type: :ordinal,
+  axis: [label_angle: 0]
+)
+|> Vl.encode_field(:y, "inertia", title: "Inertia", type: :quantitative)
+```
+
+Nope. I missed something. That is an elobow plot of the iris data...no I got it now... I think?
+
+```elixir
+defmodule Power.Clusters do
+  import Nx.Defn
+
+  defn sort_clusters(model) do
+    # We sort clusters by the first coordinate
+    order = Nx.argsort(model.clusters[[0..-1//1, 0]])
+    labels_maping = Nx.argsort(order)
+
+    %{
+      model
+      | labels: Nx.take(labels_maping, model.labels),
+        clusters: Nx.take(model.clusters, order)
+    }
+  end
+end
+```
+
+```elixir
+# power_y = Iris.Data.df_to_label_vector(plus_times, "column_5")
+
+power_model = Enum.at(power_models, 2)
+power_model = Iris.Clusters.sort_clusters(power_model)
+# accuracy = Scholar.Metrics.accuracy(power_model.labels, power_y)
+```
+
+Oh, there is that y variable. I need to make one my power data.
+
+Still not enough.
+
+But I am a lot closer to being done that I was trying this over the past... few weeks.
+
+<!-- livebook:{"break_markdown":true} -->
+
+[2023-02-09]
+
+It looks like the problem is with the labels I was trying to make. I don't think I can actually use the dates in Column 5. Those are all unique.
+
+Yeah, if the last line there is trying to show the accuracy of the clusering, I can't do that unless I have labaled data. And this data has no labels.
+
+I saw above the "//" in some of the code and I wasn't able to find it when searching the Hex docs for Elixir core. But when I asked ChatGPT:
+"The double slash (//) is the floor division operator in Elixir. It is used to perform integer division, meaning that it will return the integer portion of a division operation, discarding any remainder. In the example you provided, the expression [0..-1//1, 0] will return [0, -1, 0]."
+
+Yes. That is what I wanted to know... except it's wrong... haha. It's actuall the step range operator. so 1..5//2 would be the numbers from 1 to 5 by steps of 2.
+
+ChatGPT, very confidently wrong. But it did help me a find a error message in an iex sessoion that got me the name of the operator.
+
+So at the end of my session today it looks like I have determined that I don't need the lines from the example that are adding the labels because I have no labels. I just need to figure out how to look at the clustering, see if it works, and graph a way to visualize what it thinks the clustering shoudl be.

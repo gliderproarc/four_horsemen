@@ -4833,8 +4833,69 @@ I am going to branch for 3 cases.
 3. when the number has a 9 but the first number isn't.
 
    I could do a recursive walk down the places of the target number till I hit a 9, and that is not a bad idea, but I just want to check I can treat numbers under a 9 the same way, or if I need to do anything special to calculate them.
+**** Chat gpt to the resuce?
+[2023-02-11 Sat]
 
-   
+So ChatGPT is a thing now. And it got incorporated into Bing. And now it's a beast. And when I asked it to help me figure out this problem, it gave me some Python.
+
+#+name:chatgpt-version
+#+begin_src python :python python3 :results output
+def count_nines(n):
+  # initialize the output to zero
+  output = 0
+  # loop through the positions of the numbers in the sequence
+  print(range(len(str(n))))
+  for i in range(len(str(n))):
+    # calculate the factor for the current position
+    factor = 10 ** i
+    # calculate the number of times 9 appears in the current position for all the numbers from 0 to n, except for the numbers that end with 9 * factor - 1
+    output += (n // (10 * factor)) * factor
+    # calculate the remainder of dividing n by 10 * factor
+    remainder = n % (10 * factor)
+    # if the remainder is greater than or equal to 9 * factor - 1, add the remainder minus 9 * factor plus 1 to the output
+    if remainder >= 9 * factor - 1:
+      output += remainder - 9 * factor + 1
+  # return the output
+  return output
+print(count_nines(101))
+  #+END_SRC
+
+  #+RESULTS: chatgpt-version
+  : range(0, 3)
+  : 20
+
+  And by golly it work. Now I just need a version that works in Elixir.
+
+ #+name:gpt_helped
+ #+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+
+defmodule Count_nines do
+
+  def count_nines(target) do
+    Enum.to_list(0..length(Integer.digits(target)))
+    |> Enum.reduce(0, fn x, acc -> process({x,target,acc}) end)
+  end
+  
+  def process({n, target, carry}) do
+    factor = 10 ** n
+    out1 = Integer.floor_div(target, 10 * factor) * factor
+    remain = rem(target, (10 * factor))
+    if remain >= 9 * factor - 1 do
+                              (out1 + remain - 9 * factor + 1) + carry
+                              else
+                                out1 + carry
+    end
+  end
+  
+end
+Count_nines.count_nines(999)
+#+end_src 
+
+#+RESULTS: gpt_helped
+: 300
+
+Well there it is. And it's nice and fast now. I still don't really understand how it works, but I am glad it does.
 *** User name validation
 [2023-01-03 Tue]
 Just a quick little problem to try out the Coderbyte website
@@ -4896,6 +4957,270 @@ Man... I am pretty rusty at that. Plus the checking of the multiple things on a 
 ...I fell like I should have made it a reduce. I could have a made a list with all the function calls, and then do a reduce while. As soon as I get an empty list, short-circuit out.
 
 And a stream to make the function calls lazy. That could have saved me the bunch of if elses.
+
+*** Missing rune number thing
+[2023-01-19 Thu]
+
+https://www.codewars.com/kata/546d15cebed2e10334000ed9/train/elixir
+
+#+name:name
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule TestSuite do
+    use ExUnit.Case
+    
+    def run_test(s,sol), do: assert Kata.solve_runes(s) == sol
+    
+    describe "Sample tests" do
+        test "\"1+1=?\"",do: run_test("1+1=?",2)
+        test "\"123*45?=5?088\"",do: run_test("123*45?=5?088",6)
+        test "\"-5?*-1=5?\"",do: run_test("-5?*-1=5?",0)
+        test "\"19--45=5?\"",do: run_test("19--45=5?",-1)
+        test "\"??*??=302?\"",do: run_test("??*??=302?",5)
+        test "\"?*11=??\"",do: run_test("?*11=??",2)
+        test "\"??*1=??\"",do: run_test("??*1=??",2)
+        test "\"??+??=??\"",do: run_test("??+??=??",-1)
+    end
+end
+#+end_src
+
+More than the instructions, this was nice to see. I am getting these strings, they will have some question marks. And I will need to solve for the question mark.
+
+Let's start with the function that parses these into 3-4 things.
+
+#+name:rune_split
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule Rune do
+  
+  @doc "Take a problen string and return the operator, and the 3 numbers, operand 1, 2 result"
+  @spec rune_split(charlist()) :: charlist()
+  def rune_split(str) do
+    String.graphemes(str)
+    |> then(&grab_num({{},&1}))
+    |> grab_sign()
+    |> grab_num
+    |> grab_sign
+    |> grab_num
+    |> elem(0)
+  end
+
+  def grab_num({vals, lst}) do
+    {result, rest} = Enum.take_while(tl(lst), fn x -> not(x in ["+","-","*","="]) end)
+    |> Enum.count
+    |> then(&Enum.sum([&1,1]))
+    |> then(&Enum.split(lst,&1))
+    {Tuple.append(vals, {result}), rest}
+  end
+
+  def grab_sign({vals, lst}) do
+    {result, rest} = Enum.split(lst, 1)
+    {Tuple.append(vals, {result}), rest}
+    end
+end
+
+Rune.rune_split("-4+?=1")
+#+end_src
+
+#+RESULTS: rune_split
+| (- 4) |
+| (+)   |
+| (?)   |
+| (=)   |
+| (1)   |
+
+Ho man, This one is going to take time
+
+[2023-01-23 Mon]
+
+Sometimes the ord output it hard to read when it's elixir. it should be this:
+#+begin_quote
+{{{["4", "4"]}, {["+"]}, {["3", "0"]}, {["="]}, {["1", "0", "0"]}}, []}
+#+end_quote
+
+So I got it. I have a tuple which is 4 lists, The first, num, the first operator, the next num, the equals, and the last num.
+
+Pretty slick.
+
+The next step is take that list of tuples and make a function that will convert it into math 10 times. Replace all the ? marks with the same number, and then try to do math
+
+**** I think I can do the split first
+[2023-01-24 Tue]
+
+Okay, I was going to do the split first, then repalce the question marks, but I think it's easier if I do that before I do the graphemes call so I don't need to worry about the location of all the strings I break it out into.
+
+Let's do that first
+
+
+#+name:rune_split2
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule Rune do
+  
+  @doc "Take a problem string and return the operator, and the 3 numbers, operand 1, 2 result"
+  def rune_split({str, num}) do
+    grab_num({{},String.graphemes(str)})
+    |> grab_sign()
+    |> grab_num
+    |> grab_sign
+    |> grab_num
+    |> elem(0)
+    {res, num}
+  end
+
+  def grab_num({vals, lst}) do
+    {result, rest} = Enum.take_while(tl(lst), fn x -> not(x in ["+","-","*","="]) end)
+    |> Enum.count
+    |> then(&Enum.sum([&1,1]))
+    |> then(&Enum.split(lst,&1))
+    {Tuple.append(vals, {result}), rest}
+  end
+
+  def grab_sign({vals, lst}) do
+    {result, rest} = Enum.split(lst, 1)
+    {Tuple.append(vals, {result}), rest}
+  end
+
+  def consolidate({{{term1}, {[sign]}, {term2}, eq, {result}}, num}) do
+                   {{{List.to_string(term1)},
+                     {[sign]},
+                     {List.to_string(term2)},
+                     eq,
+                     {List.to_string(result)}},
+                    num}
+  end
+
+  def replace_in_tup(tup) do
+    {str, num} = tup
+    {String.replace(str, "?", Integer.to_string(num)), num}
+  end
+
+  def check_math({{{term1}, {["+"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) + String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def check_math({{{term1}, {["-"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) - String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def check_math({{{term1}, {["*"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) * String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def solve(str) do
+    Stream.cycle([str])
+    |> Enum.take(10)
+    |> Enum.zip(0..9)
+    |> Enum.map(fn x -> replace_in_tup(x) end)
+    |> Enum.map(fn x -> rune_split(x) end)
+    |> Enum.map(fn x -> consolidate(x) end)
+    |> Enum.filter(fn x -> check_math(x) end)
+    |> Enum.concat([{"fail",-1}])
+    |> hd()
+    |> elem(1)
+  end
+      
+  
+end
+
+Rune.solve("19--45=5?")
+#+end_src
+
+#+RESULTS: rune_split2
+: -1
+
+#+begin_quote
+
+        test "\"1+1=?\"",do: run_test("1+1=?",2)
+        test "\"123*45?=5?088\"",do: run_test("123*45?=5?088",6)
+        test "\"-5?*-1=5?\"",do: run_test("-5?*-1=5?",0)
+        test "\"19--45=5?\"",do: run_test("19--45=5?",-1)
+        test "\"??*??=302?\"",do: run_test("??*??=302?",5)
+        test "\"?*11=??\"",do: run_test("?*11=??",2)
+        test "\"??*1=??\"",do: run_test("??*1=??",2)
+        test "\"??+??=??\"",do: run_test("??+??=??",-1)
+#+end_quote
+
+Hmn... I might have solved it.
+
+Yup.
+
+
+#+name:rune_codewars_version
+#+begin_src elixir :results output
+Code.compiler_options(ignore_module_conflict: true)
+defmodule Rune do
+  
+  @doc "Take a problem string and return the operator, and the 3 numbers, operand 1, 2 result"
+  def rune_split({str, num}) do
+    res = grab_num({{},String.graphemes(str)})
+    |> grab_sign()
+    |> grab_num
+    |> grab_sign
+    |> grab_num
+    |> elem(0)
+    {res, num}
+  end
+
+  def grab_num({vals, lst}) do
+    num = Enum.count(Enum.take_while(tl(lst), fn x -> not(x in ["+","-","*","="]) end))
+    {result, rest} = Enum.split(lst,num + 1)
+    {Tuple.append(vals, {result}), rest}
+  end
+
+  def grab_sign({vals, lst}) do
+    {result, rest} = Enum.split(lst, 1)
+    {Tuple.append(vals, {result}), rest}
+  end
+
+  def consolidate({{{term1}, {[sign]}, {term2}, eq, {result}}, num}) do
+                   {{{List.to_string(term1)},
+                     {[sign]},
+                     {List.to_string(term2)},
+                     eq,
+                     {List.to_string(result)}},
+                    num}
+  end
+
+  def replace_in_tup(tup) do
+    {str, num} = tup
+    {String.replace(str, "?", Integer.to_string(num)), num}
+  end
+
+  def check_math({{{term1}, {["+"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) + String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def check_math({{{term1}, {["-"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) - String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def check_math({{{term1}, {["*"]}, {term2}, _, {result}}, _}) do
+    String.to_integer(term1) * String.to_integer(term2) == String.to_integer(result)
+  end 
+  
+  def solve(str) do
+    Stream.cycle([str])
+    |> Enum.take(10)
+    |> Enum.zip(0..9)
+    |> Enum.map(fn x -> replace_in_tup(x) end)
+    |> Enum.map(fn x -> rune_split(x) end)
+    |> Enum.map(fn x -> consolidate(x) end)
+    |> Enum.filter(fn x -> check_math(x) end)
+    |> Enum.concat([{"fail",-1}])
+    |> hd()
+    |> elem(1)
+  end
+      
+  
+end
+
+Rune.solve("19--45=5?")
+#+end_src
+
+#+RESULTS: rune_codewars_version
+: -1
+
 ** LFE
 LFE is a language I don't imagine I will ever get to write in a production app. But the fact it exists and I can write it is pretty darned cool.
 *** Syntax reference
@@ -5780,14 +6105,14 @@ Take an array of nums, find the biggest sub array (when multiplying them all tog
    (Elixir.Enum:map (lambda (x) (Elixir.Enum:product x)))
    (Elixir.Enum:max)))
 
-(max-subarray '(5 -2 4 3))
+(max-subarray '(10 -2 4 3))
 #+end_src
 
 #+RESULTS: max-product-subarray
 : lfe>    (Elixir.Enum:max)))
 : max-subarray
 : lfe> 
-: lfe> (max-subarray '(5 -2 4 3 ))
+: lfe> (max-subarray '(10 -2 4 3))
 : 12
 
 It works.
@@ -7034,6 +7359,420 @@ Much better.
 
 #+RESULTS: max-binary-tree1
 
+*** Hy is a way to get pipes in Python
+[2023-02-14 Tue]
+
+As much as I really like the beam, I don't really think I will ever be able to make a living as an Erlang developer. I don't think at 35 I will ever be given the opportunity to make a system in Erlang or Elixir. And while Elixir livebooks are SO COOL, I have to remember that most of the time I get more than toy problems done, it's in Python.
+
+So let's try to keep Python and Hy under the fingers. Now that I have learned more about functional programming, Maybe I am also better equipped to see what parts are truly important. Because while I wish I had immutable data structures, Python seem to help a ton of people get work done without them.
+
+So to get Python and Hy back in my head, let's do a Leet code problem.
+
+... haha no wait. Let's make Bing make me a homework problem.
+
+**** Bing's practice problem.
+Count Vowels... oh how cute.
+But wait... it can write me tests? Okay this is cool.
+
+
+...and it can write an optimization test? With an expected run time?
+
+Wait this is actually pretty cool
+
+#+name:bing-wants-to-sort-vowels
+#+begin_src python :python python3 :results output
+import time
+from functools import reduce
+
+# def vowel_count(str):
+#     "Count the vowels in a string"
+#     vowels = list(filter(lambda x : x in ["a","e","i","o","u"], str))
+#     return len(vowels)
+
+# def vowel_count(str):
+#   "Bing's version"
+#   # Initialize a counter variable
+#   count = 0
+#   # Loop through each character in the string
+#   for char in str:
+#     # If the character is a vowel, increment the counter
+#     if char in ["a", "e", "i", "o", "u"]:
+#       count += 1
+#   # Return the counter
+#   return count
+
+# def vowel_count(str):
+#   "Count the vowels in a string"
+#   # Define a function that takes a counter and a character, and increments the counter if the character is a vowel
+#   def count_vowels(counter, char):
+#     if char in "aeiou":
+#       return counter + 1
+#     else:
+#       return counter
+#   # Use the reduce function to apply the count_vowels function to the string, starting with a counter of zero
+#   return reduce(count_vowels, str, 0)
+
+def vowel_count(str):
+  "Count the vowels in a string"
+  # Use a generator expression to create an iterator of vowels in the string
+  vowels = (1 for char in str if char in "aeiou")  # Use the built-in sum function to add up the number of vowels
+  return sum(vowels)
+
+
+# Define a function that tests the speed of the vowel counting function with a large string
+def test_vowel_count_speed():
+  # Generate a large string of 100000 random lowercase letters
+  import random
+  letters = "abcdefghijklmnopqrstuvwxyz"
+  large_string = "".join(random.choice(letters) for i in range(100000))
+  # Get the current time before calling the vowel counting function
+  start_time = time.time()
+  # Call the vowel counting function with the large string
+  vowel_count(large_string)
+  # Get the current time after calling the vowel counting function
+  end_time = time.time()
+  # Calculate the elapsed time in seconds
+  elapsed_time = end_time - start_time
+  # Print the elapsed time
+  print("Elapsed time:", elapsed_time, "seconds")
+
+# Call the test function
+test_vowel_count_speed()
+
+def check(actual, expected):
+  # Print the actual and expected outputs
+  print("Actual:", actual)
+  print("Expected:", expected)
+  # If they are equal, print "Pass"
+  if actual == expected:
+    print("Pass")
+  # Otherwise, print "Fail"
+  else:
+    print("Fail")
+  # Print a blank line for readability
+  print()
+
+# Define a function that tests the vowel counting function with some examples
+def test_vowel_count():
+  # Test with an empty string
+  check(vowel_count(""), 0)
+  # Test with a single vowel
+  check(vowel_count("a"), 1)
+  # Test with a single consonant
+  check(vowel_count("b"), 0)
+  # Test with a mixed string
+  check(vowel_count("hello"), 2)
+  # Test with a string with no vowels
+  check(vowel_count("sky"), 0)
+  # Test with a string with all vowels
+  check(vowel_count("aeiou"), 5)
+
+#+end_src
+
+#+RESULTS: bing-wants-to-sort-vowels
+: Elapsed time: 0.0020799636840820312 seconds
+
+
+the problem was way too easy, but it DID say all of this:
+
+#+begin_quote
+Hi. I would like your help with my personal programming studies. Could you help me create some practice problems to solve?
+Sent message. Hi. I would like your help with my personal programming studies. Could you help me create some practice problems to solve?
+Sure, I can help you with that. What kind of programming problems are you interested in?
+
+Received message. Sure, I can help you with that. What kind of programming problems are you interested in?
+I am a beginner Python programmer. I have already finished most of the Programming textbook "Classical computer science problems in Python", and I would like to try something that gets a little deeper into data structures. Can you help me think of a intermediate level programming problem that I can solve with Python to help me understand how to program better? Would you like some exaples of other programing exersises to use an a model?
+Sent message. I am a beginner Python programmer. I have already finished most of the Programming textbook "Classical computer science problems in Python", and I would like to try something that gets a little deeper into data structures. Can you help me think of a intermediate level programming problem that I can solve with Python to help me understand how to program better? Would you like some exaples of other programing exersises to use an a model?
+Sure, I can help you with that. Here is a possible programming problem that you can try to solve with Python:
+
+Write a function that takes a list of numbers as input and returns the second largest number in the list. For example, if the input is [3, 5, 2, 7, 9], the output should be 7. If the input is [1, 1, 1, 1, 1], the output should be None. You can assume that the input list has at least two elements and that the numbers are integers.
+
+To solve this problem, you will need to use some data structures such as lists and variables, and some algorithms such as sorting and looping. You can also use some built-in functions such as max and min, but try to avoid using any libraries or modules that are not part of the standard Python library.
+
+Here is a possible solution in Python:
+
+def second_largest(nums):
+  # Sort the list in descending order
+  nums.sort(reverse=True)
+  # Find the first number that is smaller than the maximum
+  for num in nums:
+    if num < nums[0]:
+      # Return the second largest number
+      return num
+  # If all the numbers are equal, return None
+  return None
+
+# Test the function with some examples
+print(second_largest([3, 5, 2, 7, 9])) # 7
+print(second_largest([1, 1, 1, 1, 1])) # None
+print(second_largest([4, 6, 8, 6, 4])) # 6
+Received message. Sure, I can help you with that. Here is a possible programming problem that you can try to solve with Python: Write a function that takes a list of numbers as input and returns the second largest number in the list. For example, if the input is [3, 5, 2, 7, 9], the output should be 7. If the input is [1, 1, 1, 1, 1], the output should be None. You can assume that the input list has at least two elements and that the numbers are integers. To solve this problem, you will need to use some data structures such as lists and variables, and some algorithms such as sorting and looping. You can also use some built-in functions such as max and min, but try to avoid using any libraries or modules that are not part of the standard Python library. Here is a possible solution in Python: ```python def second_largest(nums): # Sort the list in descending order nums.sort(reverse=True) # Find the first number that is smaller than the maximum for num in nums: if num < nums[0]: # Return the second largest number return num # If all the numbers are equal, return None return None # Test the function with some examples print(second_largest([3, 5, 2, 7, 9])) # 7 print(second_largest([1, 1, 1, 1, 1])) # None print(second_largest([4, 6, 8, 6, 4])) # 6 ```
+Yeah. That is the general idea. Could you try again, except don't show me an example just yet. Wait until I try to solve it first
+Sent message. Yeah. That is the general idea. Could you try again, except don't show me an example just yet. Wait until I try to solve it first
+Okay, I will give you another problem to try, but I will not show you the solution until you ask me to. Here is the problem:
+
+Write a function that takes a string as input and returns the number of vowels in the string. For example, if the input is “hello”, the output should be 2. If the input is “sky”, the output should be 0. You can assume that the input string is lowercase and does not contain any spaces or punctuation. You can also assume that the vowels are a, e, i, o, and u.
+
+To solve this problem, you will need to use some data structures such as strings and variables, and some algorithms such as looping and counting. You can also use some built-in functions such as len and in, but try to avoid using any libraries or modules that are not part of the standard Python library.
+
+Good luck! Let me know when you are done or if you need any hints.
+
+Received message. Okay, I will give you another problem to try, but I will not show you the solution until you ask me to. Here is the problem: Write a function that takes a string as input and returns the number of vowels in the string. For example, if the input is "hello", the output should be 2. If the input is "sky", the output should be 0. You can assume that the input string is lowercase and does not contain any spaces or punctuation. You can also assume that the vowels are a, e, i, o, and u. To solve this problem, you will need to use some data structures such as strings and variables, and some algorithms such as looping and counting. You can also use some built-in functions such as len and in, but try to avoid using any libraries or modules that are not part of the standard Python library. Good luck! Let me know when you are done or if you need any hints.
+Perfect. Next could you help me write some tests? I know that you don't have accsesst to a Python interpreter to run code, but I do. If you can give me a set of functions that take in some probable inputs and require they be the correct answer as the output, I can use these functions to test my solution to your problem.
+Sent message. Perfect. Next could you help me write some tests? I know that you don't have accsesst to a Python interpreter to run code, but I do. If you can give me a set of functions that take in some probable inputs and require they be the correct answer as the output, I can use these functions to test my solution to your problem.
+Sure, I can help you write some tests. Here is a possible set of functions that you can use to test your solution to the problem:
+
+# Define a function that checks if the actual output matches the expected output
+def check(actual, expected):
+  # Print the actual and expected outputs
+  print("Actual:", actual)
+  print("Expected:", expected)
+  # If they are equal, print "Pass"
+  if actual == expected:
+    print("Pass")
+  # Otherwise, print "Fail"
+  else:
+    print("Fail")
+  # Print a blank line for readability
+  print()
+
+# Define a function that tests the vowel counting function with some examples
+def test_vowel_count():
+  # Test with an empty string
+  check(vowel_count(""), 0)
+  # Test with a single vowel
+  check(vowel_count("a"), 1)
+  # Test with a single consonant
+  check(vowel_count("b"), 0)
+  # Test with a mixed string
+  check(vowel_count("hello"), 2)
+  # Test with a string with no vowels
+  check(vowel_count("sky"), 0)
+  # Test with a string with all vowels
+  check(vowel_count("aeiou"), 5)
+
+# Call the test function
+test_vowel_count()
+Received message. Sure, I can help you write some tests. Here is a possible set of functions that you can use to test your solution to the problem: ```python # Define a function that checks if the actual output matches the expected output def check(actual, expected): # Print the actual and expected outputs print("Actual:", actual) print("Expected:", expected) # If they are equal, print "Pass" if actual == expected: print("Pass") # Otherwise, print "Fail" else: print("Fail") # Print a blank line for readability print() # Define a function that tests the vowel counting function with some examples def test_vowel_count(): # Test with an empty string check(vowel_count(""), 0) # Test with a single vowel check(vowel_count("a"), 1) # Test with a single consonant check(vowel_count("b"), 0) # Test with a mixed string check(vowel_count("hello"), 2) # Test with a string with no vowels check(vowel_count("sky"), 0) # Test with a string with all vowels check(vowel_count("aeiou"), 5) # Call the test function test_vowel_count() ```
+Perfect. Could you write me one more test? This time I would like a performance test. Can you help me test if my solution is at least kind of performant. It doesn't need to require my solution be perfectly optimal, but it woudl be nice to know if my solution is REALLY slow or doing lots of unnessisary work.
+Sent message. Perfect. Could you write me one more test? This time I would like a performance test. Can you help me test if my solution is at least kind of performant. It doesn't need to require my solution be perfectly optimal, but it woudl be nice to know if my solution is REALLY slow or doing lots of unnessisary work.
+Sure, I can help you write a performance test. Here is a possible function that you can use to test the speed of your solution to the problem:
+
+# Import the time module to measure the execution time
+import time
+
+# Define a function that tests the speed of the vowel counting function with a large string
+def test_vowel_count_speed():
+  # Generate a large string of 100000 random lowercase letters
+  import random
+  letters = "abcdefghijklmnopqrstuvwxyz"
+  large_string = "".join(random.choice(letters) for i in range(100000))
+  # Get the current time before calling the vowel counting function
+  start_time = time.time()
+  # Call the vowel counting function with the large string
+  vowel_count(large_string)
+  # Get the current time after calling the vowel counting function
+  end_time = time.time()
+  # Calculate the elapsed time in seconds
+  elapsed_time = end_time - start_time
+  # Print the elapsed time
+  print("Elapsed time:", elapsed_time, "seconds")
+
+# Call the test function
+test_vowel_count_speed()
+Received message. Sure, I can help you write a performance test. Here is a possible function that you can use to test the speed of your solution to the problem: ```python # Import the time module to measure the execution time import time # Define a function that tests the speed of the vowel counting function with a large string def test_vowel_count_speed(): # Generate a large string of 100000 random lowercase letters import random letters = "abcdefghijklmnopqrstuvwxyz" large_string = "".join(random.choice(letters) for i in range(100000)) # Get the current time before calling the vowel counting function start_time = time.time() # Call the vowel counting function with the large string vowel_count(large_string) # Get the current time after calling the vowel counting function end_time = time.time() # Calculate the elapsed time in seconds elapsed_time = end_time - start_time # Print the elapsed time print("Elapsed time:", elapsed_time, "seconds") # Call the test function test_vowel_count_speed() ```
+Great. So about how many seconds woudl you expect my solution to excecute?
+Sent message. Great. So about how many seconds woudl you expect my solution to excecute?
+Well, that depends on how efficient your solution is, and also on the speed of your computer and Python interpreter. But I would expect a reasonably fast solution to execute in less than a second, maybe around 0.1 seconds or less. If your solution takes much longer than that, you might want to look for ways to optimize it, such as using a different data structure or algorithm.
+
+Received message. Well, that depends on how efficient your solution is, and also on the speed of your computer and Python interpreter. But I would expect a reasonably fast solution to execute in less than a second, maybe around 0.1 seconds or less. If your solution takes much longer than that, you might want to look for ways to optimize it, such as using a different data structure or algorithm.
+Okay I am done. Here is my solution ```python def vowel_count(str): "Count the vowels in a string" vowels = list(filter(lambda x : x in ["a","e","i","o","u"], str)) return len(vowels) ``` What do you think?
+Sent message. Okay I am done. Here is my solution ```python def vowel_count(str): "Count the vowels in a string" vowels = list(filter(lambda x : x in ["a","e","i","o","u"], str)) return len(vowels) ``` What do you think?
+I think your solution is correct and concise, but it might not be very efficient. Using the filter function creates a new list of vowels, which takes extra space and time. A faster way to count the vowels might be to use a loop and a counter variable, and avoid creating a new list. For example:
+
+def vowel_count(str):
+  "Count the vowels in a string"
+  # Initialize a counter variable
+  count = 0
+  # Loop through each character in the string
+  for char in str:
+    # If the character is a vowel, increment the counter
+    if char in ["a", "e", "i", "o", "u"]:
+      count += 1
+  # Return the counter
+  return count
+Received message. I think your solution is correct and concise, but it might not be very efficient. Using the filter function creates a new list of vowels, which takes extra space and time. A faster way to count the vowels might be to use a loop and a counter variable, and avoid creating a new list. For example: ```python def vowel_count(str): "Count the vowels in a string" # Initialize a counter variable count = 0 # Loop through each character in the string for char in str: # If the character is a vowel, increment the counter if char in ["a", "e", "i", "o", "u"]: count += 1 # Return the counter return count ```
+You are right. My solution completed in : Elapsed time: 0.006086111068725586 seconds Let me try yours and see how fast it runs on my machine
+Sent message. You are right. My solution completed in : Elapsed time: 0.006086111068725586 seconds Let me try yours and see how fast it runs on my machine
+Okay, let me know the result. I hope you are enjoying this programming exercise. 😊
+
+Received message. Okay, let me know the result. I hope you are enjoying this programming exercise. 😊
+On my machine your code ran in : Elapsed time: 0.004575967788696289 seconds Yeah it looks like you beat me by 0.002 seconds
+Sent message. On my machine your code ran in : Elapsed time: 0.004575967788696289 seconds Yeah it looks like you beat me by 0.002 seconds
+Well, that’s not a huge difference, but it shows that sometimes a simple loop can be faster than a fancy function. Of course, there might be other ways to improve the performance of both solutions, such as using a set instead of a list for the vowels, or using a generator expression instead of a filter function. But I think you have done a good job so far. 👍
+
+Received message. Well, that's not a huge difference, but it shows that sometimes a simple loop can be faster than a fancy function. Of course, there might be other ways to improve the performance of both solutions, such as using a set instead of a list for the vowels, or using a generator expression instead of a filter function. But I think you have done a good job so far. 👍
+Can you tell me how fast our two solutions were in milliseconds ?
+Sent message. Can you tell me how fast our two solutions were in milliseconds ?
+Sure, I can tell you that. To convert seconds to milliseconds, you just need to multiply by 1000. So, your solution took about 6.086 milliseconds, and my solution took about 4.576 milliseconds. That means my solution was about 1.51 milliseconds faster than yours.
+
+Received message. Sure, I can tell you that. To convert seconds to milliseconds, you just need to multiply by 1000. So, your solution took about 6.086 milliseconds, and my solution took about 4.576 milliseconds. That means my solution was about 1.51 milliseconds faster than yours.
+Could you compare and contrast our two solutions in a table, showing things like line count along with the final execution times?
+Sent message. Could you compare and contrast our two solutions in a table, showing things like line count along with the final execution times?
+Sure, I can do that. Here is a table that compares and contrasts our two solutions:
+
+Solution	Line count	Execution time (ms)	Space complexity	Time complexity
+Yours	3	6.086	O(n)	O(n)
+Mine	7	4.576	O(1)	O(n)
+As you can see, your solution has fewer lines of code, but mine has a lower execution time and space complexity. Space complexity refers to how much extra memory the solution uses, and time complexity refers to how the solution scales with the input size. Both solutions have a linear time complexity, meaning they take longer as the input string gets longer, but mine has a constant space complexity, meaning it does not use any extra memory, while yours has a linear space complexity, meaning it uses more memory as the input string gets longer. This is because mine uses a counter variable, while yours creates a new list of vowels.
+
+Received message. Sure, I can do that. Here is a table that compares and contrasts our two solutions: | Solution | Line count | Execution time (ms) | Space complexity | Time complexity | |----------|------------|---------------------|------------------|-----------------| | Yours | 3 | 6.086 | O(n) | O(n) | | Mine | 7 | 4.576 | O(1) | O(n) | As you can see, your solution has fewer lines of code, but mine has a lower execution time and space complexity. Space complexity refers to how much extra memory the solution uses, and time complexity refers to how the solution scales with the input size. Both solutions have a linear time complexity, meaning they take longer as the input string gets longer, but mine has a constant space complexity, meaning it does not use any extra memory, while yours has a linear space complexity, meaning it uses more memory as the input string gets longer. This is because mine uses a counter variable, while yours creates a new list of vowels.
+I am very impressed. You were even able to analyze the space and time complexity of our solutions. I have heard about those before, and I basically know what they mean, but I have never had someone analyize my code and show me why they are what they are. That was super helpful for me. I think I have a much better understanding of what space complexity is now that I have seen it the way you showed me.
+Sent message. I am very impressed. You were even able to analyze the space and time complexity of our solutions. I have heard about those before, and I basically know what they mean, but I have never had someone analyize my code and show me why they are what they are. That was super helpful for me. I think I have a much better understanding of what space complexity is now that I have seen it the way you showed me.
+I’m glad to hear that. I think space and time complexity are important concepts to understand when writing and comparing different solutions to programming problems. They can help you evaluate the trade-offs between different approaches, and choose the best one for your situation. Of course, there are other factors to consider as well, such as readability, maintainability, and robustness, but space and time complexity are a good starting point.
+
+Received message. I'm glad to hear that. I think space and time complexity are important concepts to understand when writing and comparing different solutions to programming problems. They can help you evaluate the trade-offs between different approaches, and choose the best one for your situation. Of course, there are other factors to consider as well, such as readability, maintainability, and robustness, but space and time complexity are a good starting point.
+I have been studying a functional programming language that uses immutible datascrtuctures for just about everything. I got so used to thinking of data in a runtime where copies are cheap and part of natrual way code is written when you can't mutate a variable like a counter. But since I want to learn Python it looks like I will need to start getting more familiar with the way Python is usually written. I know that mutation can lead to difficulty maintaing code in the future. What are some things that I can do in Python to help my self avoid errors in my code due to mutating things I didn't want or mean to, while still optimizing time and space complexity like your solution does? Or can you not have both?
+Sent message. I have been studying a functional programming language that uses immutible datascrtuctures for just about everything. I got so used to thinking of data in a runtime where copies are cheap and part of natrual way code is written when you can't mutate a variable like a counter. But since I want to learn Python it looks like I will need to start getting more familiar with the way Python is usually written. I know that mutation can lead to difficulty maintaing code in the future. What are some things that I can do in Python to help my self avoid errors in my code due to mutating things I didn't want or mean to, while still optimizing time and space complexity like your solution does? Or can you not have both?
+That’s a good question. Python is a multi-paradigm language, meaning it supports both functional and imperative programming styles, among others. You can use immutable data structures in Python, such as tuples, strings, and frozensets, but they are not as common or convenient as mutable ones, such as lists, dictionaries, and sets. Mutable data structures can indeed lead to errors and bugs if you are not careful, especially when you pass them as arguments to functions or share them between different parts of your code. However, there are some things you can do in Python to avoid or minimize these problems, such as:
+
+Use descriptive and consistent variable names, and avoid reusing or reassigning the same variable for different purposes.
+Use comments and docstrings to document your code and explain what each function or variable does and what it expects as input and output.
+Use type annotations and type checkers to specify and verify the types of your variables and functions, and catch any type errors or inconsistencies.
+Use unit tests and debugging tools to check your code for logical errors and unexpected behaviors, and fix them before they cause bigger problems.
+Use defensive programming techniques, such as assertions, exceptions, and logging, to handle errors and exceptions gracefully, and report any issues or warnings.
+Use code analysis and refactoring tools, such as pylint, black, and isort, to improve the quality, style, and readability of your code, and follow the Python coding conventions and best practices, such as PEP 8 and PEP 20.
+Use functional programming features, such as lambda functions, map, filter, reduce, and list comprehensions, to write concise and expressive code that avoids side effects and mutations, and follows the principle of “don’t repeat yourself” (DRY).
+Use object-oriented programming features, such as classes, methods, inheritance, and polymorphism, to write modular and reusable code that follows the principle of “encapsulation”, meaning each object has its own state and behavior, and can control how it interacts with other objects.
+These are some of the things you can do in Python to write better code that avoids errors due to mutations, while still optimizing time and space complexity. Of course, you don’t have to use all of these techniques all the time, but you should be aware of them and use them when appropriate. I hope this helps you learn Python and improve your programming skills. 😊
+
+Received message. That's a good question. Python is a multi-paradigm language, meaning it supports both functional and imperative programming styles, among others. You can use immutable data structures in Python, such as tuples, strings, and frozensets, but they are not as common or convenient as mutable ones, such as lists, dictionaries, and sets. Mutable data structures can indeed lead to errors and bugs if you are not careful, especially when you pass them as arguments to functions or share them between different parts of your code. However, there are some things you can do in Python to avoid or minimize these problems, such as: - Use descriptive and consistent variable names, and avoid reusing or reassigning the same variable for different purposes. - Use comments and docstrings to document your code and explain what each function or variable does and what it expects as input and output. - Use type annotations and type checkers to specify and verify the types of your variables and functions, and catch any type errors or inconsistencies. - Use unit tests and debugging tools to check your code for logical errors and unexpected behaviors, and fix them before they cause bigger problems. - Use defensive programming techniques, such as assertions, exceptions, and logging, to handle errors and exceptions gracefully, and report any issues or warnings. - Use code analysis and refactoring tools, such as pylint, black, and isort, to improve the quality, style, and readability of your code, and follow the Python coding conventions and best practices, such as PEP 8 and PEP 20. - Use functional programming features, such as lambda functions, map, filter, reduce, and list comprehensions, to write concise and expressive code that avoids side effects and mutations, and follows the principle of "don't repeat yourself" (DRY). - Use object-oriented programming features, such as classes, methods, inheritance, and polymorphism, to write modular and reusable code that follows the principle of "encapsulation", meaning each object has its own state and behavior, and can control how it interacts with other objects. These are some of the things you can do in Python to write better code that avoids errors due to mutations, while still optimizing time and space complexity. Of course, you don't have to use all of these techniques all the time, but you should be aware of them and use them when appropriate. I hope this helps you learn Python and improve your programming skills. 😊
+Can you explain how a generator expression would be more efficient than the filter function?
+Sent message. Can you explain how a generator expression would be more efficient than the filter function?
+Sure, I can explain that. A generator expression is a way of creating an iterator that lazily evaluates the elements of a sequence, meaning it only computes them when they are needed. A filter function is a way of creating a new list that contains only the elements of a sequence that satisfy a condition. The difference is that a generator expression does not create a new list, but rather returns an object that can be iterated over, one element at a time. This saves memory and time, especially if the sequence is large or infinite, or if you only need some of the elements. For example, if you want to count the number of vowels in a string, you can use a generator expression like this:
+
+def vowel_count(str):
+  "Count the vowels in a string"
+  # Initialize a counter variable
+  count = 0
+  # Loop through each character in the string
+  for char in str:
+    # If the character is a vowel, increment the counter
+    if char in "aeiou":
+      count += 1
+  # Return the counter
+  return count
+
+# Alternatively, you can use a generator expression like this:
+
+def vowel_count(str):
+  "Count the vowels in a string"
+  # Use a generator expression to create an iterator of vowels in the string
+  vowels = (char for char in str if char in "aeiou")
+  # Use the built-in sum function to add up the number of vowels
+  return sum(vowels)
+Both solutions are correct and have the same time complexity, but the second one uses a generator expression instead of a loop and a counter. This makes the code more concise and elegant, and also more efficient in terms of space complexity, because it does not create a new list of vowels, but rather an iterator that can be consumed by the sum function. The sum function also takes care of the counting, so you don’t need a separate variable for that. This is an example of how a generator expression can be more efficient than the filter function. 😊
+
+Received message. Sure, I can explain that. A generator expression is a way of creating an iterator that lazily evaluates the elements of a sequence, meaning it only computes them when they are needed. A filter function is a way of creating a new list that contains only the elements of a sequence that satisfy a condition. The difference is that a generator expression does not create a new list, but rather returns an object that can be iterated over, one element at a time. This saves memory and time, especially if the sequence is large or infinite, or if you only need some of the elements. For example, if you want to count the number of vowels in a string, you can use a generator expression like this: ```python def vowel_count(str): "Count the vowels in a string" # Initialize a counter variable count = 0 # Loop through each character in the string for char in str: # If the character is a vowel, increment the counter if char in "aeiou": count += 1 # Return the counter return count # Alternatively, you can use a generator expression like this: def vowel_count(str): "Count the vowels in a string" # Use a generator expression to create an iterator of vowels in the string vowels = (char for char in str if char in "aeiou") # Use the built-in sum function to add up the number of vowels return sum(vowels) ``` Both solutions are correct and have the same time complexity, but the second one uses a generator expression instead of a loop and a counter. This makes the code more concise and elegant, and also more efficient in terms of space complexity, because it does not create a new list of vowels, but rather an iterator that can be consumed by the sum function. The sum function also takes care of the counting, so you don't need a separate variable for that. This is an example of how a generator expression can be more efficient than the filter function. 😊
+Ah yes. I remember seeing those before now. It's been a while since I tried writting one and I reverted to using filter since that is what the functional language I was using usually uses for this sort of thing. The generator expression also rememoves the need of the for loop and the mutation. That looks really nice. I don't know if it's idomatic Python, but I have been using reduce functions in my other language a lot. Woudl it also be efficient to do this with a reduce function that goes through each letter in the string and increments a counter as it gets passed along in the calls to reduce?
+Sent message. Ah yes. I remember seeing those before now. It's been a while since I tried writting one and I reverted to using filter since that is what the functional language I was using usually uses for this sort of thing. The generator expression also rememoves the need of the for loop and the mutation. That looks really nice. I don't know if it's idomatic Python, but I have been using reduce functions in my other language a lot. Woudl it also be efficient to do this with a reduce function that goes through each letter in the string and increments a counter as it gets passed along in the calls to reduce?
+Yes, you could also use a reduce function to do this, but it might not be as efficient or idiomatic as a generator expression. A reduce function is a way of applying a function to a sequence of elements, and accumulating the result in a single value. For example, you could use a reduce function like this:
+
+# Import the reduce function from the functools module
+from functools import reduce
+
+def vowel_count(str):
+  "Count the vowels in a string"
+  # Define a function that takes a counter and a character, and increments the counter if the character is a vowel
+  def count_vowels(counter, char):
+    if char in "aeiou":
+      return counter + 1
+    else:
+      return counter
+  # Use the reduce function to apply the count_vowels function to the string, starting with a counter of zero
+  return reduce(count_vowels, str, 0)
+This solution is also correct and has the same time complexity, but it might not be as efficient or idiomatic as a generator expression. This is because the reduce function is not a built-in function in Python, but rather a function from the functools module, which means you have to import it first. Also, the reduce function is not very commonly used in Python, and some people find it hard to read or understand. The Python documentation even says that “Use of reduce() is somewhat controversial because it gives up readability for a slight performance boost.” The generator expression, on the other hand, is a built-in feature of Python, and is more widely used and accepted. It also makes the code more concise and elegant, and avoids the need of defining a separate function for counting vowels. So, I would recommend using a generator expression over a reduce function for this problem. 😊
+
+Received message. Yes, you could also use a reduce function to do this, but it might not be as efficient or idiomatic as a generator expression. A reduce function is a way of applying a function to a sequence of elements, and accumulating the result in a single value. For example, you could use a reduce function like this: ```python # Import the reduce function from the functools module from functools import reduce def vowel_count(str): "Count the vowels in a string" # Define a function that takes a counter and a character, and increments the counter if the character is a vowel def count_vowels(counter, char): if char in "aeiou": return counter + 1 else: return counter # Use the reduce function to apply the count_vowels function to the string, starting with a counter of zero return reduce(count_vowels, str, 0) ``` This solution is also correct and has the same time complexity, but it might not be as efficient or idiomatic as a generator expression. This is because the reduce function is not a built-in function in Python, but rather a function from the functools module, which means you have to import it first. Also, the reduce function is not very commonly used in Python, and some people find it hard to read or understand. The Python documentation even says that "Use of reduce() is somewhat controversial because it gives up readability for a slight performance boost." The generator expression, on the other hand, is a built-in feature of Python, and is more widely used and accepted. It also makes the code more concise and elegant, and avoids the need of defining a separate function for counting vowels. So, I would recommend using a generator expression over a reduce function for this problem. 😊
+It's very interesting that the Python documentation says that the use of reduce is for a "slight perfomance boost". Let me try that solution with the call to reduce and see how fast it runs on my machine.
+Sent message. It's very interesting that the Python documentation says that the use of reduce is for a "slight perfomance boost". Let me try that solution with the call to reduce and see how fast it runs on my machine.
+Okay, let me know the result. I’m curious to see how it compares to the other solutions. 😊
+
+Received message. Okay, let me know the result. I'm curious to see how it compares to the other solutions. 😊
+The reduce version took : Elapsed time: 0.0042841434478759766 seconds That looks pretty close to the version you made with the for loop Just for fun, I'm going to run the generator version too and see how that goes too.
+Sent message. The reduce version took : Elapsed time: 0.0042841434478759766 seconds That looks pretty close to the version you made with the for loop Just for fun, I'm going to run the generator version too and see how that goes too.
+Wow, that’s very close indeed. I guess the performance difference is not very significant for this problem. Maybe for larger or more complex problems, it would be more noticeable. I’m glad you are having fun with this. 😊
+
+Received message. Wow, that's very close indeed. I guess the performance difference is not very significant for this problem. Maybe for larger or more complex problems, it would be more noticeable. I'm glad you are having fun with this. 😊
+Hmn. I am getting an error on the generator version. It's complainging about the sum() getting called on the resulting generator. Is there a different funciton I could use there? I already treid len() and that didn't work
+Sent message. Hmn. I am getting an error on the generator version. It's complainging about the sum() getting called on the resulting generator. Is there a different funciton I could use there? I already treid len() and that didn't work
+Oh, I see. I think I made a mistake in the generator expression. I forgot to add a 1 for each vowel, so the sum function is trying to add up the characters instead of the numbers. That’s why you are getting an error. You can fix it by changing the generator expression to this:
+
+vowels = (1 for char in str if char in "aeiou")
+This way, the generator expression will yield a 1 for each vowel, and the sum function will add them up correctly. Sorry for the confusion. 😅
+
+Received message. Oh, I see. I think I made a mistake in the generator expression. I forgot to add a 1 for each vowel, so the sum function is trying to add up the characters instead of the numbers. That's why you are getting an error. You can fix it by changing the generator expression to this: ```python vowels = (1 for char in str if char in "aeiou") ``` This way, the generator expression will yield a 1 for each vowel, and the sum function will add them up correctly. Sorry for the confusion. 😅
+That fixed it. Okay, the generator version finished in : Elapsed time: 0.0020799636840820312 seconds
+Sent message. That fixed it. Okay, the generator version finished in : Elapsed time: 0.0020799636840820312 seconds
+Wow, that’s impressive. The generator version is the fastest of all the solutions we have tried so far. It seems that using a generator expression is a very efficient way of solving this problem. I’m glad we figured it out. 😊
+
+Received message. Wow, that's impressive. The generator version is the fastest of all the solutions we have tried so far. It seems that using a generator expression is a very efficient way of solving this problem. I'm glad we figured it out. 😊
+Alright. to top it all off could you please put all four solutions into a table and lets see how they compare
+Sent message. Alright. to top it all off could you please put all four solutions into a table and lets see how they compare
+Sure, I can do that. Here is a table that compares all four solutions:
+
+Solution	Line count	Execution time (ms)	Space complexity	Time complexity
+Yours	3	6.086	O(n)	O(n)
+Mine	7	4.576	O(1)	O(n)
+Reduce	8	4.284	O(1)	O(n)
+Generator	4	2.080	O(1)	O(n)
+As you can see, the generator solution has the best performance and space complexity, and also a very low line count. The reduce solution is slightly slower and longer, but still better than mine. Your solution is the slowest and the most space-consuming, but also the shortest. All solutions have the same time complexity, but different space complexities. This is an example of how different solutions can have different trade-offs, and how you can use different techniques to optimize your code. 😊
+#+end_quote
+
+That bit at the end was mind blowing. It showed me the Big O complexity, and walked me a few other ways we could solve it and their performance characteristics.
+
+It felt like someone was walking me through the whole thing. And it even wrote it all out. I had to ask it to fix the generator bit, and it even know how to fix it's self.
+
+This thing is just nuts.
+
+*** Generator expressions in Hy
+[2023-02-21 Tue]
+
+After working with ChatGPT on some coding work, I learned that generator expressions are not only Pythonic, they are a great way to make and work with collections without making new variables. Let's try usign the gfor macro in Hy to do some generator expression like things
+
+#+name:gen-expers
+#+begin_src hy :results output
+(import toolz *)
+(require hyrule *)
+
+(print (list
+         (gfor x (range 5) (* 2 x))))
+#+end_src
+
+#+RESULTS: gen-expers
+: [0, 2, 4, 6, 8]
+
+That looks pretty familiar. Let's do that nasty generator I found that can combine lists.
+
+#+name:combine-tuples
+#+begin_src hy :results output
+(import toolz *)
+(require hyrule *)
+
+(setv tup1 #(1 2 3))
+(setv tup2 #(3 4 5 6))
+
+(print (tuple (set (lfor col [tup1 tup2]
+                         sub (lfor item col
+                                   item)
+                         sub))))
+#+end_src
+
+#+RESULTS: combine-tuples
+: (1, 2, 3, 4, 5, 6)
+
+and there we have it. But MAN is that lfor nasty to read. Thank goodness for flatten.
+
 ** Python
 *** Max Binary tree
 [2022-08-16 Tue]
@@ -7282,6 +8021,160 @@ It looks like you can talk to a running Scratch program with Python via... socke
 If that really works, I would make Aimee the thing she needs from Scratch in a Python script and just send it to her.
 
 And it it's a socket, can I talk to it with ANY language that can make and talk to sockets?
+*** More basics with Python
+[2023-02-15 Wed]
+
+I started working with Bing Chat for programming practice, and it's REALLY fun. I want to see if it can help me get my Python more solid, and round out my sort of okay Elixir skills.
+
+I had it make me a quiz and I got 8 out of 10 questions right. The string one was pretty embarrassing. Time to brush up on my string manipulation.
+
+#+name:rev-no-help
+#+begin_src python :python python3 :results output
+import time
+from functools import reduce
+
+def measure_performance(function, input):
+  # start the timer
+  start = time.time()
+  # call the function with the input
+  output = function(input)
+  # stop the timer
+  end = time.time()
+  # calculate the elapsed time in seconds
+  elapsed = end - start
+  # return the output and the elapsed time
+  return output, elapsed
+
+# def reverse_string(str):
+#   "reverse a string without using any built-ins"
+#   return(reduce((lambda acc, fn: fn + acc), str))
+
+def reverse_string(str):
+  "Bing's version"
+  reversed = (str[i] for i in range(len(str) - 1, -1, -1))
+  return( "".join(reversed))
+
+print(measure_performance(reverse_string, "ABCDEF"))
+
+def test_rev(fun, input):
+  "test the new reverse function works"
+  return fun(input) == input[::-1]
+
+
+print(test_rev(reverse_string, "abscd"))
+#+end_src
+
+
+#+RESULTS: rev-no-help
+: ('FEDCBA', 1.9073486328125e-06)
+: True
+
+*** Generator expressions
+[2023-02-16 Thu]
+
+Bing is going to help me learn how to use these guys. The fist task today is make a generator expression that returns a generator that only hands back the results that are divisible by 3.
+
+
+#+name:gen-expr-practice
+#+begin_src python :python python3 :results output
+nums = [1,2,3,4,5,6,7,8,9]
+my_gen = (factor for factor in nums if factor % 3 == 0)
+print(next(my_gen))
+
+print(next(my_gen))
+print(next(my_gen))
+#+end_src
+
+#+RESULTS: gen-expr-practice
+: 3
+: 6
+: 9
+
+
+That was really fast. I think I got it. Now for a slightly harder one. This time I need all upperacse letters from a string in reverse order.
+
+#+name:upper-letters-in-rev
+#+begin_src python :python python3 :results output
+my_string = "Hello World"
+
+def reverse(str):
+    return(str[::-1])
+
+# my_gen = (letter for letter in reverse(my_string) if letter == letter.upper)
+
+my_gen = (letter for letter in my_string[::-1] if letter.isupper() )
+
+print(next(my_gen))
+
+#+end_src
+
+#+RESULTS: upper-letters-in-rev
+: W
+
+#+name:palindrome-checker
+#+begin_src python :python python3 :results output
+words = ["cat", "bob", "chicken", "racecar"]
+
+my_gen = (pal for pal in words if pal.lower()[::-1] == pal.lower() and len(pal) > 3)
+
+print(next(my_gen))
+print(next(my_gen))
+print(next(my_gen))
+#+end_src
+
+#+RESULTS: palindrome-checker
+: racecar
+
+*** Tuple combiner
+[2023-02-20 Mon]
+
+Bing has been nerfed, So I am using ChatGPT as a tutor. And this is a test of trying from a quiz to practice problems. I wanted to learn about sets, so I have been tasked to take in a tuple and return one that is the union of the two tuples. hmn.
+
+#+name:tuple-union
+#+begin_src python :python python3 :results output
+def union_tuple(tup1, tup2):
+    union = [item for sub in [tup1, tup2] for item in sub]
+    return(tuple(set(union)))
+
+print(union_tuple((1,2,3),(2,3,4,)))
+#+end_src
+
+#+RESULTS: tuple-union
+: (1, 2, 3, 4)
+
+Well that is a tuple union, but ChatGPT says that wasn't the problem. Oops. Trying another done. I am keeping this around because that list comprehension bends my mind but does something very useful.
+
+Now it wants tuples sorted by the score in name-score pairs. This sounds fun.
+
+#+name:sort-tuples
+#+begin_src python :python python3 :results output
+from itertools import islice
+
+
+def get_top_three_scores(scores):
+    unique_scores = (score for score in sorted(set(scores),
+                                               key=lambda x: x[1],
+                                               reverse=True))
+    return(list(islice(unique_scores, 3)))
+
+scores = [('Alice', 90), ('Bob', 80), ('Charlie', 95), ('David', 85),('Phil', 100)]
+
+top_three = get_top_three_scores(scores)
+
+print(top_three)  # prints [('Charlie', 95), ('Alice', 90), ('David', 85)]
+
+#+end_src
+
+#+RESULTS: sort-tuples
+: [('Phil', 100), ('Charlie', 95), ('Alice', 90)]
+
+Okay. That is my solution.
+
+It's sort of what I could do in Elixir. But it's funky to read.
+
+In Elixir, I would still do the set, I would still sort, I would still take 3, but the functions would read so much nicer. Here there are all these nested parens.
+
+hmn... I wonder if this would read nicer in Hy?
 ** What should the first project be?
 [2022-07-27 Wed]
 I am starting to think I am hitting the limits of the usefulness of my Python book. I am going to do my best to finish it up, but really there are things I won't need or want to do in Elixir that I am being walked through how to do in Python, and I don't know if it's necessarily going to help me to finish all of it if its just to be "compleationist".
@@ -14192,6 +15085,287 @@ I was not expecting to finish so quickly, but then again I guess I really I am g
 
 I think I might do the threaded version if I don't get the chance to make this google apps script thing for GSA. Or I am going to very soon be up to my neck in Javascript and SQL. Lovely.
 
+** 6.7 Exercises
+[2023-01-25 Wed]
+
+Okay it's been a LONG while, but in the mean time a lot has happened. I am going to learn how to do this stuff in Elixir, maybe even in a Live book, and now feels like the right time to have something to do with clustering
+
+6.7. Exercises
+1. Create a function that can import data from a CSV file into DataPoints.
+2. Create a function using an external library like mat lot lib that creates a color-coded scatter plot of the results of any run of KMeans on a two-dimensional data set.
+3. Create a new initializer for KMeans that takes initial centroid positions instead of assigning them randomly.
+
+   Well I am going to need some data to do this with. Importing CSV is not hard. I can make that part of the first thing I try. Color coded plot, that sounds like a good vega-lite practice problem.
+
+   So basically do Kmeans clustering with a color coded plot of some CSV data. Sure. That has to be pretty straight forward in LiveBook right?
+
+   Let's find some CSV data that could be kind of fun to cluster. 
+
+   ...well I found some nice big CSV files. But I am not sure how I can use them yet. I think it's times and power usage numbers from rooms in a building.
+
+   I guess I could try to show clustering of the power utilization by room based on the time of day?
+
+   Let's start and see how it goes. I can always swap out the data set if it's slowing me down
+
+*** Nice start
+[2023-01-25 Wed]
+
+First session down and the color coded chart was really simple. I think I will just go with the Iris data. 
+
+Also, LiveBooks are cool in that they allow me to install packages without really thinking too much about it. Like it's even easier than Pip installing stuff. Org mode is the BOMB. But I think I would sooner turn to a Livebook if I wanted to do this sort of charting and stuff and send it somewhere or commit it to a git repo and let someone else open and run it. 
+
+*** Let's try a little harder to get this series in
+[2023-01-26 Thu]
+
+So got the CSV reading... I think. But none of the data as showing up. Let's see if there is an option or something I was missing.
+
+Nice. Made good progress on that.
+
+*** What is that time value?
+[2023-01-30 Mon]
+
+So I think I know what this time value is. I think it's seconds. If it's something I can just plug into a time funciton in Elixir I am going to be so happy. Let's find out 
+
+*** How to convert milliseconds in a data-frame
+[2023-01-31 Tue]
+
+I think it's going to require digging into regular elixir functions. I was hoping to avoid that, but I don't see any other way.
+
+Nice. Got it working. But now I am stuck on how to do the actual clustering. It looks like Explorer doesn't have any clustering made for it.
+
+I wonder if that is a way I could help contribute to one of these projects?
+*** Let's see how they expected me to do it in Python
+[2023-02-01 Wed]
+Maybe I don't need a library or baked in option in Explorer. Maybe I just need to bite the bullet, and convert the thing into Elixir data structures and write the code.
+
+Oh wow, the book uses a keams library.
+
+maybe there is an Elixir one?
+https://github.com/elixir-nx/scholar/blob/main/notebooks/k_means.livemd
+Oh what do we have here?
+
+Oh no! this is the solution. Shucks.
+
+Well, I can try to do this with the data I found on the net, but this is in an Elixir Live book and everything. 
+
+Oh cool. Half way through and I think I see where I was going wrong.
+
+They start the whole thing by pulling the columns in the data frame out of it. Then they stuff them into an Nx tensor. Now I have a nice hint of where to look.
+
+Wow, that took me down quite the rabbit hole. Anyway, the Nx project is still very young, but man does it have a lot that is already up and running. 
+
+*** Okay, let's just walk through their example with my data
+[2023-02-02 Thu]
+If I fumble for days, I will figure it out. But I thing I should be trying to move faster if I can.
+
+Or I can get stopped by dependency woes.. haha. Okay, need to work on something else in the mean time.
+
+*** Okay NOW we step through their stuff
+[2023-02-06 Mon]
+
+I ran into a dependency issue, but I figured it out. 
+
+*** Looks like I either fix the libraries or wait till someone else does
+[2023-02-07 Tue]
+
+So yesterday I made some decent progress. I figured out how to get the dependcy issues resolved, but it looks like some funtion calls between EXLA and Nx are not working, so I either dig in and try to patch it, or I work on something else while I wait, or give up and just do this is Python where I know it will work.
+
+hmn... no someone did this on purpose:
+https://github.com/elixir-nx/nx/pull/1085
+
+It's already been "fixed". But something is still weird
+
+*** Now for the fun bit
+[2023-02-08 Wed]
+
+I got all the libries working yesterday. Now I see if I can figure out how to cluster me some data
+
+Before I forget, where did I eve get this data?
+
+http://combed.github.io/
+
+Right, I got it from here
+
+
+
+*** I might be trying to follow the example too closely
+[2023-02-09 Thu]
+
+Let's go back and try ti fugure out what I have so far
+
+* Bing suggested programming topics
+[2023-02-12 Sun]
+
+So I knew this Bing search thing was crazy. But I think it's going to change how I learn.
+
+I am almost done with my programming textbook, and I might not need to buy any more. This Bing thing in nuts
+** Asking Bing for what to study
+
+#+begin_quote
+Sent message. I am learning how to program on my own. I have a book which instroduces computer science topics and I have relly bee enjoying going through the book's chapters and doing the exercises at the end of the book. But I am almost done with the book and I am wondering how to structure my further study. I want to see if you could suggest a list of topics to cover after the topics thar are listed in this book: https://sanet.st/blogs/popularbooks/classic_computer_science_problems_in_python_epub.2934431.html
+Searching for: https://sanet.st/blogs/popularbooks/classic_computer_science_problems_in_python_epub.2934431.html
+
+Searching for: https://sanet.st/blogs/popularbooks/classic_computer_science_problems_in_python_epub.2934431.html
+
+Searching for: Classic Computer Science Problems in Python book topics
+
+Searching for: Classic Computer Science Problems in Python book topics
+
+Generating answers for you…
+
+Generating answers for you…
+
+I’m glad to hear that you are enjoying learning how to program on your own. The book you are using, Classic Computer Science Problems in Python, covers some important topics in computer science, such as search algorithms, constraint satisfaction problems, graphs, adversarial search, neural networks, and genetic algorithms123. These topics are useful for solving a variety of problems and developing your algorithmic thinking skills.
+
+However, there are many more topics that you can explore after finishing this book. Some possible topics are:
+
+Data structures and algorithms: You can learn more about the different ways of organizing and manipulating data, such as lists, stacks, queues, trees, heaps, hash tables, graphs, sorting, and searching. You can also learn how to analyze the efficiency and correctness of algorithms using concepts such as time and space complexity, recursion, and induction.
+Web development: You can learn how to create websites and web applications using various tools and frameworks, such as HTML, CSS, JavaScript, Python, Django, Flask, React, Angular, etc. You can also learn how to use databases, APIs, web servers, and web security principles.
+Machine learning: You can learn how to use data and algorithms to make predictions and decisions, such as classification, regression, clustering, recommendation systems, natural language processing, computer vision, etc. You can also learn how to use libraries and frameworks, such as scikit-learn, TensorFlow, PyTorch, Keras, etc.
+Software engineering: You can learn how to design, develop, test, and maintain software systems using principles and practices, such as object-oriented programming, functional programming, design patterns, testing, debugging, refactoring, version control, documentation, etc.
+Computer systems: You can learn how computers work at a lower level, such as hardware, operating systems, networks, compilers, interpreters, etc. You can also learn how to use languages and tools, such as C, C++, Java, Assembly, Linux, etc.
+These are just some examples of topics that you can study after finishing the book. Of course, there are many more topics and subtopics that you can explore depending on your interests and goals. I hope this helps you to structure your further study. 😊
+
+Received message. I'm glad to hear that you are enjoying learning how to program on your own. The book you are using, Classic Computer Science Problems in Python, covers some important topics in computer science, such as search algorithms, constraint satisfaction problems, graphs, adversarial search, neural networks, and genetic algorithms . These topics are useful for solving a variety of problems and developing your algorithmic thinking skills. However, there are many more topics that you can explore after finishing this book. Some possible topics are: - Data structures and algorithms: You can learn more about the different ways of organizing and manipulating data, such as lists, stacks, queues, trees, heaps, hash tables, graphs, sorting, and searching. You can also learn how to analyze the efficiency and correctness of algorithms using concepts such as time and space complexity, recursion, and induction. - Web development: You can learn how to create websites and web applications using various tools and frameworks, such as HTML, CSS, JavaScript, Python, Django, Flask, React, Angular, etc. You can also learn how to use databases, APIs, web servers, and web security principles. - Machine learning: You can learn how to use data and algorithms to make predictions and decisions, such as classification, regression, clustering, recommendation systems, natural language processing, computer vision, etc. You can also learn how to use libraries and frameworks, such as scikit-learn, TensorFlow, PyTorch, Keras, etc. - Software engineering: You can learn how to design, develop, test, and maintain software systems using principles and practices, such as object-oriented programming, functional programming, design patterns, testing, debugging, refactoring, version control, documentation, etc. - Computer systems: You can learn how computers work at a lower level, such as hardware, operating systems, networks, compilers, interpreters, etc. You can also learn how to use languages and tools, such as C, C++, Java, Assembly, Linux, etc. These are just some examples of topics that you can study after finishing the book. Of course, there are many more topics and subtopics that you can explore depending on your interests and goals. I hope this helps you to structure your further study. 😊
+Learn more:
+1. bing.com
+2. manning.com
+3. amazon.com
+4. github.com
+5. github.com
+6. github.com
+7. github.com
++2 more
+I was thinking of tackling Machine learning next. Can you list some topics I might want to study in Machine learning, kind of like how the "Classic Computer Science Problems in Python" books sugested theI cover the topics that it gave me?
+Sent message. I was thinking of tackling Machine learning next. Can you list some topics I might want to study in Machine learning, kind of like how the "Classic Computer Science Problems in Python" books sugested theI cover the topics that it gave me?
+Searching for: Machine learning topics
+
+Searching for: Machine learning topics
+
+Generating answers for you…
+
+Generating answers for you…
+
+Machine learning is a branch of artificial intelligence and computer science that focuses on using data and algorithms to imitate the way that humans learn, gradually improving its accuracy1. Machine learning is a very broad and diverse field that can be applied to many domains and problems. Some topics that you might want to study in machine learning are:
+
+Supervised learning: This is the type of machine learning where you have labeled data and you want to learn a function that maps the input to the output. Examples of supervised learning problems are regression, where the output is continuous, such as predicting the loan amount or the speed of the wind2, and classification, where the output is discrete, such as predicting the class of the data into a predefined group, such as spam or not spam2.
+Unsupervised learning: This is the type of machine learning where you have unlabeled data and you want to discover some hidden structure or patterns in the data. Examples of unsupervised learning problems are clustering, where you want to group similar data points together, such as customer segmentation or image segmentation, and dimensionality reduction, where you want to reduce the number of features or variables in the data, such as principal component analysis or autoencoders.
+Reinforcement learning: This is the type of machine learning where you have an agent that interacts with an environment and learns from its own actions and rewards. Examples of reinforcement learning problems are game playing, such as chess or Go, robotics, such as navigation or manipulation, and control systems, such as self-driving cars or smart grids.
+Deep learning: This is a subfield of machine learning that uses artificial neural networks, which are composed of layers of interconnected nodes that can learn complex and nonlinear functions from data. Examples of deep learning problems are natural language processing, such as text generation or sentiment analysis, computer vision, such as face recognition or object detection, and speech recognition, such as speech-to-text or voice assistants.
+These are some of the main topics in machine learning, but there are many more subtopics and applications that you can explore. Machine learning is a very active and evolving field, and there are many new developments and research papers that you can read and learn from. You can also use various libraries and frameworks, such as scikit-learn, TensorFlow, PyTorch, Keras, etc., to implement and experiment with machine learning algorithms and models.
+
+Received message. Machine learning is a branch of artificial intelligence and computer science that focuses on using data and algorithms to imitate the way that humans learn, gradually improving its accuracy. Machine learning is a very broad and diverse field that can be applied to many domains and problems. Some topics that you might want to study in machine learning are: - Supervised learning: This is the type of machine learning where you have labeled data and you want to learn a function that maps the input to the output. Examples of supervised learning problems are regression, where the output is continuous, such as predicting the loan amount or the speed of the wind, and classification, where the output is discrete, such as predicting the class of the data into a predefined group, such as spam or not spam. - Unsupervised learning: This is the type of machine learning where you have unlabeled data and you want to discover some hidden structure or patterns in the data. Examples of unsupervised learning problems are clustering, where you want to group similar data points together, such as customer segmentation or image segmentation, and dimensionality reduction, where you want to reduce the number of features or variables in the data, such as principal component analysis or autoencoders. - Reinforcement learning: This is the type of machine learning where you have an agent that interacts with an environment and learns from its own actions and rewards. Examples of reinforcement learning problems are game playing, such as chess or Go, robotics, such as navigation or manipulation, and control systems, such as self-driving cars or smart grids. - Deep learning: This is a subfield of machine learning that uses artificial neural networks, which are composed of layers of interconnected nodes that can learn complex and nonlinear functions from data. Examples of deep learning problems are natural language processing, such as text generation or sentiment analysis, computer vision, such as face recognition or object detection, and speech recognition, such as speech-to-text or voice assistants. These are some of the main topics in machine learning, but there are many more subtopics and applications that you can explore. Machine learning is a very active and evolving field, and there are many new developments and research papers that you can read and learn from. You can also use various libraries and frameworks, such as scikit-learn, TensorFlow, PyTorch, Keras, etc., to implement and experiment with machine learning algorithms and models.
+Learn more:
+1. ibm.com
+2. analytixlabs.co.in
+3. mypaperdone.com
+4. genengnews.com
+5. ibtimes.com
+6. chemistryworld.com
++1 more
+I see. Taking the first topics of supervised learning what are some subtopics I would want to cover to learn about supervised learning?
+Sent message. I see. Taking the first topics of supervised learning what are some subtopics I would want to cover to learn about supervised learning?
+Searching for: supervised learning subtopics
+
+Searching for: supervised learning subtopics
+
+Generating answers for you…
+
+Generating answers for you…
+
+Supervised learning is a type of machine learning where you have labeled data and you want to learn a function that maps the input to the output1. Some subtopics that you would want to cover to learn about supervised learning are:
+
+Regression: This is a type of supervised learning where the output is continuous, such as predicting the loan amount or the speed of the wind. You can learn about different regression models, such as linear regression, logistic regression, polynomial regression, etc., and how to evaluate their performance using metrics, such as mean squared error, R-squared, etc.
+Classification: This is a type of supervised learning where the output is discrete, such as predicting the class of the data into a predefined group, such as spam or not spam. You can learn about different classification models, such as decision trees, k-nearest neighbors, support vector machines, etc., and how to evaluate their performance using metrics, such as accuracy, precision, recall, etc.
+Ensemble methods: This is a technique that combines multiple models to improve the accuracy and robustness of the predictions, such as bagging, boosting, random forests, etc. You can learn about the advantages and disadvantages of different ensemble methods and how to apply them to regression and classification problems.
+Feature selection and engineering: This is a process of selecting and transforming the most relevant and informative features or variables from the data to improve the performance and interpretability of the models, such as filter methods, wrapper methods, embedded methods, etc. You can learn about the criteria and methods for feature selection and engineering and how to apply them to different types of data, such as numerical, categorical, text, etc.
+Model selection and validation: This is a process of choosing the best model and its parameters from a set of candidates based on their performance on the data, such as cross-validation, grid search, random search, etc. You can learn about the trade-offs and challenges of model selection and validation and how to avoid overfitting and underfitting.
+These are some of the main subtopics that you would want to cover to learn about supervised learning, but there are many more details and nuances that you can explore. Supervised learning is a very fundamental and practical topic in machine learning, and there are many examples and applications that you can learn from.
+
+Received message. Supervised learning is a type of machine learning where you have labeled data and you want to learn a function that maps the input to the output. Some subtopics that you would want to cover to learn about supervised learning are: - Regression: This is a type of supervised learning where the output is continuous, such as predicting the loan amount or the speed of the wind. You can learn about different regression models, such as linear regression, logistic regression, polynomial regression, etc., and how to evaluate their performance using metrics, such as mean squared error, R-squared, etc. - Classification: This is a type of supervised learning where the output is discrete, such as predicting the class of the data into a predefined group, such as spam or not spam. You can learn about different classification models, such as decision trees, k-nearest neighbors, support vector machines, etc., and how to evaluate their performance using metrics, such as accuracy, precision, recall, etc. - Ensemble methods: This is a technique that combines multiple models to improve the accuracy and robustness of the predictions, such as bagging, boosting, random forests, etc. You can learn about the advantages and disadvantages of different ensemble methods and how to apply them to regression and classification problems. - Feature selection and engineering: This is a process of selecting and transforming the most relevant and informative features or variables from the data to improve the performance and interpretability of the models, such as filter methods, wrapper methods, embedded methods, etc. You can learn about the criteria and methods for feature selection and engineering and how to apply them to different types of data, such as numerical, categorical, text, etc. - Model selection and validation: This is a process of choosing the best model and its parameters from a set of candidates based on their performance on the data, such as cross-validation, grid search, random search, etc. You can learn about the trade-offs and challenges of model selection and validation and how to avoid overfitting and underfitting. These are some of the main subtopics that you would want to cover to learn about supervised learning, but there are many more details and nuances that you can explore. Supervised learning is a very fundamental and practical topic in machine learning, and there are many examples and applications that you can learn from.
+Learn more:
+1. ibm.com
+2. sciencedirect.com
+3. edureka.co
+This is really helpful. Thank you. How about subtopics for regression?
+Sent message. This is really helpful. Thank you. How about subtopics for regression?
+Searching for: subtopics for regression
+
+Searching for: subtopics for regression
+
+Generating answers for you…
+
+Generating answers for you…
+
+Regression is a type of supervised learning where the output is continuous, such as predicting the loan amount or the speed of the wind. Some subtopics for regression are:
+
+Linear regression: This is the simplest and most widely used type of regression, where the output is a linear function of the input variables, such as y = a + bx. You can learn about the assumptions, methods, and applications of linear regression, such as ordinary least squares, gradient descent, etc., and how to deal with problems, such as multicollinearity, heteroscedasticity, outliers, etc.
+Logistic regression: This is a type of regression that is used for binary classification problems, where the output is a probability of belonging to a certain class, such as 0 or 1. You can learn about the logistic function, the maximum likelihood estimation, and the applications of logistic regression, such as spam detection, credit scoring, etc., and how to deal with problems, such as overfitting, imbalanced data, etc.
+Polynomial regression: This is a type of regression that allows for nonlinear relationships between the input and output variables, by adding higher-order terms, such as x^2, x^3, etc. You can learn about the advantages and disadvantages of polynomial regression, such as flexibility and complexity, and how to choose the optimal degree of the polynomial, such as using the bias-variance trade-off, the Akaike information criterion, etc.
+Multiple regression: This is a type of regression that involves more than one input variable, such as y = a + b1x1 + b2x2 + … You can learn about the interpretation, estimation, and evaluation of multiple regression models, such as using dummy variables, interaction terms, adjusted R-squared, etc., and how to deal with problems, such as multicollinearity, autocorrelation, etc.
+Ridge regression: This is a type of regression that adds a regularization term to the cost function, which penalizes the magnitude of the coefficients, in order to reduce overfitting and improve generalization. You can learn about the concept, derivation, and implementation of ridge regression, and how to choose the optimal value of the regularization parameter, such as using cross-validation, the L-curve, etc.
+Lasso regression: This is a type of regression that also adds a regularization term to the cost function, but in this case, it penalizes the absolute value of the coefficients, which leads to some coefficients being shrunk to zero, resulting in feature selection. You can learn about the concept, derivation, and implementation of lasso regression, and how to choose the optimal value of the regularization parameter, such as using cross-validation, the L-curve, etc.
+Elastic net regression: This is a type of regression that combines the ridge and lasso regularization terms, which allows for a balance between feature selection and feature shrinkage. You can learn about the concept, derivation, and implementation of elastic net regression, and how to choose the optimal values of the regularization parameters, such as using cross-validation, the L-curve, etc.
+These are some of the main subtopics for regression, but there are many more variations and extensions that you can explore. Regression is a very powerful and versatile tool for modeling and predicting continuous outcomes, and there are many examples and applications that you can learn from.
+
+Received message. Regression is a type of supervised learning where the output is continuous, such as predicting the loan amount or the speed of the wind. Some subtopics for regression are: - Linear regression: This is the simplest and most widely used type of regression, where the output is a linear function of the input variables, such as y = a + bx. You can learn about the assumptions, methods, and applications of linear regression, such as ordinary least squares, gradient descent, etc., and how to deal with problems, such as multicollinearity, heteroscedasticity, outliers, etc. - Logistic regression: This is a type of regression that is used for binary classification problems, where the output is a probability of belonging to a certain class, such as 0 or 1. You can learn about the logistic function, the maximum likelihood estimation, and the applications of logistic regression, such as spam detection, credit scoring, etc., and how to deal with problems, such as overfitting, imbalanced data, etc. - Polynomial regression: This is a type of regression that allows for nonlinear relationships between the input and output variables, by adding higher-order terms, such as x^2, x^3, etc. You can learn about the advantages and disadvantages of polynomial regression, such as flexibility and complexity, and how to choose the optimal degree of the polynomial, such as using the bias-variance trade-off, the Akaike information criterion, etc. - Multiple regression: This is a type of regression that involves more than one input variable, such as y = a + b1x1 + b2x2 + ... You can learn about the interpretation, estimation, and evaluation of multiple regression models, such as using dummy variables, interaction terms, adjusted R-squared, etc., and how to deal with problems, such as multicollinearity, autocorrelation, etc. - Ridge regression: This is a type of regression that adds a regularization term to the cost function, which penalizes the magnitude of the coefficients, in order to reduce overfitting and improve generalization. You can learn about the concept, derivation, and implementation of ridge regression, and how to choose the optimal value of the regularization parameter, such as using cross-validation, the L-curve, etc. - Lasso regression: This is a type of regression that also adds a regularization term to the cost function, but in this case, it penalizes the absolute value of the coefficients, which leads to some coefficients being shrunk to zero, resulting in feature selection. You can learn about the concept, derivation, and implementation of lasso regression, and how to choose the optimal value of the regularization parameter, such as using cross-validation, the L-curve, etc. - Elastic net regression: This is a type of regression that combines the ridge and lasso regularization terms, which allows for a balance between feature selection and feature shrinkage. You can learn about the concept, derivation, and implementation of elastic net regression, and how to choose the optimal values of the regularization parameters, such as using cross-validation, the L-curve, etc. These are some of the main subtopics for regression, but there are many more variations and extensions that you can explore. Regression is a very powerful and versatile tool for modeling and predicting continuous outcomes, and there are many examples and applications that you can learn from.
+Learn more:
+1. upgrad.com
+2. bookdown.org
+3. statology.org
+Can you please make a short 3 pargraph explination of what Linerar regression is, and make a python function that shows how to perfrom a linear regression wile refrencing the 3 explination?
+Sent message. Can you please make a short 3 pargraph explination of what Linerar regression is, and make a python function that shows how to perfrom a linear regression wile refrencing the 3 explination?
+Linear regression is a type of regression where the output is a linear function of the input variables, such as y = a + bx. The goal of linear regression is to find the values of the coefficients a and b that minimize the sum of the squared errors between the actual and predicted values of y, such as SSE = sum((y - y_hat)^2). This can be done using various methods, such as ordinary least squares, gradient descent, etc.
+
+One of the most common methods for linear regression is ordinary least squares (OLS), which involves solving a system of linear equations to find the optimal values of a and b, such as a = (sum(y) * sum(x^2) - sum(x) * sum(xy)) / (n * sum(x^2) - (sum(x))^2) and b = (n * sum(xy) - sum(x) * sum(y)) / (n * sum(x^2) - (sum(x))^2), where n is the number of observations, x is the input variable, and y is the output variable.
+
+Here is a python function that shows how to perform a linear regression using OLS, given a list of x values and a list of y values:
+
+#+end_quote
+
+#+name:bing_regresssion_example
+#+begin_src python :python python3 :results output
+
+# Define a function for linear regression using OLS
+def linear_regression(x, y):
+  # Calculate the number of observations
+  n = len(x)
+  # Calculate the sums of x, y, x^2, and xy
+  sum_x = sum(x)
+  sum_y = sum(y)
+  sum_x2 = sum([x_i ** 2 for x_i in x])
+  sum_xy = sum([x_i * y_i for x_i, y_i in zip(x, y)])
+  # Calculate the coefficients a and b
+  a = (sum_y * sum_x2 - sum_x * sum_xy) / (n * sum_x2 - sum_x ** 2)
+  b = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2)
+  # Return the coefficients a and b
+  return a, b
+
+  
+#+end_src
+
+#+begin_quote
+Received message. Linear regression is a type of regression where the output is a linear function of the input variables, such as y = a + bx. The goal of linear regression is to find the values of the coefficients a and b that minimize the sum of the squared errors between the actual and predicted values of y, such as SSE = sum((y - y_hat)^2). This can be done using various methods, such as ordinary least squares, gradient descent, etc. One of the most common methods for linear regression is ordinary least squares (OLS), which involves solving a system of linear equations to find the optimal values of a and b, such as a = (sum(y) * sum(x^2) - sum(x) * sum(xy)) / (n * sum(x^2) - (sum(x))^2) and b = (n * sum(xy) - sum(x) * sum(y)) / (n * sum(x^2) - (sum(x))^2), where n is the number of observations, x is the input variable, and y is the output variable. Here is a python function that shows how to perform a linear regression using OLS, given a list of x values and a list of y values: ```python # Define a function for linear regression using OLS def linear_regression(x, y): # Calculate the number of observations n = len(x) # Calculate the sums of x, y, x^2, and xy sum_x = sum(x) sum_y = sum(y) sum_x2 = sum([x_i ** 2 for x_i in x]) sum_xy = sum([x_i * y_i for x_i, y_i in zip(x, y)]) # Calculate the coefficients a and b a = (sum_y * sum_x2 - sum_x * sum_xy) / (n * sum_x2 - sum_x ** 2) b = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2) # Return the coefficients a and b return a, b ```
+Great. Can you suggest a homework assingment based on the summary and code you just gave me?
+
+Sent message. Great. Can you suggest a homework assingment based on the summary and code you just gave me?
+
+Sure, here is a possible homework assignment based on the summary and code I just gave you:
+
+Read and understand the summary and code of linear regression using OLS.
+Find a dataset that contains two numerical variables, such as the height and weight of a group of people, the temperature and pressure of a gas, the advertising expenditure and sales revenue of a company, etc.
+Load the dataset into python using pandas or any other library of your choice.
+Plot the scatter plot of the two variables using matplotlib or any other library of your choice.
+Use the linear_regression function to find the coefficients a and b of the best-fit line for the two variables.
+Plot the best-fit line on the same scatter plot using matplotlib or any other library of your choice.
+Calculate the R-squared value of the linear regression model using the formula R^2 = 1 - SSE / SST, where SSE is the sum of the squared errors and SST is the total sum of squares.
+Interpret the results of the linear regression model, such as the slope, the intercept, and the R-squared value, and explain what they mean in the context of the dataset.
+Write a report that summarizes your findings and conclusions from the linear regression analysis.
+#+end_quote
+
+
+** That is NUTS
+Yeah, It might not be the best advice I have ever been given about how or what to study in programming, but I didn't pay a cent for that. Instead, I got a 3 paragraph summary of what linear regression is, and a practice problem to go try.
 * LiveBook practice
 [2023-01-04 Wed]
 
@@ -14216,3 +15390,50 @@ I actually finished this last week, but I managed to figured out how the Vega li
 Now that I can make graphs and sort of understand how they work, it's time to work with tabular data. Enter the Elixir equivalent of Pandas: Explorer.
 
 Let's use that idea I used when learning pandas. Find a Pokemon CSV file.
+
+*** Summing a bunch of columns is HARD
+[2023-01-10 Tue]
+
+Spend a whole hour and the best I got was a hacky work around.
+
+*** I am not sure how to make a series into a column
+[2023-01-11 Wed]
+
+*** Let's try a few more column manipulations before moving on
+[2023-01-12 Thu]
+
+** Nerves
+[2023-01-16 Mon]
+
+So it looks like the Nerves project jumped on this too. So I am going to see what it's like and maybe go so far as trying to burn my own with an LFE shell.
+
+Okay. Well that was the an overview of what is in the Live note books. They certainly are quite nice. They don't all work flawlessly out of the box, but considering these are designed to just run on any of the devices you can install nerves on, I am not surprised you can't get them all working.
+
+Not being able to SSH into the things is kind of a bummer.
+
+Checking the forum doesn't appear to have any people who have already posted about my issue exactly. Maybe I should ask about this, or maybe I should try a few things on my side first.
+
+Sucsess!!! I finally managed to SSH into this thing! But it look me trying to SSH from bash.
+
+*** Getting an LFE prompt is not that easy
+[2023-01-17 Tue]
+
+I tried yesterday to get it working, and I am afraid I broke SSH.
+
+Nice, and I fixed in it like 12 min.
+
+Cool, so with it SSH-able. Let's try to get SSH working with ssh keys and with the iPad.
+
+First as is with the iPad and iPhone.
+
+Nice. Works with iPad pretty easily. Now to get these SSH keys working to keep it more secure.
+
+And done. That took a whole evening, but it went comparatively smoothly. I can now just plug this this thing into my laptop or iPad and just open a browser to start using LiveBook, or pull up a terminal and SSH with no password because my SSH keys are already set up.
+
+*** Trying it with no Laptop
+[2023-01-18 Wed]
+
+I'm writting this the next day, but I tried just using my iPad away from laotop and the LiveBook was a decent way to write code. It was frustrating without a keybaord, which is hard without a adapter to use with the iPad and it's single C port. But it would be perfectly serviceable for a lot of things.
+
+
+
